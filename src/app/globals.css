@@ -1,0 +1,102 @@
+@import url("https://fonts.googleapis.com/css2?family=Amiri:ital,wght@0,400;0,700;1,400&family=Playfair+Display:wght@600;700&display=swap");
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ─── CSS Variables ────────────────────────────────────── */
+:root {
+  --bg: #fdfcf8;
+  --bg-card: #ffffff;
+  --text: #1a1917;
+  --text-muted: #6b6560;
+  --accent: #b8860b;
+  --accent-hover: #9a6e00;
+  --border: #e8e3dc;
+  --shadow: rgba(0, 0, 0, 0.06);
+}
+
+.dark {
+  --bg: #1a1917;
+  --bg-card: #242220;
+  --text: #e6e0d5;
+  --text-muted: #8a847a;
+  --accent: #d4af37;
+  --accent-hover: #c49e2a;
+  --border: #2e2b28;
+  --shadow: rgba(0, 0, 0, 0.3);
+}
+
+/* ─── Base ─────────────────────────────────────────────── */
+html {
+  scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  background-color: var(--bg);
+  color: var(--text);
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  transition: background-color 0.3s ease, color 0.3s ease;
+  line-height: 1.7;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ─── Scrollbar (webkit) ───────────────────────────────── */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--accent);
+}
+
+/* ─── Selection ─────────────────────────────────────────── */
+::selection {
+  background: rgba(184, 134, 11, 0.2);
+  color: var(--text);
+}
+
+/* ─── Utility: card animation on load ──────────────────── */
+.novel-card-enter {
+  opacity: 0;
+  transform: translateY(20px);
+  animation: fadeUp 0.5s ease-out forwards;
+}
+
+/* ─── Gold text fill ────────────────────────────────────── */
+.text-gold-500 {
+  color: #b8860b;
+}
+.dark .text-gold-400 {
+  color: #d4af37;
+}
+
+/* ─── Number input hide arrows ──────────────────────────── */
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+input[type="number"] {
+  -moz-appearance: textfield;
+}
+
+/* ─── RTL utilities ─────────────────────────────────────── */
+[dir="rtl"] .ms-auto {
+  margin-left: auto;
+  margin-right: unset;
+}
+
+/* ─── PDF Canvas dark filter ────────────────────────────── */
+.dark canvas.pdf-canvas {
+  filter: invert(0.88) hue-rotate(180deg) contrast(0.92);
+}
