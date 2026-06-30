@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <!-- Book body -->
+  <rect x="8" y="6" width="48" height="52" rx="4" fill="#B8860B" opacity="0.15"/>
+  <!-- Book cover left page -->
+  <path d="M10 10 C10 8 12 6 14 6 L32 6 L32 58 L14 58 C12 58 10 56 10 54 Z" fill="#B8860B" opacity="0.3"/>
+  <!-- Book cover right page -->
+  <path d="M32 6 L50 6 C52 6 54 8 54 10 L54 54 C54 56 52 58 50 58 L32 58 Z" fill="#B8860B" opacity="0.5"/>
+  <!-- Spine -->
+  <rect x="30" y="6" width="4" height="52" fill="#B8860B" opacity="0.8"/>
+  <!-- Arabic letter ر (Ra) -->
+  <text x="43" y="40" text-anchor="middle" font-family="'Amiri', 'Scheherazade New', serif" font-size="26" font-weight="700" fill="#B8860B">ر</text>
+  <!-- Gold shine on spine -->
+  <rect x="30" y="6" width="1.5" height="52" fill="white" opacity="0.3"/>
+  <!-- Top decorative line -->
+  <line x1="16" y1="16" x2="28" y2="16" stroke="#B8860B" stroke-width="1.5" stroke-linecap="round" opacity="0.6"/>
+  <line x1="16" y1="20" x2="24" y2="20" stroke="#B8860B" stroke-width="1" stroke-linecap="round" opacity="0.4"/>
+</svg>
