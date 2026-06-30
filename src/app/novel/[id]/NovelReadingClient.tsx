@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { ArrowRight, Wallet, Star, BookOpen, Tag, Calendar } from "lucide-react";
 import dynamic from "next/dynamic";
