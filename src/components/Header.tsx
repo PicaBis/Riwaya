@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Moon, Sun, User, LogOut, BookOpen } from "lucide-react";
+import Image from "next/image";
+import { Moon, Sun, User, LogOut, Info } from "lucide-react";
 import { useApp } from "@/context/AppContext";
 import { GuestLoginModal } from "./GuestLoginModal";
 
@@ -14,20 +15,35 @@ export function Header() {
     <>
       <header className="sticky top-0 z-40 w-full border-b border-parchment-200 dark:border-white/8 bg-parchment-50/90 dark:bg-onyx-900/90 backdrop-blur-md">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
-          {/* Logo */}
-          <Link
-            href="/"
-            className="flex items-center gap-2.5 group"
-          >
-            <div className="w-8 h-8 rounded-lg bg-gold-500/10 flex items-center justify-center transition-colors group-hover:bg-gold-500/20">
-              <BookOpen className="w-4 h-4 text-gold-500" />
+
+          {/* ── Logo ──────────────────────────────────── */}
+          <Link href="/" className="flex items-center gap-2.5 group" dir="rtl">
+            <div className="w-8 h-8 flex-shrink-0">
+              <Image src="/logo.svg" alt="روايتي" width={32} height={32} />
             </div>
             <span className="font-arabic text-xl font-bold text-gray-900 dark:text-gray-100 tracking-wide">
               روايتي
             </span>
           </Link>
 
-          {/* Actions */}
+          {/* ── Nav links ─────────────────────────────── */}
+          <nav className="hidden sm:flex items-center gap-1" dir="rtl">
+            <Link
+              href="/"
+              className="px-3.5 py-1.5 rounded-lg text-sm font-arabic text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-parchment-100 dark:hover:bg-white/8 transition-colors"
+            >
+              المكتبة
+            </Link>
+            <Link
+              href="/about"
+              className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-sm font-arabic text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-parchment-100 dark:hover:bg-white/8 transition-colors"
+            >
+              <Info className="w-3.5 h-3.5" />
+              من نحن
+            </Link>
+          </nav>
+
+          {/* ── Actions ───────────────────────────────── */}
           <div className="flex items-center gap-2">
             {/* Theme toggle */}
             <button
@@ -51,9 +67,9 @@ export function Header() {
             {guest ? (
               <div className="flex items-center gap-1.5">
                 <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-lg bg-gold-500/10 border border-gold-500/20">
-                  <div className="w-5 h-5 rounded-full bg-gold-500 flex items-center justify-center">
+                  <div className="w-5 h-5 rounded-full bg-gold-500 flex items-center justify-center flex-shrink-0">
                     <span className="text-white text-xs font-bold">
-                      {guest.name.charAt(0)}
+                      {guest.name.charAt(0).toUpperCase()}
                     </span>
                   </div>
                   <span className="text-sm font-arabic text-gold-600 dark:text-gold-400 font-medium">

@@ -102,7 +102,11 @@ export function NovelReadingClient({ novel }: NovelReadingClientProps) {
 
         {/* ── PDF Viewer (fills remaining height) ─────── */}
         <div className="flex-1 overflow-hidden" dir="ltr">
-          <PDFViewer pdfUrl={pdfUrl} title={novel.title} />
+          <PDFViewer
+            pdfUrl={pdfUrl}
+            title={novel.title}
+            freeUntilPage={novel.freeUntilPage}
+          />
         </div>
       </div>
 

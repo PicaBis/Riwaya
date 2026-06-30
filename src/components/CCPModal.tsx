@@ -1,6 +1,6 @@
 "use client";
 
-import { X, CreditCard, Copy, CheckCheck } from "lucide-react";
+import { X, Wallet, Copy, CheckCheck } from "lucide-react";
 import { useState } from "react";
 
 interface CCPModalProps {
@@ -8,21 +8,16 @@ interface CCPModalProps {
   onClose: () => void;
 }
 
-// ✏️  Replace with your real CCP details
-const CCP_DETAILS = {
-  accountNumber: "XXXX XXXX XXXX",
-  key: "XX",
-  name: "اسمك الكامل",
-  note: "دعم رواية: ",
-};
+const RIP_NUMBER = "00799999002885975343";
+const AUTHOR_NAME = "Medjahed Abdelhadi";
 
 export function CCPModal({ novelTitle, onClose }: CCPModalProps) {
   const [copied, setCopied] = useState(false);
 
   const copyAccount = async () => {
-    await navigator.clipboard.writeText(CCP_DETAILS.accountNumber);
+    await navigator.clipboard.writeText(RIP_NUMBER);
     setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+    setTimeout(() => setCopied(false), 2500);
   };
 
   return (
@@ -42,7 +37,7 @@ export function CCPModal({ novelTitle, onClose }: CCPModalProps) {
         {/* Header */}
         <div className="text-center mb-6">
           <div className="w-14 h-14 rounded-2xl bg-gold-500/10 flex items-center justify-center mx-auto mb-3">
-            <CreditCard className="w-7 h-7 text-gold-500" />
+            <Wallet className="w-7 h-7 text-gold-500" />
           </div>
           <h2 className="text-xl font-display font-bold text-gray-900 dark:text-gray-100">
             دعم المؤلف
@@ -52,11 +47,11 @@ export function CCPModal({ novelTitle, onClose }: CCPModalProps) {
           </p>
         </div>
 
-        {/* CCP Details */}
+        {/* RIP Details */}
         <div className="space-y-3 mb-5">
           <div className="rounded-xl bg-parchment-100 dark:bg-white/5 border border-parchment-300 dark:border-white/10 p-4">
             <p className="text-xs text-gray-400 dark:text-gray-500 mb-1 font-sans text-right">
-              رقم الحساب البريدي (CCP)
+              رقم RIP — بريد الجزائر
             </p>
             <div className="flex items-center justify-between gap-2">
               <button
@@ -72,39 +67,30 @@ export function CCPModal({ novelTitle, onClose }: CCPModalProps) {
               </button>
               <span
                 dir="ltr"
-                className="text-lg font-mono font-semibold text-gray-900 dark:text-gray-100 tracking-widest"
+                className="text-base font-mono font-semibold text-gray-900 dark:text-gray-100 tracking-widest"
               >
-                {CCP_DETAILS.accountNumber}
+                {RIP_NUMBER}
               </span>
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
-            <div className="rounded-xl bg-parchment-100 dark:bg-white/5 border border-parchment-300 dark:border-white/10 p-3 text-right">
-              <p className="text-xs text-gray-400 dark:text-gray-500 mb-0.5">المفتاح</p>
-              <p className="font-mono font-bold text-gray-900 dark:text-gray-100">
-                {CCP_DETAILS.key}
-              </p>
-            </div>
-            <div className="rounded-xl bg-parchment-100 dark:bg-white/5 border border-parchment-300 dark:border-white/10 p-3 text-right">
-              <p className="text-xs text-gray-400 dark:text-gray-500 mb-0.5">الاسم</p>
-              <p className="font-arabic text-sm text-gray-900 dark:text-gray-100">
-                {CCP_DETAILS.name}
-              </p>
-            </div>
+          <div className="rounded-xl bg-parchment-100 dark:bg-white/5 border border-parchment-300 dark:border-white/10 p-3 text-right">
+            <p className="text-xs text-gray-400 dark:text-gray-500 mb-0.5">الاسم</p>
+            <p className="font-medium text-gray-900 dark:text-gray-100">
+              {AUTHOR_NAME}
+            </p>
           </div>
 
           <div className="rounded-xl bg-parchment-100 dark:bg-white/5 border border-parchment-300 dark:border-white/10 p-3 text-right">
             <p className="text-xs text-gray-400 dark:text-gray-500 mb-0.5">الملاحظة</p>
             <p className="font-arabic text-sm text-gray-700 dark:text-gray-300">
-              {CCP_DETAILS.note}
-              {novelTitle}
+              دعم رواية: {novelTitle}
             </p>
           </div>
         </div>
 
         <p className="text-center text-xs text-gray-400 dark:text-gray-500 font-arabic leading-relaxed">
-          شكراً لدعمك، يُحفّزني على الاستمرار في الكتابة 💛
+          شكراً لدعمك — يُحفّزني على الاستمرار في الكتابة 💛
         </p>
       </div>
     </div>

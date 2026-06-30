@@ -11,15 +11,18 @@ import {
   BookOpen,
 } from "lucide-react";
 import clsx from "clsx";
+import { Paywall } from "./Paywall";
 
 interface PDFViewerProps {
   pdfUrl: string;
   title: string;
+  /** Page after which the paywall activates (chapter 3 gate) */
+  freeUntilPage?: number;
 }
 
 type RenderStatus = "idle" | "loading" | "rendering" | "ready" | "error";
 
-export function PDFViewer({ pdfUrl, title }: PDFViewerProps) {
+export function PDFViewer({ pdfUrl, title, freeUntilPage = 20 }: PDFViewerProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -30,6 +33,15 @@ export function PDFViewer({ pdfUrl, title }: PDFViewerProps) {
   const [status, setStatus] = useState<RenderStatus>("idle");
   const [pageInput, setPageInput] = useState("1");
   const renderTaskRef = useRef<import("pdfjs-dist").RenderTask | null>(null);
+
+  /* ── Paywall state ────────────────────────────────── */
+  const [isUnlocked, setIsUnlocked] = useState(() => {
+    if (typeof window !== "undefined") {
+      return sessionStorage.getItem("riwayati_unlocked") === "1";
+    }
+    return false;
+  });
+  const isLocked = !isUnlocked && currentPage > freeUntilPage;
 
   /* ── Load PDF ─────────────────────────────────────── */
   useEffect(() => {
@@ -52,9 +64,7 @@ export function PDFViewer({ pdfUrl, title }: PDFViewerProps) {
       }
     })();
 
-    return () => {
-      cancelled = true;
-    };
+    return () => { cancelled = true; };
   }, [pdfUrl]);
 
   /* ── Render Page ──────────────────────────────────── */
@@ -62,7 +72,6 @@ export function PDFViewer({ pdfUrl, title }: PDFViewerProps) {
     async (pageNum: number, targetScale: number) => {
       if (!pdf || !canvasRef.current) return;
 
-      // Cancel previous render
       if (renderTaskRef.current) {
         renderTaskRef.current.cancel();
         renderTaskRef.current = null;
@@ -111,7 +120,6 @@ export function PDFViewer({ pdfUrl, title }: PDFViewerProps) {
     if (e.key === "Enter") goTo(Number(pageInput));
   };
 
-  /* ── Full screen ──────────────────────────────────── */
   const toggleFullscreen = () => {
     if (!document.fullscreenElement) {
       containerRef.current?.requestFullscreen();
@@ -124,6 +132,7 @@ export function PDFViewer({ pdfUrl, title }: PDFViewerProps) {
   useEffect(() => {
     const handle = (e: KeyboardEvent) => {
       if (e.target instanceof HTMLInputElement) return;
+      if (isLocked) return; // No keyboard nav when locked
       if (e.key === "ArrowLeft" || e.key === "PageDown") goTo(currentPage + 1);
       if (e.key === "ArrowRight" || e.key === "PageUp") goTo(currentPage - 1);
       if (e.key === "+" || e.key === "=") zoomIn();
@@ -132,7 +141,7 @@ export function PDFViewer({ pdfUrl, title }: PDFViewerProps) {
     };
     window.addEventListener("keydown", handle);
     return () => window.removeEventListener("keydown", handle);
-  }, [currentPage, totalPages]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [currentPage, totalPages, isLocked]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <div
@@ -170,7 +179,7 @@ export function PDFViewer({ pdfUrl, title }: PDFViewerProps) {
             <ToolBtn
               onClick={() => goTo(currentPage - 1)}
               disabled={currentPage <= 1}
-              title="الصفحة السابقة (→)"
+              title="الصفحة السابقة"
             >
               <ChevronRight className="w-4 h-4" />
             </ToolBtn>
@@ -190,8 +199,8 @@ export function PDFViewer({ pdfUrl, title }: PDFViewerProps) {
             </div>
             <ToolBtn
               onClick={() => goTo(currentPage + 1)}
-              disabled={currentPage >= totalPages}
-              title="الصفحة التالية (←)"
+              disabled={currentPage >= totalPages || isLocked}
+              title="الصفحة التالية"
             >
               <ChevronLeft className="w-4 h-4" />
             </ToolBtn>
@@ -205,14 +214,16 @@ export function PDFViewer({ pdfUrl, title }: PDFViewerProps) {
       </div>
 
       {/* ── Canvas area ──────────────────────────────── */}
-      <div className="flex-1 overflow-auto flex items-start justify-center p-4 sm:p-8">
+      <div className="flex-1 overflow-auto flex items-start justify-center p-4 sm:p-8 relative">
         <div className="relative">
           {/* Loading / rendering overlay */}
           {(status === "loading" || status === "rendering") && (
             <div
               className={clsx(
                 "flex flex-col items-center justify-center gap-3 text-gray-400",
-                status === "loading" ? "min-h-[60vh] min-w-[300px]" : "absolute inset-0 bg-parchment-50/60 dark:bg-onyx-900/60 rounded-sm z-10"
+                status === "loading"
+                  ? "min-h-[60vh] min-w-[300px]"
+                  : "absolute inset-0 bg-parchment-50/60 dark:bg-onyx-900/60 rounded-sm z-10"
               )}
             >
               <div className="w-10 h-10 rounded-full border-2 border-gold-500/30 border-t-gold-500 animate-spin" />
@@ -242,9 +253,14 @@ export function PDFViewer({ pdfUrl, title }: PDFViewerProps) {
             style={{ maxWidth: "100%" }}
           />
         </div>
+
+        {/* ── Paywall overlay ───────────────────────── */}
+        {isLocked && (
+          <Paywall onUnlock={() => setIsUnlocked(true)} price={500} />
+        )}
       </div>
 
-      {/* ── Bottom nav bar (mobile friendly) ─────────── */}
+      {/* ── Bottom nav bar (mobile) ───────────────────── */}
       <div className="flex items-center justify-between px-4 py-2 bg-white dark:bg-onyx-900 border-t border-parchment-200 dark:border-white/8 flex-shrink-0 sm:hidden">
         <button
           onClick={() => goTo(currentPage - 1)}
@@ -259,7 +275,7 @@ export function PDFViewer({ pdfUrl, title }: PDFViewerProps) {
         </span>
         <button
           onClick={() => goTo(currentPage + 1)}
-          disabled={currentPage >= totalPages}
+          disabled={currentPage >= totalPages || isLocked}
           className="flex items-center gap-1 text-sm font-arabic text-gray-600 dark:text-gray-400 disabled:opacity-30 active:scale-95 transition-transform"
         >
           التالية
