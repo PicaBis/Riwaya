@@ -33,17 +33,6 @@ export function NovelReadingClient({ novel }: { novel: Novel }) {
   const freeUntilPage = getFreeUntilPage(novel);
   const lockedChapter = getLockedChapter(novel);
 
-  useEffect(() => {
-    if (!document.fullscreenElement) {
-      document.documentElement.requestFullscreen?.().catch(() => {});
-    }
-    return () => {
-      if (document.fullscreenElement) {
-        document.exitFullscreen?.().catch(() => {});
-      }
-    };
-  }, []);
-
   return (
     <>
       {/* ── Slim top bar ──────────────────────────────── */}
