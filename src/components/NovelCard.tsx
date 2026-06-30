@@ -15,7 +15,7 @@ interface NovelCardProps {
 }
 
 export function NovelCard({ novel, index = 0 }: NovelCardProps) {
-  const { ratings, setRating } = useApp();
+  const { ratings, setRating, guest } = useApp();
   const [showCCP, setShowCCP] = useState(false);
   const currentRating = ratings[novel.id] ?? 0;
 
@@ -82,6 +82,7 @@ export function NovelCard({ novel, index = 0 }: NovelCardProps) {
               initialRating={currentRating}
               onRate={(s) => setRating(novel.id, s)}
               size="sm"
+              readOnly={!guest}
             />
           </div>
 

@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { Moon, Sun, User, LogOut } from "lucide-react";
+import { Moon, Sun, User, LogOut, Code2 } from "lucide-react";
 import { useApp } from "@/context/AppContext";
 import { GuestLoginModal } from "./GuestLoginModal";
 import { AboutModal } from "./AboutModal";
@@ -41,6 +41,13 @@ export function Header() {
               className="px-3.5 py-1.5 rounded-lg text-sm font-arabic text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-parchment-100 dark:hover:bg-white/8 transition-colors"
             >
               عن المنصة
+            </button>
+            <button
+              onClick={() => setShowAbout(true)}
+              title="رمز المطور"
+              className="px-3.5 py-1.5 rounded-lg text-sm font-arabic text-gold-500 hover:text-gold-600 hover:bg-gold-500/10 transition-colors"
+            >
+              <Code2 className="w-3.5 h-3.5" />
             </button>
           </nav>
 

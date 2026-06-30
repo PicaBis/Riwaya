@@ -73,7 +73,7 @@ export function Paywall({ onUnlock, price = 500, ripNumber = RIP_NUMBER, title, 
           هذا المحتوى مقفول
         </h3>
         <p className="font-arabic text-sm text-gray-500 dark:text-gray-400 text-center max-w-xs leading-relaxed mb-2">
-          لقد وصلت إلى نهاية الفصل الثالث — اشترك لمتابعة القراءة وقراءة باقي الرواية
+          لقد وصلت إلى نهاية الفصل الثالث (الحرب الكبرى) — اشترك لمتابعة القراءة
         </p>
         <p className="font-arabic text-xl font-bold text-gold-500 mb-8 text-center">
           {price} دج

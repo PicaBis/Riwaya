@@ -27,7 +27,7 @@ export const novels: Novel[] = [
     language: "ar",
     tags: ["أدب", "رواية", "عربي"],
     // ✏️ Adjust this to the actual first page of chapter 3
-    freeUntilPage: 20,
+    freeUntilPage: 129,
   },
   // ➕ Add new novels here — same structure
 ];

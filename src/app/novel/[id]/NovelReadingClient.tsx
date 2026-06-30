@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { ArrowRight, Wallet, Star, BookOpen, Tag, Calendar } from "lucide-react";
 import dynamic from "next/dynamic";
@@ -31,7 +31,7 @@ interface NovelReadingClientProps {
 }
 
 export function NovelReadingClient({ novel }: NovelReadingClientProps) {
-  const { ratings, setRating, bookmarks, saveBookmark } = useApp();
+  const { ratings, setRating, bookmarks, saveBookmark, guest } = useApp();
   const [showCCP, setShowCCP] = useState(false);
   const currentRating = ratings[novel.id] ?? 0;
   const pdfUrl = `/novels/${novel.pdfFile}`;
@@ -40,6 +40,24 @@ export function NovelReadingClient({ novel }: NovelReadingClientProps) {
   const handlePageChange = (page: number) => {
     saveBookmark(novel.id, page);
   };
+
+  useEffect(() => {
+    const enterFullscreen = () => {
+      const el = document.documentElement;
+      if (el.requestFullscreen) el.requestFullscreen().catch(() => {});
+    };
+    const handleFirstInteraction = () => {
+      enterFullscreen();
+      document.removeEventListener("click", handleFirstInteraction);
+      document.removeEventListener("keydown", handleFirstInteraction);
+    };
+    document.addEventListener("click", handleFirstInteraction);
+    document.addEventListener("keydown", handleFirstInteraction);
+    return () => {
+      document.removeEventListener("click", handleFirstInteraction);
+      document.removeEventListener("keydown", handleFirstInteraction);
+    };
+  }, []);
 
   return (
     <>
@@ -92,6 +110,7 @@ export function NovelReadingClient({ novel }: NovelReadingClientProps) {
                 initialRating={currentRating}
                 onRate={(s) => setRating(novel.id, s)}
                 size="sm"
+                readOnly={!guest}
               />
             </div>
 
