@@ -10,11 +10,12 @@ interface PaywallProps {
   ripNumber?: string;
   chapterTitle?: string;
   chapterTeaser?: string;
+  previewText?: string;
 }
 
 const RIP_NUMBER = "00799999002885975343";
 
-export function Paywall({ onUnlock, price = 500, chapterTitle, chapterTeaser }: PaywallProps) {
+export function Paywall({ onUnlock, price = 500, chapterTitle, chapterTeaser, previewText }: PaywallProps) {
   const [code, setCode] = useState("");
   const [showCode, setShowCode] = useState(false);
   const [checking, setChecking] = useState(false);
@@ -62,22 +63,32 @@ export function Paywall({ onUnlock, price = 500, chapterTitle, chapterTeaser }: 
         لقد وصلت إلى نهاية الفصول المجانية
       </p>
 
-      {/* Chapter info */}
-      {chapterTitle && (
-        <div className="w-full max-w-xs bg-white dark:bg-onyx-800 rounded-xl border border-parchment-200 dark:border-white/10 p-4 mb-4 text-center">
-          <div className="flex items-center justify-center gap-2 mb-2">
-            <BookOpen className="w-4 h-4 text-gold-500" />
-            <span className="font-arabic font-semibold text-gray-900 dark:text-gray-100 text-sm">
-              {chapterTitle}
-            </span>
-          </div>
-          {chapterTeaser && (
-            <p className="font-arabic text-xs text-gray-500 dark:text-gray-400 leading-relaxed">
-              {chapterTeaser}
-            </p>
-          )}
-        </div>
-      )}
+{/* Chapter info */}
+       {chapterTitle && (
+         <div className="w-full max-w-xs bg-white dark:bg-onyx-800 rounded-xl border border-parchment-200 dark:border-white/10 p-4 mb-4 text-center">
+           <div className="flex items-center justify-center gap-2 mb-2">
+             <BookOpen className="w-4 h-4 text-gold-500" />
+             <span className="font-arabic font-semibold text-gray-900 dark:text-gray-100 text-sm">
+               {chapterTitle}
+             </span>
+           </div>
+           {chapterTeaser && (
+             <p className="font-arabic text-xs text-gray-500 dark:text-gray-400 leading-relaxed mb-2">
+               {chapterTeaser}
+             </p>
+           )}
+           {previewText && (
+             <div className="border-t border-parchment-200 dark:border-white/10 pt-2 mt-2">
+               <p className="font-arabic text-xs text-gold-600 dark:text-gold-400 leading-relaxed">
+                 {previewText}
+               </p>
+               <p className="font-arabic text-[10px] text-gray-400 mt-1">
+                 (الأسطر الأولى من الفصل)
+               </p>
+             </div>
+           )}
+         </div>
+       )}
 
       <p className="font-arabic text-xl font-bold text-gold-500 mb-6">
         {price} دج

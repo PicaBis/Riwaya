@@ -3,7 +3,10 @@ export interface Chapter {
   title: string;
   /** Page number where this chapter starts (1-indexed) */
   startPage: number;
+  /** Promotional blurb or teaser for the chapter */
   teaser?: string;
+  /** First few lines of the chapter to show in preview */
+  preview?: string;
 }
 
 export interface Novel {
@@ -34,12 +37,12 @@ export const novels: Novel[] = [
     pdfFile: "shajarat-sina.pdf",
     language: "ar",
     tags: ["أدب", "رواية", "عربي"],
-    chapters: [
-      { number: 1, title: "الفصل الأول: البداية",    startPage: 1 },
-      { number: 2, title: "الفصل الثاني: الرحلة",    startPage: 8 },
-      { number: 3, title: "الفصل الثالث: المواجهة",  startPage: 15 },
-      { number: 4, title: "الفصل الرابع: السر",       startPage: 25 },
-    ],
+chapters: [
+       { number: 1, title: "الفصل الأول: البداية", startPage: 1, teaser: "بداية القصة تأخذنا في رحلة عبر أرض الجزائير الخلالية، حيث تكتشف صديقى صداء البحر الأسود يخاطبه في المكان الأقدس...", preview: "بداية القصة تأخذنا في رحلة عبر أرض الجزائير الخلالية..." },
+       { number: 2, title: "الفصل الثاني: الرحلة", startPage: 8, teaser: "تكتمل الرحلة إلى بحر سينا، حيث تنشأ مفاجأة تغيّر مسار الأحداث بشكل كامل...", preview: "تكتمل الرحلة إلى بحر سينا، حيث تنشأ مفاجأة تغيّر مسار الأحداث..." },
+       { number: 3, title: "الفصل الثالث: المواجهة", startPage: 15, teaser: "المواجهة تشهد صراعات عقلية وعاطفية متقابلة، وتتصاعد الأملاسية...", preview: "المواجهة تشهد صراعات عقلية وعاطفية متقابلة..." },
+       { number: 4, title: "الفصل الرابع: السر", startPage: 25, teaser: "الفصل الحالي مقفول. يجب الاشتراك لمتابعة القراءة. إذا كانت لديك محفظة RIP، يمكنك دفع 500 دج لفتح الفصول المقفولة.", preview: "حجر السر مكشوف أمامنا الآن... لكن كيف نتخلص منه؟" },
+     ],
     freeUntilChapter: 3,
   },
 ];

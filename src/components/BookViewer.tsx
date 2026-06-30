@@ -19,13 +19,14 @@ import { Paywall } from "./Paywall";
 import { useToast } from "./Toast";
 
 interface BookViewerProps {
-  pdfUrl: string;
-  title: string;
-  novelId?: string;
-  freeUntilPage?: number;
-  lockedChapterTitle?: string;
-  lockedChapterTeaser?: string;
-}
+   pdfUrl: string;
+   title: string;
+   novelId?: string;
+   freeUntilPage?: number;
+   lockedChapterTitle?: string;
+   lockedChapterTeaser?: string;
+   lockedChapterPreview?: string;
+ }
 type FlipDir   = "next" | "prev";
 type FlipPhase = "idle" | "out" | "in";
 type LoadState = "loading" | "ready" | "error";
@@ -34,13 +35,14 @@ const FLIP_MS       = 300;
 const HIDE_DELAY_MS = 3000;
 
 export function BookViewer({
-  pdfUrl,
-  title,
-  novelId = "novel",
-  freeUntilPage = 20,
-  lockedChapterTitle,
-  lockedChapterTeaser,
-}: BookViewerProps) {
+   pdfUrl,
+   title,
+   novelId = "novel",
+   freeUntilPage = 20,
+   lockedChapterTitle,
+   lockedChapterTeaser,
+   lockedChapterPreview,
+ }: BookViewerProps) {
   const { toast } = useToast();
 
   const wrapRef      = useRef<HTMLDivElement>(null);
@@ -469,15 +471,16 @@ export function BookViewer({
           />
         </div>
 
-        {/* Paywall */}
-        {isLocked && (
-          <Paywall
-            onUnlock={() => setUnlocked(true)}
-            price={500}
-            chapterTitle={lockedChapterTitle}
-            chapterTeaser={lockedChapterTeaser}
-          />
-        )}
+{/* Paywall */}
+         {isLocked && (
+           <Paywall
+             onUnlock={() => setUnlocked(true)}
+             price={500}
+             chapterTitle={lockedChapterTitle}
+             chapterTeaser={lockedChapterTeaser}
+             previewText={lockedChapterPreview}
+           />
+         )}
       </div>
 
       {/* Side arrows */}

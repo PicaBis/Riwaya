@@ -34,13 +34,13 @@ export function Header() {
             >
               المكتبة
             </Link>
-            <Link
-              href="/about"
-              className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-sm font-arabic text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-parchment-100 dark:hover:bg-white/8 transition-colors"
-            >
-              <Info className="w-3.5 h-3.5" />
-              من نحن
-            </Link>
+<Link
+               href="/about"
+               className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-sm font-arabic text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-parchment-100 dark:hover:bg-white/8 transition-colors"
+             >
+               <Info className="w-3.5 h-3.5" />
+               عــن الأستاذ بيكا
+             </Link>
           </nav>
 
           {/* ── Actions ───────────────────────────────── */}

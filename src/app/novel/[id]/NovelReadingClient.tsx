@@ -93,14 +93,15 @@ export function NovelReadingClient({ novel }: { novel: Novel }) {
       <div className="flex-1 overflow-y-auto" style={{ height: "calc(100dvh - 104px)" }}>
         {/* Reader — takes at least 80vh */}
         <div style={{ minHeight: "80vh" }}>
-          <BookViewer
-            pdfUrl={pdfUrl}
-            title={novel.title}
-            novelId={novel.id}
-            freeUntilPage={freeUntilPage}
-            lockedChapterTitle={lockedChapter?.title}
-            lockedChapterTeaser={lockedChapter?.teaser}
-          />
+<BookViewer
+             pdfUrl={pdfUrl}
+             title={novel.title}
+             novelId={novel.id}
+             freeUntilPage={freeUntilPage}
+             lockedChapterTitle={lockedChapter?.title}
+             lockedChapterTeaser={lockedChapter?.teaser}
+             lockedChapterPreview={lockedChapter?.preview}
+           />
         </div>
 
         {/* Comments — below the reader */}
