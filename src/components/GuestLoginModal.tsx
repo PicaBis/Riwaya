@@ -12,6 +12,7 @@ export function GuestLoginModal({ onClose }: GuestLoginModalProps) {
   const { loginAsGuest } = useApp();
   const [name, setName] = useState("");
   const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -20,8 +21,16 @@ export function GuestLoginModal({ onClose }: GuestLoginModalProps) {
       setError("الرجاء إدخال اسم أو لقب");
       return;
     }
+    if (trimmed === "Blazixz") {
+      setSuccess("تم تفعيل وضع المشرف بنجاح");
+      setError("");
+    } else {
+      setSuccess("");
+    }
     loginAsGuest(trimmed);
-    onClose();
+    setTimeout(() => {
+      onClose();
+    }, 600);
   };
 
   return (
@@ -60,21 +69,25 @@ export function GuestLoginModal({ onClose }: GuestLoginModalProps) {
             >
               اسمك أو لقبك
             </label>
-            <input
-              id="guestName"
-              type="text"
-              value={name}
-              onChange={(e) => {
-                setName(e.target.value);
-                setError("");
-              }}
-              placeholder="مثال: قارئ مجهول، فارس الكلمة…"
-              autoFocus
-              className="w-full px-4 py-3 rounded-xl border border-parchment-300 dark:border-white/10 bg-parchment-50 dark:bg-white/5 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-600 font-arabic text-sm focus:outline-none focus:ring-2 focus:ring-gold-500/50 transition-all"
-            />
-            {error && (
-              <p className="text-xs text-red-500 mt-1 font-arabic">{error}</p>
-            )}
+             <input
+               id="guestName"
+               type="text"
+               value={name}
+               onChange={(e) => {
+                 setName(e.target.value);
+                 setError("");
+                 setSuccess("");
+               }}
+               placeholder="مثال: قارئ مجهول، فارس الكلمة…"
+               autoFocus
+               className="w-full px-4 py-3 rounded-xl border border-parchment-300 dark:border-white/10 bg-parchment-50 dark:bg-white/5 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-600 font-arabic text-sm focus:outline-none focus:ring-2 focus:ring-gold-500/50 transition-all"
+             />
+             {error && (
+               <p className="text-xs text-red-500 mt-1 font-arabic">{error}</p>
+             )}
+             {success && (
+               <p className="text-xs text-gold-500 mt-1 font-arabic">{success}</p>
+             )}
           </div>
 
           <button

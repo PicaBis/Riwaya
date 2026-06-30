@@ -3,13 +3,15 @@
 import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { Moon, Sun, User, LogOut, Info } from "lucide-react";
+import { Moon, Sun, User, LogOut } from "lucide-react";
 import { useApp } from "@/context/AppContext";
 import { GuestLoginModal } from "./GuestLoginModal";
+import { AboutModal } from "./AboutModal";
 
 export function Header() {
   const { isDark, toggleTheme, guest, logout } = useApp();
   const [showLogin, setShowLogin] = useState(false);
+  const [showAbout, setShowAbout] = useState(false);
 
   return (
     <>
@@ -34,13 +36,12 @@ export function Header() {
             >
               المكتبة
             </Link>
-            <Link
-              href="/about"
-              className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-sm font-arabic text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-parchment-100 dark:hover:bg-white/8 transition-colors"
+            <button
+              onClick={() => setShowAbout(true)}
+              className="px-3.5 py-1.5 rounded-lg text-sm font-arabic text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-parchment-100 dark:hover:bg-white/8 transition-colors"
             >
-              <Info className="w-3.5 h-3.5" />
-              من نحن
-            </Link>
+              عن المنصة
+            </button>
           </nav>
 
           {/* ── Actions ───────────────────────────────── */}
@@ -86,18 +87,19 @@ export function Header() {
               </div>
             ) : (
               <button
-                onClick={() => setShowLogin(true)}
-                className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-gold-500 hover:bg-gold-600 active:scale-95 text-white text-sm font-arabic font-medium transition-all duration-150 shadow-sm"
-              >
-                <User className="w-4 h-4" />
-                <span>دخول كضيف</span>
-              </button>
+              onClick={() => setShowLogin(true)}
+              className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-gold-500 hover:bg-gold-600 active:scale-95 text-white text-sm font-arabic font-medium transition-all duration-150 shadow-sm"
+            >
+              <User className="w-4 h-4" />
+              <span>دخول كضيف</span>
+            </button>
             )}
           </div>
         </div>
       </header>
 
       {showLogin && <GuestLoginModal onClose={() => setShowLogin(false)} />}
+      {showAbout && <AboutModal onClose={() => setShowAbout(false)} />}
     </>
   );
 }

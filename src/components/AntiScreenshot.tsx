@@ -97,6 +97,14 @@ export function AntiScreenshot() {
       if (document.visibilityState === "hidden") showOverlay();
     };
 
+    /* ── Drag & drop ─────────────────────────────────── */
+    const onDragStart = (e: DragEvent) => e.preventDefault();
+    const onDrop = (e: DragEvent) => e.preventDefault();
+
+    document.addEventListener("dragstart", onDragStart);
+    document.addEventListener("drop", onDrop);
+    document.addEventListener("dragover", (e) => e.preventDefault());
+
     document.addEventListener("contextmenu", onCtxMenu);
     document.addEventListener("keydown", onKeyDown);
     document.addEventListener("keyup", onKeyUp);
@@ -107,6 +115,8 @@ export function AntiScreenshot() {
       document.removeEventListener("keydown", onKeyDown);
       document.removeEventListener("keyup", onKeyUp);
       document.removeEventListener("visibilitychange", onVisibility);
+      document.removeEventListener("dragstart", onDragStart);
+      document.removeEventListener("drop", onDrop);
       document.getElementById("__as_style")?.remove();
       document.getElementById("__as_overlay")?.remove();
     };

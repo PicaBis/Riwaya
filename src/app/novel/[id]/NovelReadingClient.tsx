@@ -1,12 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { ArrowRight, Wallet, Star, BookOpen, Tag, Calendar } from "lucide-react";
 import dynamic from "next/dynamic";
 import { Novel } from "@/data/novels";
 import { StarRating } from "@/components/StarRating";
 import { CCPModal } from "@/components/CCPModal";
+import { Comments } from "@/components/Comments";
 import { useApp } from "@/context/AppContext";
 
 /* Lazy-load PDF viewer (client only, no SSR) */
@@ -30,16 +31,21 @@ interface NovelReadingClientProps {
 }
 
 export function NovelReadingClient({ novel }: NovelReadingClientProps) {
-  const { ratings, setRating } = useApp();
+  const { ratings, setRating, bookmarks, saveBookmark } = useApp();
   const [showCCP, setShowCCP] = useState(false);
   const currentRating = ratings[novel.id] ?? 0;
   const pdfUrl = `/novels/${novel.pdfFile}`;
+  const initialPage = bookmarks[novel.id] || 1;
+
+  const handlePageChange = (page: number) => {
+    saveBookmark(novel.id, page);
+  };
 
   return (
     <>
-      <div className="flex flex-col h-[calc(100vh-4rem)]" dir="rtl">
+      <div className="min-h-screen flex flex-col" dir="rtl">
         {/* ── Top info bar ────────────────────────────── */}
-        <div className="flex items-center gap-3 px-4 sm:px-6 py-3 bg-white dark:bg-onyx-900 border-b border-parchment-200 dark:border-white/8 flex-shrink-0">
+        <div className="sticky top-16 z-30 flex items-center gap-3 px-4 sm:px-6 py-3 bg-white dark:bg-onyx-900 border-b border-parchment-200 dark:border-white/8">
           {/* Back */}
           <Link
             href="/"
@@ -100,13 +106,21 @@ export function NovelReadingClient({ novel }: NovelReadingClientProps) {
           </div>
         </div>
 
-        {/* ── PDF Viewer (fills remaining height) ─────── */}
-        <div className="flex-1 overflow-hidden" dir="ltr">
+        {/* ── PDF Viewer ─────────────────────────────── */}
+        <div dir="ltr">
           <PDFViewer
             pdfUrl={pdfUrl}
             title={novel.title}
             freeUntilPage={novel.freeUntilPage}
+            initialPage={initialPage}
+            onPageChange={handlePageChange}
+            preview={novel.description}
           />
+        </div>
+
+        {/* ── Comments Section ───────────────────────── */}
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 py-8" dir="rtl">
+          <Comments novelId={novel.id} />
         </div>
       </div>
 

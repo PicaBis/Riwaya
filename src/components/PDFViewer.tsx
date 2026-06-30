@@ -18,21 +18,28 @@ interface PDFViewerProps {
   title: string;
   /** Page after which the paywall activates (chapter 3 gate) */
   freeUntilPage?: number;
+  initialPage?: number;
+  onPageChange?: (page: number) => void;
+  preview?: string;
 }
 
 type RenderStatus = "idle" | "loading" | "rendering" | "ready" | "error";
 
-export function PDFViewer({ pdfUrl, title, freeUntilPage = 20 }: PDFViewerProps) {
+export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, onPageChange, preview }: PDFViewerProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
   const [pdf, setPdf] = useState<import("pdfjs-dist").PDFDocumentProxy | null>(null);
   const [totalPages, setTotalPages] = useState(0);
-  const [currentPage, setCurrentPage] = useState(1);
+  const [currentPage, setCurrentPage] = useState(initialPage);
   const [scale, setScale] = useState(1.2);
   const [status, setStatus] = useState<RenderStatus>("idle");
-  const [pageInput, setPageInput] = useState("1");
+  const [pageInput, setPageInput] = useState(String(initialPage));
   const renderTaskRef = useRef<import("pdfjs-dist").RenderTask | null>(null);
+
+  useEffect(() => {
+    onPageChange?.(currentPage);
+  }, [currentPage, onPageChange]);
 
   /* ── Paywall state ────────────────────────────────── */
   const [isUnlocked, setIsUnlocked] = useState(() => {
@@ -120,13 +127,27 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20 }: PDFViewerProps)
     if (e.key === "Enter") goTo(Number(pageInput));
   };
 
-  const toggleFullscreen = () => {
-    if (!document.fullscreenElement) {
-      containerRef.current?.requestFullscreen();
-    } else {
-      document.exitFullscreen();
-    }
-  };
+    const toggleFullscreen = () => {
+      if (!document.fullscreenElement) {
+        containerRef.current?.requestFullscreen();
+      } else {
+        document.exitFullscreen();
+      }
+    };
+
+    const onCanvasCtx = (e: MouseEvent) => e.preventDefault();
+    const onCanvasDrag = (e: DragEvent) => e.preventDefault();
+
+    useEffect(() => {
+      const c = canvasRef.current;
+      if (!c) return;
+      c.addEventListener("contextmenu", onCanvasCtx);
+      c.addEventListener("dragstart", onCanvasDrag);
+      return () => {
+        c.removeEventListener("contextmenu", onCanvasCtx);
+        c.removeEventListener("dragstart", onCanvasDrag);
+      };
+    }, [pdf]);
 
   /* ── Keyboard shortcuts ───────────────────────────── */
   useEffect(() => {
@@ -214,8 +235,11 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20 }: PDFViewerProps)
       </div>
 
       {/* ── Canvas area ──────────────────────────────── */}
-      <div className="flex-1 overflow-auto flex items-start justify-center p-4 sm:p-8 relative">
-        <div className="relative">
+      <div
+        className="flex-1 overflow-auto flex items-start justify-center p-4 sm:p-8 relative"
+        onContextMenu={(e) => e.preventDefault()}
+      >
+        <div className="relative select-none" draggable={false}>
           {/* Loading / rendering overlay */}
           {(status === "loading" || status === "rendering") && (
             <div
@@ -256,7 +280,7 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20 }: PDFViewerProps)
 
         {/* ── Paywall overlay ───────────────────────── */}
         {isLocked && (
-          <Paywall onUnlock={() => setIsUnlocked(true)} price={500} />
+          <Paywall onUnlock={() => setIsUnlocked(true)} price={500} title={title} preview={preview} />
         )}
       </div>
 
