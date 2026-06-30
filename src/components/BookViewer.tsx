@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { Paywall } from "./Paywall";
 import { useToast } from "./Toast";
+import { ReadingSettings } from "./ReadingSettings";
 
 interface BookViewerProps {
    pdfUrl: string;
@@ -379,6 +380,7 @@ export function BookViewer({
           <ToolBtn onClick={() => setShowHelp(true)} title="اختصارات (?)">
             <Keyboard className="w-3.5 h-3.5" />
           </ToolBtn>
+          <ReadingSettings scale={scale} onScaleChange={(s) => setScale(s)} />
           <ToolBtn
             onClick={() => {
               if (!document.fullscreenElement) wrapRef.current?.requestFullscreen();

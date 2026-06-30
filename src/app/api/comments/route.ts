@@ -1,5 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
-import { CommentData, getComments, setComments, seedComments } from "@/lib/comments-store";
+import {
+  CommentData,
+  getComments,
+  setComments,
+  seedComments,
+  banUser,
+  isUserBanned,
+  getBannedUsers,
+} from "@/lib/comments-store";
 
 function generateId(): string {
   return `c_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
@@ -31,6 +39,7 @@ export async function GET(req: NextRequest) {
   return NextResponse.json({
     comments: result,
     admin: adminCode === "Blazixz",
+    banned: adminCode === "Blazixz" ? getBannedUsers() : undefined,
   });
 }
 
@@ -41,6 +50,11 @@ export async function POST(req: NextRequest) {
 
   if (!novelId || !author || !content) {
     return NextResponse.json({ error: "Missing fields" }, { status: 400 });
+  }
+
+  // Check if user is banned
+  if (isUserBanned(author.trim())) {
+    return NextResponse.json({ error: "هذا المستخدم محظور" }, { status: 403 });
   }
 
   const comment: CommentData = {

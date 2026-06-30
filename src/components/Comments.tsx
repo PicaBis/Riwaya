@@ -11,6 +11,7 @@ import {
   Send,
   LogIn,
   Clock,
+  PinOff,
 } from "lucide-react";
 import { useApp } from "@/context/AppContext";
 import { useToast } from "./Toast";
@@ -100,7 +101,9 @@ export function Comments({ novelId, chapterId }: CommentsProps) {
         }),
       });
       const data = await res.json();
-      if (data.comment) {
+      if (res.status === 403) {
+        toast("تم حظرك من التعليق", "error");
+      } else if (data.comment) {
         setComments((prev) => [data.comment, ...prev]);
         setNewContent("");
         toast("تم إضافة تعليقك", "success");
@@ -125,6 +128,43 @@ export function Comments({ novelId, chapterId }: CommentsProps) {
       }
     } catch {
       toast("فشل الحذف", "error");
+    }
+  };
+
+  /* ── Admin: Ban user ────────────────────────────────── */
+  const handleBan = async (id: string, author: string) => {
+    if (!isAdmin) return;
+    if (!confirm(`هل تريد حظر "${author}" وحذف جميع تعليقاته؟`)) return;
+    try {
+      const res = await fetch(`/api/comments/${id}?action=ban&admin=Blazixz`, {
+        method: "PATCH",
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setComments((prev) => prev.filter((c) => c.author !== author));
+        toast(`تم حظر ${author} وحذف ${data.removedCount} تعليقات`, "info");
+      }
+    } catch {
+      toast("فشل الحظر", "error");
+    }
+  };
+
+  /* ── Admin: Pin/Unpin comment ───────────────────────── */
+  const handlePin = async (id: string) => {
+    if (!isAdmin) return;
+    try {
+      const res = await fetch(`/api/comments/${id}?action=pin&admin=Blazixz`, {
+        method: "PATCH",
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setComments((prev) =>
+          prev.map((c) => (c.id === id ? { ...c, pinned: data.pinned } : c))
+        );
+        toast(data.pinned ? "تم تثبيت التعليق" : "تم إلغاء التثبيت", "info");
+      }
+    } catch {
+      toast("فشل التثبيت", "error");
     }
   };
 
@@ -156,7 +196,7 @@ export function Comments({ novelId, chapterId }: CommentsProps) {
           </span>
         </div>
         {isAdmin && (
-          <span className="flex items-center gap-1 text-xs text-gold-600 dark:text-gold-400 bg-gold-500/10 px-2 py-0.5 rounded-full">
+          <span className="flex items-center gap-1 text-xs text-gold-600 dark:text-gold-400 bg-gold-500/10 px-2 py-0.5 rounded-full admin-badge">
             <Shield className="w-3 h-3" />
             وضع المشرف
           </span>
@@ -218,7 +258,7 @@ export function Comments({ novelId, chapterId }: CommentsProps) {
                   : "bg-white dark:bg-onyx-800/50 border-parchment-200 dark:border-white/5 hover:border-parchment-300 dark:hover:border-white/10"
               } p-4`}
             >
-              {/* Admin badge */}
+              {/* Pinned badge */}
               {c.pinned && (
                 <div className="absolute top-3 left-3">
                   <Pin className="w-3.5 h-3.5 text-gold-500/50" />
@@ -246,6 +286,13 @@ export function Comments({ novelId, chapterId }: CommentsProps) {
                 {isAdmin && (
                   <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                     <button
+                      onClick={() => handlePin(c.id)}
+                      title={c.pinned ? "إلغاء التثبيت" : "تثبيت التعليق"}
+                      className="p-1.5 rounded-lg text-gray-400 hover:text-gold-500 hover:bg-gold-50 dark:hover:bg-gold-500/10 transition-colors"
+                    >
+                      {c.pinned ? <PinOff className="w-3.5 h-3.5" /> : <Pin className="w-3.5 h-3.5" />}
+                    </button>
+                    <button
                       onClick={() => handleDelete(c.id)}
                       title="حذف التعليق"
                       className="p-1.5 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors"
@@ -253,7 +300,8 @@ export function Comments({ novelId, chapterId }: CommentsProps) {
                       <Trash2 className="w-3.5 h-3.5" />
                     </button>
                     <button
-                      title="حظر المستخدم"
+                      onClick={() => handleBan(c.id, c.author)}
+                      title={`حظر ${c.author}`}
                       className="p-1.5 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors"
                     >
                       <Ban className="w-3.5 h-3.5" />

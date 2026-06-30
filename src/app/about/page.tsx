@@ -1,10 +1,10 @@
 import Image from "next/image";
-import { Pen, BookOpen, Star, Quote, Code, GraduationCap, Camera } from "lucide-react";
+import { Pen, BookOpen, Star, Quote, Code, GraduationCap, Camera, Globe, Palette } from "lucide-react";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "عن الأستاضع بيكا — روايتي",
-  description: "منصة الأستاضع بيكا (@ProfPica) الرسمية والحصرية للروايات والأعمال الأدبية",
+  title: "عن الأستاذ بيكا — روايتي",
+  description: "منصة الأستاذ بيكا (@ProfPica) الرسمية والحصرية للروايات والأعمال الأدبية",
 };
 
 export default function AboutPage() {
@@ -17,10 +17,10 @@ export default function AboutPage() {
           <span className="text-xs font-arabic text-gold-600 dark:text-gold-400">المؤلف</span>
         </span>
         <h1 className="font-arabic text-4xl sm:text-5xl font-bold text-gray-900 dark:text-gray-100 mb-3">
-          عــن الأستاضع بيكا
+          عــن الأستاذ بيكا
         </h1>
         <p className="font-arabic text-lg text-gold-500 max-w-2xl mx-auto">
-          منصة الأستاضع بيكا (@ProfPica) الرسمية والحصرية للروايات والأعمال الأدبية
+          منصة الأستاذ بيكا (@ProfPica) الرسمية والحصرية للروايات والأعمال الأدبية
         </p>
         <div className="flex items-center justify-center gap-4 mt-6">
           <div className="h-px w-20 bg-gradient-to-r from-transparent to-gold-500/40" />
@@ -51,7 +51,7 @@ export default function AboutPage() {
               <div className="w-1.5 h-8 rounded-full bg-gold-500" />
               <div>
                 <h2 className="font-display text-2xl font-bold text-gray-900 dark:text-gray-100">
-                  الأستاضع بيكا
+                  الأستاذ بيكا
                 </h2>
                 <p className="text-gold-500 font-medium tracking-widest text-sm mt-0.5">
                   @ProfPica
@@ -66,36 +66,36 @@ export default function AboutPage() {
                 ))}
               </div>
               <span className="text-xs text-gray-400 dark:text-gray-500 font-arabic">
-                أستاضع علوم فيزيائية - École Normale Supérieure de Laghouat
+                أستاذ علوم فيزيائية - خريج المدرسة العليا للأساتذة بالأغواط
               </span>
             </div>
 
             <p className="font-arabic text-gray-600 dark:text-gray-300 leading-loose text-base mb-6">
-              هذا الموقع هو المستودع الرسمي والحصري لجميع أعمال وكتب وروايات الأستاضع بيكا، حيث يتم تضمين كافة المؤلفات وهي حالياً قيد التوثيق والنشر المستمر عبر صفحات الموقع المتتالية لضمان حقوق الملكية الفكرية.
+              هذا الموقع هو المستودع الرسمي والحصري لجميع أعمال وكتب وروايات الأستاذ بيكا، حيث يتم تضمين كافة المؤلفات وهي حالياً قيد التوثيق والنشر المستمر عبر صفحات الموقع المتتالية لضمان حقوق الملكية الفكرية.
             </p>
 
             {/* Skills */}
             <div className="grid grid-cols-1 gap-3 mt-4">
               <div className="flex items-center gap-3 p-3 rounded-xl bg-parchment-50 dark:bg-white/5 border border-parchment-200 dark:border-white/10">
                 <GraduationCap className="w-5 h-5 text-gold-500 flex-shrink-0" />
-                <span className="font-arabic text-sm text-gray-700 dark:text-gray-300">أستاضع علوم فيزيائية - École Normale Supérieure de Laghouat</span>
+                <span className="font-arabic text-sm text-gray-700 dark:text-gray-300">أستاذ علوم فيزيائية — خريج المدرسة العليا للأساتذة بالأغواط — École Normale Supérieure de Laghouat</span>
               </div>
               <div className="flex items-center gap-3 p-3 rounded-xl bg-parchment-50 dark:bg-white/5 border border-parchment-200 dark:border-white/10">
                 <Code className="w-5 h-5 text-gold-500 flex-shrink-0" />
                 <span className="font-arabic text-sm text-gray-700 dark:text-gray-300">صناعة وتطوير المواقع</span>
               </div>
               <div className="flex items-center gap-3 p-3 rounded-xl bg-parchment-50 dark:bg-white/5 border border-parchment-200 dark:border-white/10">
-                <Pen className="w-5 h-5 text-gold-500 flex-shrink-0" />
+                <Palette className="w-5 h-5 text-gold-500 flex-shrink-0" />
                 <span className="font-arabic text-sm text-gray-700 dark:text-gray-300">الرسم والفنون الرقمية</span>
               </div>
               <div className="flex items-center gap-3 p-3 rounded-xl bg-parchment-50 dark:bg-white/5 border border-parchment-200 dark:border-white/10">
-                <Camera className="w-5 h-5 text-gold-500 flex-shrink-0" />
-                <span className="font-arabic text-sm text-gray-700 dark:text-gray-300">صناعة المحتوى الرقمي - Digital Creator</span>
+                <Globe className="w-5 h-5 text-gold-500 flex-shrink-0" />
+                <span className="font-arabic text-sm text-gray-700 dark:text-gray-300">صناعة المحتوى الرقمي — Digital Creator</span>
               </div>
             </div>
 
             <div className="mt-6 flex items-center gap-2 flex-wrap">
-              {["رواية", "أدب عربي", "الجزائر", "قصص"].map((tag) => (
+              {["رواية", "أدب عربي", "الجزائر", "قصص", "التعليم", "الفنون الرقمية"].map((tag) => (
                 <span
                   key={tag}
                   className="text-xs px-3 py-1 rounded-full bg-parchment-100 dark:bg-white/5 border border-parchment-200 dark:border-white/10 text-gray-500 dark:text-gray-400 font-arabic"
@@ -114,7 +114,7 @@ export default function AboutPage() {
         <p className="font-arabic text-xl text-gray-700 dark:text-gray-300 leading-loose text-center italic">
           &ldquo;أكتب لأنني لو لم أفعل، لابتلعني الصمت&rdquo;
         </p>
-        <p className="text-center text-sm text-gold-500 mt-4 font-medium">— الأستاضع بيكا</p>
+        <p className="text-center text-sm text-gold-500 mt-4 font-medium">— الأستاذ بيكا</p>
       </div>
 
       {/* ── About the Platform ─────────────────────────────── */}
@@ -126,8 +126,8 @@ export default function AboutPage() {
           عن المنصة
         </h3>
         <p className="font-arabic text-sm text-gray-500 dark:text-gray-400 leading-relaxed">
-          منصة الأستاضع بيكا (@ProfPica) الرسمية والحصرية للروايات والأعمال الأدبية.
-          هذا الموقع هو المستودع الرسمي والحصري لجميع أعمال وكتب وروايات الأستاضع بيكا، حيث يتم تضمين كافة المؤلفات وهي حالياً قيد التوثيق والنشر المستمر عبر صفحات الموقع المتتالية لضمان حقوق الملكية الفكرية.
+          منصة الأستاذ بيكا (@ProfPica) الرسمية والحصرية للروايات والأعمال الأدبية.
+          هذا الموقع هو المستودع الرسمي والحصري لجميع أعمال وكتب وروايات الأستاذ بيكا، حيث يتم تضمين كافة المؤلفات وهي حالياً قيد التوثيق والنشر المستمر عبر صفحات الموقع المتتالية لضمان حقوق الملكية الفكرية.
         </p>
       </div>
     </div>
