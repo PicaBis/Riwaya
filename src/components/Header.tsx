@@ -29,23 +29,23 @@ export function Header() {
           </Link>
 
           {/* ── Nav links ─────────────────────────────── */}
-          <nav className="hidden sm:flex items-center gap-1" dir="rtl">
+          <nav className="flex items-center gap-1" dir="rtl">
             <Link
               href="/"
-              className="px-3.5 py-1.5 rounded-lg text-sm font-arabic text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-parchment-100 dark:hover:bg-white/8 transition-colors"
+              className="px-2.5 py-1.5 rounded-lg text-xs sm:text-sm font-arabic text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-parchment-100 dark:hover:bg-white/8 transition-colors"
             >
-              المكتبة
+              الرئيسية
             </Link>
             <button
               onClick={() => setShowAbout(true)}
-              className="px-3.5 py-1.5 rounded-lg text-sm font-arabic text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-parchment-100 dark:hover:bg-white/8 transition-colors"
+              className="px-2.5 py-1.5 rounded-lg text-xs sm:text-sm font-arabic text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-parchment-100 dark:hover:bg-white/8 transition-colors"
             >
               عن المنصة
             </button>
             <button
               onClick={() => setShowAbout(true)}
               title="رمز المطور"
-              className="px-3.5 py-1.5 rounded-lg text-sm font-arabic text-gold-500 hover:text-gold-600 hover:bg-gold-500/10 transition-colors"
+              className="px-2.5 py-1.5 rounded-lg text-xs sm:text-sm font-arabic text-gold-500 hover:text-gold-600 hover:bg-gold-500/10 transition-colors"
             >
               <Code2 className="w-3.5 h-3.5" />
             </button>
@@ -94,12 +94,12 @@ export function Header() {
               </div>
             ) : (
               <button
-              onClick={() => setShowLogin(true)}
-              className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-gold-500 hover:bg-gold-600 active:scale-95 text-white text-sm font-arabic font-medium transition-all duration-150 shadow-sm"
-            >
-              <User className="w-4 h-4" />
-              <span>دخول كضيف</span>
-            </button>
+                onClick={() => setShowLogin(true)}
+                className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-gold-500 hover:bg-gold-600 active:scale-95 text-white text-sm font-arabic font-medium transition-all duration-150 shadow-sm"
+              >
+                <User className="w-4 h-4" />
+                <span>دخول كضيف</span>
+              </button>
             )}
           </div>
         </div>

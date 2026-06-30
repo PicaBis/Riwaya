@@ -134,6 +134,7 @@ export function NovelReadingClient({ novel }: NovelReadingClientProps) {
             initialPage={initialPage}
             onPageChange={handlePageChange}
             preview={novel.description}
+            novelId={novel.id}
           />
         </div>
 

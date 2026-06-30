@@ -31,22 +31,24 @@
 html {
   scroll-behavior: smooth;
   -webkit-text-size-adjust: 100%;
+  -webkit-tap-highlight-color: transparent;
 }
 
 body {
   background-color: var(--bg);
   color: var(--text);
   font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  transition: background-color 0.3s ease, color 0.3s ease;
+  transition: background-color 0.4s ease, color 0.4s ease;
   line-height: 1.7;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  overscroll-behavior: none;
 }
 
 /* ─── Scrollbar (webkit) ───────────────────────────────── */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 5px;
+  height: 5px;
 }
 ::-webkit-scrollbar-track {
   background: transparent;
@@ -65,19 +67,32 @@ body {
   color: var(--text);
 }
 
-/* ─── Utility: card animation on load ──────────────────── */
-.novel-card-enter {
-  opacity: 0;
-  transform: translateY(20px);
-  animation: fadeUp 0.5s ease-out forwards;
+/* ─── Animations ────────────────────────────────────────── */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(18px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
 
-/* ─── Gold text fill ────────────────────────────────────── */
-.text-gold-500 {
-  color: #b8860b;
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
 }
-.dark .text-gold-400 {
-  color: #d4af37;
+
+@keyframes gentlePulse {
+  0%, 100% { opacity: 0.6; }
+  50%      { opacity: 1; }
+}
+
+.animate-fade-up {
+  animation: fadeUp 0.6s ease-out both;
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.45s ease-out both;
+}
+
+.animate-gentle-pulse {
+  animation: gentlePulse 3s ease-in-out infinite;
 }
 
 /* ─── Number input hide arrows ──────────────────────────── */
@@ -96,7 +111,23 @@ input[type="number"] {
   margin-right: unset;
 }
 
-/* ─── PDF Canvas dark filter ────────────────────────────── */
+/* ─── Mobile reading optimizations ─────────────────────── */
+@media (max-width: 640px) {
+  body {
+    font-size: 15px;
+    line-height: 1.8;
+  }
+  canvas {
+    image-rendering: high-quality;
+    image-rendering: -webkit-optimize-contrast;
+  }
+  .toolbar-btn {
+    min-width: 36px;
+    min-height: 36px;
+  }
+}
+
+/* ─── PDF Canvas in dark mode (optional, gentle) ────────── */
 .dark canvas.pdf-canvas {
-  filter: invert(0.88) hue-rotate(180deg) contrast(0.92);
+  filter: invert(0.92) hue-rotate(180deg) contrast(0.9) brightness(0.9);
 }
