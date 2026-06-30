@@ -105,6 +105,7 @@ export function NovelReadingClient({ novel }: NovelReadingClientProps) {
           <PDFViewer
             pdfUrl={pdfUrl}
             title={novel.title}
+            novelId={novel.id}
             freeUntilPage={novel.freeUntilPage}
           />
         </div>

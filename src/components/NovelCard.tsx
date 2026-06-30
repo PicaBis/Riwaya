@@ -8,6 +8,7 @@ import { PDFCover } from "./PDFCover";
 import { StarRating } from "./StarRating";
 import { CCPModal } from "./CCPModal";
 import { useApp } from "@/context/AppContext";
+import { Card3D } from "./NovelCard3D";
 
 interface NovelCardProps {
   novel: Novel;
@@ -21,8 +22,9 @@ export function NovelCard({ novel, index = 0 }: NovelCardProps) {
 
   return (
     <>
+      <Card3D>
       <article
-        className="group flex flex-col bg-white dark:bg-onyx-800 rounded-2xl overflow-hidden shadow-book hover:shadow-book-hover border border-parchment-200 dark:border-white/8 transition-all duration-300 hover:-translate-y-1"
+        className="group flex flex-col bg-white dark:bg-onyx-800 rounded-2xl overflow-hidden shadow-book hover:shadow-book-hover border border-parchment-200 dark:border-white/8 transition-shadow duration-300"
         style={{ animationDelay: `${index * 80}ms` }}
       >
         {/* Cover Image (PDF first page) */}
@@ -104,6 +106,7 @@ export function NovelCard({ novel, index = 0 }: NovelCardProps) {
           </div>
         </div>
       </article>
+      </Card3D>
 
       {showCCP && (
         <CCPModal novelTitle={novel.title} onClose={() => setShowCCP(false)} />

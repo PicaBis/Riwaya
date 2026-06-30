@@ -4,7 +4,7 @@
 @tailwind components;
 @tailwind utilities;
 
-/* ─── CSS Variables ────────────────────────────────────── */
+/* ─── CSS Variables ───────────────────────────────────── */
 :root {
   --bg: #fdfcf8;
   --bg-card: #ffffff;
@@ -27,7 +27,7 @@
   --shadow: rgba(0, 0, 0, 0.3);
 }
 
-/* ─── Base ─────────────────────────────────────────────── */
+/* ─── Base ────────────────────────────────────────────── */
 html {
   scroll-behavior: smooth;
   -webkit-text-size-adjust: 100%;
@@ -43,60 +43,90 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* ─── Scrollbar (webkit) ───────────────────────────────── */
-::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
-}
-::-webkit-scrollbar-track {
-  background: transparent;
-}
-::-webkit-scrollbar-thumb {
-  background: var(--border);
-  border-radius: 999px;
-}
-::-webkit-scrollbar-thumb:hover {
-  background: var(--accent);
+/* ─── Keyframes ───────────────────────────────────────── */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
 }
 
-/* ─── Selection ─────────────────────────────────────────── */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes scaleIn {
+  from { opacity: 0; transform: scale(0.94); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+@keyframes shimmer {
+  from { background-position: -200% 0; }
+  to   { background-position:  200% 0; }
+}
+
+@keyframes spinSlow {
+  to { transform: rotate(360deg); }
+}
+
+/* Animated SVG underline on hero title */
+@keyframes drawUnderline {
+  from { stroke-dashoffset: 220; }
+  to   { stroke-dashoffset: 0; }
+}
+
+.animate-draw-underline {
+  stroke-dasharray: 220;
+  stroke-dashoffset: 220;
+  animation: drawUnderline 1.2s 0.4s ease-out forwards;
+}
+
+/* ─── Scrollbar (webkit) ──────────────────────────────── */
+::-webkit-scrollbar        { width: 5px; height: 5px; }
+::-webkit-scrollbar-track  { background: transparent; }
+::-webkit-scrollbar-thumb  { background: var(--border); border-radius: 999px; }
+::-webkit-scrollbar-thumb:hover { background: var(--accent); }
+
+/* ─── Selection ───────────────────────────────────────── */
 ::selection {
   background: rgba(184, 134, 11, 0.2);
   color: var(--text);
 }
 
-/* ─── Utility: card animation on load ──────────────────── */
+/* ─── Number input — hide spinners ───────────────────── */
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+input[type="number"] { -moz-appearance: textfield; }
+
+/* ─── Print blackout ──────────────────────────────────── */
+@media print {
+  html, body, * { display: none !important; visibility: hidden !important; }
+  body::before {
+    display: block !important;
+    visibility: visible !important;
+    content: "هذا المحتوى محمي بحقوق الطبع والنشر — روايتي";
+    font-size: 24px;
+    text-align: center;
+    padding-top: 40vh;
+    color: #111;
+  }
+}
+
+/* ─── Reduced motion ─────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* ─── Performance hints ──────────────────────────────── */
+canvas { contain: strict; }
+
 .novel-card-enter {
-  opacity: 0;
-  transform: translateY(20px);
   animation: fadeUp 0.5s ease-out forwards;
 }
 
-/* ─── Gold text fill ────────────────────────────────────── */
-.text-gold-500 {
-  color: #b8860b;
-}
-.dark .text-gold-400 {
-  color: #d4af37;
-}
-
-/* ─── Number input hide arrows ──────────────────────────── */
-input[type="number"]::-webkit-inner-spin-button,
-input[type="number"]::-webkit-outer-spin-button {
-  -webkit-appearance: none;
-  margin: 0;
-}
-input[type="number"] {
-  -moz-appearance: textfield;
-}
-
-/* ─── RTL utilities ─────────────────────────────────────── */
-[dir="rtl"] .ms-auto {
-  margin-left: auto;
-  margin-right: unset;
-}
-
-/* ─── PDF Canvas dark filter ────────────────────────────── */
-.dark canvas.pdf-canvas {
-  filter: invert(0.88) hue-rotate(180deg) contrast(0.92);
-}
+/* Fix border-white/8 (Tailwind doesn't support /8 by default) */
+.border-white\/8 { border-color: rgba(255,255,255,0.08); }
+.bg-white\/8     { background-color: rgba(255,255,255,0.08); }

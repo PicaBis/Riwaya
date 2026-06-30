@@ -3,6 +3,7 @@ import "./globals.css";
 import { AppProvider } from "@/context/AppContext";
 import { Header } from "@/components/Header";
 import { AntiScreenshot } from "@/components/AntiScreenshot";
+import { ToastProvider } from "@/components/Toast";
 
 export const metadata: Metadata = {
   title: "روايتي — مكتبة الروايات الشخصية",
@@ -57,6 +58,7 @@ export default function RootLayout({
       </head>
       <body className="min-h-screen flex flex-col">
         <AppProvider>
+          <ToastProvider>
           <AntiScreenshot />
           <Header />
           <main className="flex-1">{children}</main>
@@ -70,6 +72,7 @@ export default function RootLayout({
               </p>
             </div>
           </footer>
+          </ToastProvider>
         </AppProvider>
       </body>
     </html>
