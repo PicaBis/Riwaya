@@ -68,6 +68,37 @@ body {
   to { transform: rotate(360deg); }
 }
 
+/* ── Page-flip animations ─────────────────────────────
+   Next page: current page folds to the RIGHT edge,
+              new page unfolds from RIGHT edge.
+   Prev page: mirror (folds/unfolds from LEFT edge).
+─────────────────────────────────────────────────────── */
+
+/* Going NEXT: page folds away to its left edge */
+@keyframes flipOutNext {
+  0%   { transform: perspective(900px) rotateY(0deg)   scaleX(1);    opacity: 1; }
+  50%  { transform: perspective(900px) rotateY(-45deg) scaleX(0.97); opacity: 0.6; }
+  100% { transform: perspective(900px) rotateY(-90deg) scaleX(0.94); opacity: 0; }
+}
+/* New page unfolds from the left edge */
+@keyframes flipInNext {
+  0%   { transform: perspective(900px) rotateY(90deg)  scaleX(0.94); opacity: 0; }
+  50%  { transform: perspective(900px) rotateY(45deg)  scaleX(0.97); opacity: 0.6; }
+  100% { transform: perspective(900px) rotateY(0deg)   scaleX(1);    opacity: 1; }
+}
+
+/* Going PREV: mirror */
+@keyframes flipOutPrev {
+  0%   { transform: perspective(900px) rotateY(0deg)  scaleX(1);    opacity: 1; }
+  50%  { transform: perspective(900px) rotateY(45deg) scaleX(0.97); opacity: 0.6; }
+  100% { transform: perspective(900px) rotateY(90deg) scaleX(0.94); opacity: 0; }
+}
+@keyframes flipInPrev {
+  0%   { transform: perspective(900px) rotateY(-90deg) scaleX(0.94); opacity: 0; }
+  50%  { transform: perspective(900px) rotateY(-45deg) scaleX(0.97); opacity: 0.6; }
+  100% { transform: perspective(900px) rotateY(0deg)   scaleX(1);    opacity: 1; }
+}
+
 /* Animated SVG underline on hero title */
 @keyframes drawUnderline {
   from { stroke-dashoffset: 220; }
