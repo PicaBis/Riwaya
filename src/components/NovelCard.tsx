@@ -91,6 +91,13 @@ export function NovelCard({ novel, index = 0 }: NovelCardProps) {
           <div className="flex gap-2 mt-1">
             <Link
               href={`/novel/${novel.id}`}
+              onClick={() => {
+                /* Request fullscreen inside the user-gesture handler so the
+                   browser allows it. The reading page will inherit fullscreen. */
+                try {
+                  document.documentElement.requestFullscreen?.();
+                } catch {}
+              }}
               className="flex-1 flex items-center justify-center gap-1.5 py-2.5 bg-gray-900 dark:bg-white hover:bg-gold-500 dark:hover:bg-gold-500 text-white dark:text-gray-900 hover:text-white text-sm font-arabic font-medium rounded-xl transition-all duration-200 active:scale-95"
             >
               <BookOpen className="w-4 h-4" />

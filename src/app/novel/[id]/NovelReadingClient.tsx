@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { ArrowRight, Wallet, Star } from "lucide-react";
 import dynamic from "next/dynamic";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Novel } from "@/data/novels";
 import { StarRating } from "@/components/StarRating";
 import { CCPModal } from "@/components/CCPModal";
@@ -30,6 +30,22 @@ export function NovelReadingClient({ novel }: { novel: Novel }) {
   const [showCCP, setShowCCP] = useState(false);
   const currentRating = ratings[novel.id] ?? 0;
   const pdfUrl = `/novels/${novel.pdfFile}`;
+
+  /* ── Fullscreen lifecycle ──────────────────────────────
+     Try to enter fullscreen on mount (works if the user arrived
+     via the "Read Now" click which already triggered the API).
+     Exit cleanly when leaving the reading page.
+  ────────────────────────────────────────────────────── */
+  useEffect(() => {
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen?.().catch(() => {});
+    }
+    return () => {
+      if (document.fullscreenElement) {
+        document.exitFullscreen?.().catch(() => {});
+      }
+    };
+  }, []);
 
   return (
     <>
