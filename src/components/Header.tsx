@@ -85,13 +85,14 @@ export function Header() {
                 </button>
               </div>
             ) : (
-              <button
-                onClick={() => setShowLogin(true)}
-                className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-gold-500 hover:bg-gold-600 active:scale-95 text-white text-sm font-arabic font-medium transition-all duration-150 shadow-sm"
-              >
-                <User className="w-4 h-4" />
-                <span>دخول كضيف</span>
-              </button>
+                <button
+                  data-guest-login
+                  onClick={() => setShowLogin(true)}
+                  className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-gold-500 hover:bg-gold-600 active:scale-95 text-white text-sm font-arabic font-medium transition-all duration-150 shadow-sm"
+                >
+                  <User className="w-4 h-4" />
+                  <span>دخول كضيف</span>
+                </button>
             )}
           </div>
         </div>

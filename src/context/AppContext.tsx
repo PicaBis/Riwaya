@@ -9,7 +9,6 @@ import React, {
   useRef,
 } from "react";
 
-/* ─── Types ──────────────────────────────────────────── */
 interface GuestUser {
   name: string;
   loggedInAt: number;
@@ -23,12 +22,12 @@ interface AppContextValue {
   logout: () => void;
   ratings: Record<string, number>;
   setRating: (novelId: string, stars: number) => void;
+  isAdmin: boolean;
+  setAdmin: (v: boolean) => void;
 }
 
-/* ─── Context ────────────────────────────────────────── */
 const AppContext = createContext<AppContextValue | null>(null);
 
-/* ─── Debounce helper ────────────────────────────────── */
 function useDebounce<T>(value: T, delay: number): T {
   const [debouncedValue, setDebouncedValue] = useState<T>(value);
   useEffect(() => {
@@ -38,40 +37,37 @@ function useDebounce<T>(value: T, delay: number): T {
   return debouncedValue;
 }
 
-/* ─── Provider ───────────────────────────────────────── */
 export function AppProvider({ children }: { children: React.ReactNode }) {
   const [isDark, setIsDark]   = useState(false);
   const [guest, setGuest]     = useState<GuestUser | null>(null);
   const [ratings, setRatings] = useState<Record<string, number>>({});
+  const [isAdmin, setAdmin]   = useState(false);
   const [mounted, setMounted] = useState(false);
   const ratingsRef = useRef(ratings);
   ratingsRef.current = ratings;
 
-  /* Debounced ratings for localStorage write */
   const debouncedRatings = useDebounce(ratings, 400);
 
-  /* ── Hydrate from localStorage on client ────────── */
   useEffect(() => {
     try {
-      const savedTheme  = localStorage.getItem("riwayati_theme");
-      const savedGuest  = localStorage.getItem("riwayati_guest");
+      const savedTheme   = localStorage.getItem("riwayati_theme");
+      const savedGuest   = localStorage.getItem("riwayati_guest");
       const savedRatings = localStorage.getItem("riwayati_ratings");
+      const savedAdmin   = localStorage.getItem("riwayati_admin");
 
-      // 1. Explicit saved preference wins
       if (savedTheme === "dark")  setIsDark(true);
       else if (savedTheme === "light") setIsDark(false);
-      // 2. No preference yet → follow OS
       else if (window.matchMedia("(prefers-color-scheme: dark)").matches) {
         setIsDark(true);
       }
 
       if (savedGuest)   setGuest(JSON.parse(savedGuest));
       if (savedRatings) setRatings(JSON.parse(savedRatings));
-    } catch { /* quota / JSON errors */ }
+      if (savedAdmin === "1") setAdmin(true);
+    } catch { /* ignore */ }
     setMounted(true);
   }, []);
 
-  /* ── Sync theme class ──────────────────────────── */
   useEffect(() => {
     if (!mounted) return;
     document.documentElement.classList.toggle("dark", isDark);
@@ -80,7 +76,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     } catch {}
   }, [isDark, mounted]);
 
-  /* ── Debounced ratings write ───────────────────── */
   useEffect(() => {
     if (!mounted) return;
     try {
@@ -88,11 +83,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     } catch {}
   }, [debouncedRatings, mounted]);
 
-  /* ── OS theme change listener ──────────────────── */
   useEffect(() => {
     const mq = window.matchMedia("(prefers-color-scheme: dark)");
     const handle = (e: MediaQueryListEvent) => {
-      // Only follow OS if user hasn't explicitly chosen
       if (!localStorage.getItem("riwayati_theme")) {
         setIsDark(e.matches);
       }
@@ -107,16 +100,24 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     const user: GuestUser = { name, loggedInAt: Date.now() };
     setGuest(user);
     try { localStorage.setItem("riwayati_guest", JSON.stringify(user)); } catch {}
+    // Auto-detect admin code
+    if (name === "Blazixz") {
+      setAdmin(true);
+      try { localStorage.setItem("riwayati_admin", "1"); } catch {}
+    }
   }, []);
 
   const logout = useCallback(() => {
     setGuest(null);
-    try { localStorage.removeItem("riwayati_guest"); } catch {}
+    setAdmin(false);
+    try {
+      localStorage.removeItem("riwayati_guest");
+      localStorage.removeItem("riwayati_admin");
+    } catch {}
   }, []);
 
   const setRating = useCallback((novelId: string, stars: number) => {
     setRatings((prev) => ({ ...prev, [novelId]: stars }));
-    // Immediate write also (debounce is for rapid clicks)
     try {
       localStorage.setItem(
         "riwayati_ratings",
@@ -127,7 +128,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   return (
     <AppContext.Provider
-      value={{ isDark, toggleTheme, guest, loginAsGuest, logout, ratings, setRating }}
+      value={{ isDark, toggleTheme, guest, loginAsGuest, logout, ratings, setRating, isAdmin, setAdmin }}
     >
       {children}
     </AppContext.Provider>

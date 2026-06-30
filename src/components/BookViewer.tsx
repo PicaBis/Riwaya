@@ -1,19 +1,5 @@
 "use client";
 
-/**
- * BookViewer — immersive full-height PDF reader with 3-D page-flip animation.
- *
- * BUG FIX (v2):
- *   Canvas was inside {loadStatus === "ready" && (...)} so canvasRef.current
- *   was null when the very first render-effect fired.
- *   Fix: canvas is ALWAYS mounted; only the loading/error overlays are conditional.
- *
- * Desktop:  Page fills full viewport height, centered.
- *           Arrows on left/right, 3D rotateY flip between pages.
- * Mobile:   Full-screen single page. Tap zones + swipe navigation.
- *           Controls auto-hide after 3 s.
- */
-
 import { useEffect, useRef, useState, useCallback } from "react";
 import clsx from "clsx";
 import {
@@ -32,12 +18,13 @@ import {
 import { Paywall } from "./Paywall";
 import { useToast } from "./Toast";
 
-/* ─── Types ─────────────────────────────────────────── */
 interface BookViewerProps {
   pdfUrl: string;
   title: string;
   novelId?: string;
   freeUntilPage?: number;
+  lockedChapterTitle?: string;
+  lockedChapterTeaser?: string;
 }
 type FlipDir   = "next" | "prev";
 type FlipPhase = "idle" | "out" | "in";
@@ -46,25 +33,25 @@ type LoadState = "loading" | "ready" | "error";
 const FLIP_MS       = 300;
 const HIDE_DELAY_MS = 3000;
 
-/* ══════════════════════════════════════════════════════ */
 export function BookViewer({
   pdfUrl,
   title,
   novelId = "novel",
   freeUntilPage = 20,
+  lockedChapterTitle,
+  lockedChapterTeaser,
 }: BookViewerProps) {
   const { toast } = useToast();
 
-  /* ── refs ──────────────────────────────────────────── */
   const wrapRef      = useRef<HTMLDivElement>(null);
   const stageRef     = useRef<HTMLDivElement>(null);
-  const canvasRef    = useRef<HTMLCanvasElement>(null);   // ← always mounted
-  const hiddenRef    = useRef<HTMLCanvasElement>(null);   // ← always mounted
+  const canvasRef    = useRef<HTMLCanvasElement>(null);
+  const hiddenRef    = useRef<HTMLCanvasElement>(null);
   const renderRef    = useRef<{ cancel: () => void } | null>(null);
   const touchStartX  = useRef<number | null>(null);
   const hideTimer    = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const initDone     = useRef(false);
 
-  /* ── state ─────────────────────────────────────────── */
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [pdf, setPdf]               = useState<any>(null);
   const [totalPages, setTotalPages] = useState(0);
@@ -75,14 +62,12 @@ export function BookViewer({
   const [scale, setScale]           = useState(1.0);
   const [loadState, setLoadState]   = useState<LoadState>("loading");
 
-  /* flip */
   const [flipPhase, setFlipPhase]   = useState<FlipPhase>("idle");
   const [flipDir, setFlipDir]       = useState<FlipDir>("next");
   const [fromSrc, setFromSrc]       = useState<string | null>(null);
   const [toSrc,   setToSrc]         = useState<string | null>(null);
   const [pendingPg, setPendingPg]   = useState<number | null>(null);
 
-  /* UI */
   const [showUI, setShowUI]         = useState(true);
   const [isBookmarked, setBM]       = useState(false);
   const [showHelp, setShowHelp]     = useState(false);
@@ -110,7 +95,6 @@ export function BookViewer({
         if (dead) return;
         setPdf(doc);
         setTotalPages(doc.numPages);
-        // loadState is set to "ready" AFTER first page renders (see step 2)
       } catch {
         if (!dead) setLoadState("error");
       }
@@ -120,55 +104,17 @@ export function BookViewer({
   }, [pdfUrl]);
 
   /* ══════════════════════════════════════════════════
-     2.  First render: pdf loaded → calculate scale → paint
-         KEY FIX: canvas is always mounted so canvasRef.current
-         is guaranteed to be non-null here.
+     2.  Calculate scale & render current page
   ══════════════════════════════════════════════════ */
-  useEffect(() => {
-    if (!pdf) return;
-    let dead = false;
+  const computeScale = useCallback(async () => {
+    if (!pdf || !stageRef.current) return 1;
+    const page = await pdf.getPage(curPage);
+    const vp1  = page.getViewport({ scale: 1 });
+    const avH  = Math.max(stageRef.current.clientHeight - 40, 200);
+    const avW  = Math.max(stageRef.current.clientWidth  - 60, 200);
+    return Math.max(0.4, Math.min(avH / vp1.height, avW / vp1.width, 2.4));
+  }, [pdf, curPage]);
 
-    const init = async () => {
-      const canvas = canvasRef.current;
-      const stage  = stageRef.current;
-      if (!canvas || !stage) return;
-
-      try {
-        const page = await pdf.getPage(curPage);
-        if (dead) return;
-
-        /* Auto-scale to fill the stage */
-        const vp1 = page.getViewport({ scale: 1 });
-        // Wait one rAF so the stage has been laid out
-        await new Promise<void>((res) => requestAnimationFrame(() => res()));
-        if (dead) return;
-
-        const avH = Math.max(stage.clientHeight - 40, 200);
-        const avW = Math.max(stage.clientWidth  - 60, 200);
-        const s   = Math.max(0.4, Math.min(avH / vp1.height, avW / vp1.width, 2.4));
-        setScale(s);
-
-        /* Render */
-        const viewport = page.getViewport({ scale: s });
-        canvas.width   = viewport.width;
-        canvas.height  = viewport.height;
-        const ctx = canvas.getContext("2d");
-        if (!ctx || dead) return;
-
-        await page.render({ canvasContext: ctx, viewport }).promise;
-        if (!dead) setLoadState("ready");
-      } catch {
-        if (!dead) setLoadState("error");
-      }
-    };
-
-    init();
-    return () => { dead = true; };
-  }, [pdf]); // ← only runs once when pdf changes (avoids scale race condition)
-
-  /* ══════════════════════════════════════════════════
-     3.  Re-render on page / scale change (after initial load)
-  ══════════════════════════════════════════════════ */
   const renderPage = useCallback(
     async (pageNum: number, canvas: HTMLCanvasElement, s: number) => {
       if (!pdf) return;
@@ -183,41 +129,72 @@ export function BookViewer({
 
       const task = page.render({ canvasContext: ctx, viewport });
       renderRef.current = { cancel: () => task.cancel() };
-      try { await task.promise; } catch { /* RenderingCancelledException is ok */ }
+      try { await task.promise; } catch { /* cancelled */ }
     },
     [pdf]
   );
 
-  /* re-render when curPage or scale changes (excluding the very first render) */
-  const isFirstRender = useRef(true);
+  /* Full render cycle: compute scale → set → render → ready */
   useEffect(() => {
-    if (loadState !== "ready") return;
-    if (isFirstRender.current) { isFirstRender.current = false; return; }
-    if (!canvasRef.current || flipPhase !== "idle") return;
+    if (!pdf) return;
+    let dead = false;
 
-    renderPage(curPage, canvasRef.current, scale);
-    try { localStorage.setItem(`rp_${novelId}`, String(curPage)); } catch {}
-    try { setBM(localStorage.getItem(`rb_${novelId}`) === String(curPage)); } catch {}
-  }, [curPage, scale, flipPhase, loadState, renderPage, novelId]);
+    const run = async () => {
+      const s = await computeScale();
+      if (dead) return;
+      setScale(s);
 
-  /* ── Auto-resize ───────────────────────────────────── */
-  const recalcScale = useCallback(async () => {
-    if (!pdf || !stageRef.current) return;
-    const page = await pdf.getPage(curPage);
-    const vp1  = page.getViewport({ scale: 1 });
-    const avH  = Math.max(stageRef.current.clientHeight - 40, 200);
-    const avW  = Math.max(stageRef.current.clientWidth  - 60, 200);
-    setScale(Math.max(0.4, Math.min(avH / vp1.height, avW / vp1.width, 2.4)));
-  }, [pdf, curPage]);
+      // Wait for scale to settle into DOM, then render
+      await new Promise((r) => setTimeout(r, 0));
+      if (dead) return;
 
-  useEffect(() => {
-    const ro = new ResizeObserver(() => recalcScale());
-    if (stageRef.current) ro.observe(stageRef.current);
-    return () => ro.disconnect();
-  }, [recalcScale]);
+      const canvas = canvasRef.current;
+      if (!canvas) return;
+
+      await renderPage(curPage, canvas, s);
+      if (dead) return;
+      initDone.current = true;
+      setLoadState("ready");
+    };
+
+    run();
+    return () => { dead = true; };
+  // Only re-run when PDF changes (initial load)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pdf]);
 
   /* ══════════════════════════════════════════════════
-     4.  Navigate with flip animation
+     3.  Re-render when page/scale changes (post-init)
+  ══════════════════════════════════════════════════ */
+  useEffect(() => {
+    if (loadState !== "ready" || !initDone.current) return;
+    if (flipPhase !== "idle") return;
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    renderPage(curPage, canvas, scale);
+    try { localStorage.setItem(`rp_${novelId}`, String(curPage)); } catch {}
+    try { setBM(localStorage.getItem(`rb_${novelId}`) === String(curPage)); } catch {}
+  }, [curPage, loadState, flipPhase, renderPage, novelId, scale]);
+
+  /* ══════════════════════════════════════════════════
+     4.  ResizeObserver — recalc scale when stage resizes
+  ══════════════════════════════════════════════════ */
+  useEffect(() => {
+    if (!stageRef.current) return;
+    let dead = false;
+
+    const ro = new ResizeObserver(async () => {
+      if (!pdf || !initDone.current || dead) return;
+      const s = await computeScale();
+      if (!dead) setScale(s);
+    });
+
+    ro.observe(stageRef.current);
+    return () => { dead = true; ro.disconnect(); };
+  }, [pdf, computeScale]);
+
+  /* ══════════════════════════════════════════════════
+     5.  Navigate with flip animation
   ══════════════════════════════════════════════════ */
   const navigate = useCallback(
     async (dir: FlipDir) => {
@@ -228,13 +205,10 @@ export function BookViewer({
       if (newPage < 1 || newPage > totalPages) return;
 
       if (!isUnlocked && newPage > freeUntilPage) {
-        setCurPage(newPage); return;   // show paywall
+        setCurPage(newPage); return;
       }
 
-      /* Snapshot current page */
       const fromUrl = canvasRef.current.toDataURL("image/jpeg", 0.9);
-
-      /* Pre-render destination page */
       await renderPage(newPage, hiddenRef.current, scale);
       const toUrl = hiddenRef.current.toDataURL("image/jpeg", 0.9);
 
@@ -247,7 +221,6 @@ export function BookViewer({
     [pdf, curPage, totalPages, scale, flipPhase, loadState, isUnlocked, freeUntilPage, renderPage]
   );
 
-  /* ── Flip phase machine ─────────────────────────────── */
   useEffect(() => {
     if (flipPhase === "out") {
       const t = setTimeout(() => setFlipPhase("in"), FLIP_MS);
@@ -265,7 +238,7 @@ export function BookViewer({
   }, [flipPhase, pendingPg]);
 
   /* ══════════════════════════════════════════════════
-     5.  UI helpers
+     6.  UI helpers
   ══════════════════════════════════════════════════ */
   const revealUI = useCallback(() => {
     setShowUI(true);
@@ -278,7 +251,6 @@ export function BookViewer({
     return () => { if (hideTimer.current) clearTimeout(hideTimer.current); };
   }, []);
 
-  /* touch */
   const onTouchStart = (e: React.TouchEvent) => {
     touchStartX.current = e.touches[0].clientX;
     revealUI();
@@ -290,7 +262,6 @@ export function BookViewer({
     touchStartX.current = null;
   };
 
-  /* click zones */
   const onStageClick = (e: React.MouseEvent<HTMLDivElement>) => {
     revealUI();
     if (isLocked) return;
@@ -300,7 +271,6 @@ export function BookViewer({
     else if (x > width * 0.72) navigate("next");
   };
 
-  /* keyboard */
   useEffect(() => {
     const handle = (e: KeyboardEvent) => {
       if (e.target instanceof HTMLInputElement) return;
@@ -314,15 +284,14 @@ export function BookViewer({
       if (e.key === "End")  setCurPage(totalPages);
       if (e.key === "+" || e.key === "=") setScale((s) => Math.min(+(s + 0.15).toFixed(2), 2.5));
       if (e.key === "-") setScale((s) => Math.max(+(s - 0.15).toFixed(2), 0.4));
-      if (e.key === "0") recalcScale();
+      if (e.key === "0") { computeScale().then(setScale); }
       if (e.key === "b") toggleBM();
     };
     window.addEventListener("keydown", handle);
     return () => window.removeEventListener("keydown", handle);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [navigate, revealUI, isLocked, totalPages, recalcScale]);
+  }, [navigate, revealUI, isLocked, totalPages, computeScale]);
 
-  /* bookmark */
   const toggleBM = () => {
     const key = `rb_${novelId}`;
     if (isBookmarked) {
@@ -332,19 +301,19 @@ export function BookViewer({
     } else {
       try { localStorage.setItem(key, String(curPage)); } catch {}
       setBM(true);
-      toast(`تم حفظ الصفحة ${curPage} ✓`, "success");
+      toast(`تم حفظ الصفحة ${curPage}`, "success");
     }
   };
 
   const goToBM = () => {
     try {
       const bm = localStorage.getItem(`rb_${novelId}`);
-      if (bm) { setCurPage(parseInt(bm, 10)); toast("الانتقال للإشارة ←", "info"); }
+      if (bm) { setCurPage(parseInt(bm, 10)); toast("الانتقال للإشارة", "info"); }
     } catch {}
   };
 
   /* ══════════════════════════════════════════════════
-     6.  Render
+     7.  Render
   ══════════════════════════════════════════════════ */
   return (
     <div
@@ -354,7 +323,6 @@ export function BookViewer({
       onTouchEnd={onTouchEnd}
       onMouseMove={revealUI}
     >
-      {/* ── Progress bar ──────────────────────────────── */}
       <div className="h-0.5 flex-shrink-0 bg-stone-200 dark:bg-white/5 z-10">
         <div
           className="h-full bg-gold-500 transition-[width] duration-700"
@@ -362,7 +330,7 @@ export function BookViewer({
         />
       </div>
 
-      {/* ── Top toolbar (auto-hide) ─────────────────────── */}
+      {/* ── Top toolbar ───────────────────────────────── */}
       <div
         className={clsx(
           "absolute top-0.5 inset-x-0 z-30 flex items-center justify-between px-4 py-2",
@@ -373,13 +341,12 @@ export function BookViewer({
         )}
         dir="rtl"
       >
-        {/* Zoom */}
         <div className="flex items-center gap-0.5">
           <ToolBtn onClick={() => setScale((s) => Math.max(+(s-0.15).toFixed(2), 0.4))}>
             <ZoomOut className="w-3.5 h-3.5" />
           </ToolBtn>
           <button
-            onClick={recalcScale}
+            onClick={() => computeScale().then(setScale)}
             className="px-2 py-0.5 text-[11px] font-mono text-gray-500 dark:text-gray-400 hover:bg-black/6 dark:hover:bg-white/10 rounded min-w-[40px] text-center transition-colors"
           >
             {Math.round(scale * 100)}%
@@ -387,19 +354,22 @@ export function BookViewer({
           <ToolBtn onClick={() => setScale((s) => Math.min(+(s+0.15).toFixed(2), 2.5))}>
             <ZoomIn className="w-3.5 h-3.5" />
           </ToolBtn>
-          <ToolBtn onClick={recalcScale} title="ملاءمة (0)">
+          <ToolBtn onClick={() => computeScale().then(setScale)} title="ملاءمة (0)">
             <RotateCcw className="w-3 h-3" />
           </ToolBtn>
         </div>
 
-        {/* Title + page counter */}
         <div className="flex items-center gap-2 text-[11px] text-gray-500 dark:text-gray-400">
           <span className="hidden sm:block font-arabic truncate max-w-[130px]">{title}</span>
           <span className="font-mono">{curPage} / {totalPages}</span>
         </div>
 
-        {/* Actions */}
         <div className="flex items-center gap-0.5">
+          {isBookmarked && (
+            <ToolBtn onClick={goToBM} title="اذهب للإشارة">
+              <BookmarkCheck className="w-3.5 h-3.5 text-gold-500" />
+            </ToolBtn>
+          )}
           <ToolBtn onClick={toggleBM} title={isBookmarked ? "إزالة إشارة (b)" : "حفظ إشارة (b)"}>
             {isBookmarked
               ? <BookmarkCheck className="w-3.5 h-3.5 text-gold-500" />
@@ -420,14 +390,13 @@ export function BookViewer({
         </div>
       </div>
 
-      {/* ══ STAGE (reading area) ══════════════════════════ */}
+      {/* ══ STAGE ═══════════════════════════════════════ */}
       <div
         ref={stageRef}
         className="flex-1 flex items-center justify-center overflow-hidden relative"
         style={{ perspective: "1400px" }}
         onClick={onStageClick}
       >
-        {/* Loading overlay */}
         {loadState === "loading" && (
           <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 text-stone-400 z-10 bg-[#F2ECE0] dark:bg-[#0E0D0B]">
             <div className="w-12 h-12 rounded-full border-2 border-gold-500/30 border-t-gold-500 animate-spin" />
@@ -435,7 +404,6 @@ export function BookViewer({
           </div>
         )}
 
-        {/* Error overlay */}
         {loadState === "error" && (
           <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 text-stone-400 z-10">
             <BookOpen className="w-14 h-14 opacity-30" />
@@ -443,42 +411,35 @@ export function BookViewer({
           </div>
         )}
 
-        {/* ─────────────────────────────────────────────────
-            CANVAS — always in the DOM (fixes the main bug).
-            canvasRef.current is guaranteed non-null when
-            effects fire after the PDF loads.
-        ───────────────────────────────────────────────── */}
+        {/* Canvas — always visible once loaded */}
         <div
           className="relative"
-          style={{ transformStyle: "preserve-3d", display: loadState === "loading" ? "none" : "block" }}
+          style={{ transformStyle: "preserve-3d" }}
         >
-          {/* Main canvas */}
           <canvas
             ref={canvasRef}
             className={clsx(
               "rounded-sm shadow-2xl block select-none",
-              /* hide during flip (images take over) */
               flipPhase !== "idle" ? "opacity-0" : "opacity-100",
-              "transition-opacity duration-[50ms]"
+              "transition-opacity duration-[50ms]",
+              loadState === "loading" && "invisible"
             )}
             style={{ maxHeight: "calc(100dvh - 116px)", maxWidth: "calc(100vw - 48px)" }}
           />
 
-          {/* Hidden canvas for pre-rendering next page */}
           <canvas
             ref={hiddenRef}
             className="absolute top-0 left-0 opacity-0 pointer-events-none"
             aria-hidden
           />
 
-          {/* ── Flip OUT (current page folds away) ── */}
           {flipPhase === "out" && fromSrc && (
             // eslint-disable-next-line @next/next/no-img-element
             <img
               src={fromSrc} alt=""
               className="absolute top-0 left-0 rounded-sm shadow-2xl select-none"
               style={{
-                width: canvasRef.current?.style.width   || "100%",
+                width: canvasRef.current?.style.width || "100%",
                 height: canvasRef.current?.style.height || "100%",
                 maxWidth: "calc(100vw - 48px)",
                 maxHeight: "calc(100dvh - 116px)",
@@ -489,14 +450,13 @@ export function BookViewer({
             />
           )}
 
-          {/* ── Flip IN (new page unfolds) ── */}
           {flipPhase === "in" && toSrc && (
             // eslint-disable-next-line @next/next/no-img-element
             <img
               src={toSrc} alt=""
               className="absolute top-0 left-0 rounded-sm shadow-2xl select-none"
               style={{
-                width: canvasRef.current?.style.width   || "100%",
+                width: canvasRef.current?.style.width || "100%",
                 height: canvasRef.current?.style.height || "100%",
                 maxWidth: "calc(100vw - 48px)",
                 maxHeight: "calc(100dvh - 116px)",
@@ -507,18 +467,23 @@ export function BookViewer({
             />
           )}
 
-          {/* Subtle inner shadow (book-spine depth) */}
           <div
             className="absolute inset-0 pointer-events-none rounded-sm"
             style={{ boxShadow: "inset -6px 0 14px rgba(0,0,0,0.12), inset 6px 0 14px rgba(0,0,0,0.06)" }}
           />
         </div>
 
-        {/* Paywall */}
-        {isLocked && <Paywall onUnlock={() => setUnlocked(true)} price={500} />}
+        {isLocked && (
+          <Paywall
+            onUnlock={() => setUnlocked(true)}
+            price={500}
+            chapterTitle={lockedChapterTitle}
+            chapterTeaser={lockedChapterTeaser}
+          />
+        )}
       </div>
 
-      {/* ── Side arrows (desktop, auto-hide) ───────────── */}
+      {/* ── Side arrows ────────────────────────────────── */}
       {(["prev","next"] as const).map((dir) => {
         const isPrev = dir === "prev";
         return (
@@ -547,7 +512,7 @@ export function BookViewer({
         );
       })}
 
-      {/* ── Bottom bar (auto-hide) ──────────────────────── */}
+      {/* ── Bottom bar ──────────────────────────────────── */}
       <div
         className={clsx(
           "absolute bottom-0 inset-x-0 z-20 flex items-center justify-between px-6 py-3",
@@ -566,7 +531,6 @@ export function BookViewer({
           <ChevronRight className="w-4 h-4" /> السابقة
         </button>
 
-        {/* Progress dots */}
         <div className="flex items-center gap-1.5">
           {Array.from({ length: Math.min(9, totalPages) }, (_, i) => {
             const frac = totalPages > 1 ? i / (Math.min(9, totalPages) - 1) : 0;
@@ -638,7 +602,6 @@ export function BookViewer({
   );
 }
 
-/* ── Toolbar button ────────────────────────────────────── */
 function ToolBtn({ children, onClick, title }: {
   children: React.ReactNode; onClick?: () => void; title?: string;
 }) {

@@ -1,18 +1,20 @@
 "use client";
 
 import { useState } from "react";
-import { Lock, Wallet, Eye, EyeOff, CheckCircle2, AlertCircle } from "lucide-react";
+import { Lock, Wallet, Eye, EyeOff, CheckCircle2, AlertCircle, BookOpen } from "lucide-react";
 import { verifyDevCode } from "@/lib/auth";
 
 interface PaywallProps {
   onUnlock: () => void;
   price?: number;
   ripNumber?: string;
+  chapterTitle?: string;
+  chapterTeaser?: string;
 }
 
 const RIP_NUMBER = "00799999002885975343";
 
-export function Paywall({ onUnlock, price = 500 }: PaywallProps) {
+export function Paywall({ onUnlock, price = 500, chapterTitle, chapterTeaser }: PaywallProps) {
   const [code, setCode] = useState("");
   const [showCode, setShowCode] = useState(false);
   const [checking, setChecking] = useState(false);
@@ -28,7 +30,6 @@ export function Paywall({ onUnlock, price = 500 }: PaywallProps) {
 
     const ok = await verifyDevCode(code.trim());
     if (ok) {
-      // Store unlock in session (not permanently)
       sessionStorage.setItem("riwayati_unlocked", "1");
       onUnlock();
     } else {
@@ -45,7 +46,7 @@ export function Paywall({ onUnlock, price = 500 }: PaywallProps) {
 
   return (
     <div
-      className="absolute inset-0 z-30 flex flex-col items-center justify-center bg-parchment-50/95 dark:bg-onyx-950/97 backdrop-blur-md"
+      className="absolute inset-0 z-30 flex flex-col items-center justify-center bg-parchment-50/95 dark:bg-onyx-950/97 backdrop-blur-md p-6"
       dir="rtl"
     >
       {/* Lock Icon */}
@@ -58,9 +59,27 @@ export function Paywall({ onUnlock, price = 500 }: PaywallProps) {
         هذا المحتوى مقفول
       </h2>
       <p className="font-arabic text-sm text-gray-500 dark:text-gray-400 text-center max-w-xs leading-relaxed mb-2">
-        لقد وصلت إلى الفصل الثالث — أشترك لمتابعة القراءة وقراءة باقي الرواية
+        لقد وصلت إلى نهاية الفصول المجانية
       </p>
-      <p className="font-arabic text-xl font-bold text-gold-500 mb-8">
+
+      {/* Chapter info */}
+      {chapterTitle && (
+        <div className="w-full max-w-xs bg-white dark:bg-onyx-800 rounded-xl border border-parchment-200 dark:border-white/10 p-4 mb-4 text-center">
+          <div className="flex items-center justify-center gap-2 mb-2">
+            <BookOpen className="w-4 h-4 text-gold-500" />
+            <span className="font-arabic font-semibold text-gray-900 dark:text-gray-100 text-sm">
+              {chapterTitle}
+            </span>
+          </div>
+          {chapterTeaser && (
+            <p className="font-arabic text-xs text-gray-500 dark:text-gray-400 leading-relaxed">
+              {chapterTeaser}
+            </p>
+          )}
+        </div>
+      )}
+
+      <p className="font-arabic text-xl font-bold text-gold-500 mb-6">
         {price} دج
       </p>
 
@@ -75,19 +94,18 @@ export function Paywall({ onUnlock, price = 500 }: PaywallProps) {
             اشترك الآن عبر RIP
           </button>
 
-          {/* Code input */}
-          <div className="text-center">
+          <div className="text-center w-full">
             <p className="text-xs text-gray-400 dark:text-gray-600 font-arabic mb-2">
               لديك رمز وصول؟
             </p>
-            <form onSubmit={handleCodeSubmit} className="flex gap-2">
+            <form onSubmit={handleCodeSubmit} className="flex gap-2 justify-center">
               <div className="relative">
                 <input
                   type={showCode ? "text" : "password"}
                   value={code}
                   onChange={(e) => { setCode(e.target.value); setError(""); }}
                   placeholder="أدخل رمز الوصول"
-                  className="ps-10 pe-4 py-2 rounded-lg border border-parchment-300 dark:border-white/10 bg-white dark:bg-white/5 text-gray-800 dark:text-gray-200 placeholder-gray-400 text-sm font-arabic focus:outline-none focus:ring-2 focus:ring-gold-500/40 w-44"
+                  className="ps-10 pe-4 py-2 rounded-lg border border-parchment-300 dark:border-white/10 bg-white dark:bg-white/5 text-gray-800 dark:text-gray-200 placeholder-gray-400 text-sm font-arabic focus:outline-none focus:ring-2 focus:ring-gold-500/40 w-40"
                   dir="ltr"
                 />
                 <button
@@ -115,7 +133,6 @@ export function Paywall({ onUnlock, price = 500 }: PaywallProps) {
           </div>
         </div>
       ) : (
-        /* Payment Details */
         <div className="w-full max-w-sm bg-white dark:bg-onyx-800 rounded-2xl border border-parchment-200 dark:border-white/10 p-5 shadow-xl">
           <h3 className="font-arabic font-bold text-gray-900 dark:text-gray-100 mb-4 text-center">
             تفاصيل الدفع عبر RIP
@@ -146,7 +163,7 @@ export function Paywall({ onUnlock, price = 500 }: PaywallProps) {
 
             <div className="rounded-xl bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700/30 p-3">
               <p className="text-xs text-amber-700 dark:text-amber-400 font-arabic leading-relaxed">
-                📨 بعد الدفع، أرسل صورة الإيصال + اسمك إلى المؤلف للحصول على رمز الوصول.
+                بعد الدفع، أرسل صورة الإيصال + اسمك إلى المؤلف للحصول على رمز الوصول.
               </p>
             </div>
           </div>

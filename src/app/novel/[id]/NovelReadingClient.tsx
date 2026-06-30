@@ -1,21 +1,21 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowRight, Wallet, Star } from "lucide-react";
+import { ArrowRight, Wallet, Star, Shield } from "lucide-react";
 import dynamic from "next/dynamic";
 import { useState, useEffect } from "react";
-import { Novel } from "@/data/novels";
+import { Novel, getFreeUntilPage, getLockedChapter } from "@/data/novels";
 import { StarRating } from "@/components/StarRating";
 import { CCPModal } from "@/components/CCPModal";
+import { Comments } from "@/components/Comments";
 import { useApp } from "@/context/AppContext";
 
-/* Lazy-load BookViewer (client only, no SSR) */
 const BookViewer = dynamic(
   () => import("@/components/BookViewer").then((m) => m.BookViewer),
   {
     ssr: false,
     loading: () => (
-      <div className="flex-1 flex items-center justify-center bg-[#F5F0E8] dark:bg-[#0E0D0B] min-h-[80vh]">
+      <div className="flex-1 flex items-center justify-center bg-[#F5F0E8] dark:bg-[#0E0D0B]" style={{ minHeight: "80vh" }}>
         <div className="flex flex-col items-center gap-3 text-gray-400">
           <div className="w-12 h-12 rounded-full border-2 border-gold-500/30 border-t-gold-500 animate-spin" />
           <span className="font-arabic text-sm">جارٍ تهيئة القارئ…</span>
@@ -26,16 +26,13 @@ const BookViewer = dynamic(
 );
 
 export function NovelReadingClient({ novel }: { novel: Novel }) {
-  const { ratings, setRating } = useApp();
+  const { ratings, setRating, guest, isAdmin } = useApp();
   const [showCCP, setShowCCP] = useState(false);
   const currentRating = ratings[novel.id] ?? 0;
   const pdfUrl = `/novels/${novel.pdfFile}`;
+  const freeUntilPage = getFreeUntilPage(novel);
+  const lockedChapter = getLockedChapter(novel);
 
-  /* ── Fullscreen lifecycle ──────────────────────────────
-     Try to enter fullscreen on mount (works if the user arrived
-     via the "Read Now" click which already triggered the API).
-     Exit cleanly when leaving the reading page.
-  ────────────────────────────────────────────────────── */
   useEffect(() => {
     if (!document.fullscreenElement) {
       document.documentElement.requestFullscreen?.().catch(() => {});
@@ -54,7 +51,6 @@ export function NovelReadingClient({ novel }: { novel: Novel }) {
         className="flex items-center justify-between gap-3 px-4 sm:px-5 py-2 bg-white dark:bg-onyx-900 border-b border-parchment-200 dark:border-white/8 flex-shrink-0"
         dir="rtl"
       >
-        {/* Back */}
         <Link
           href="/"
           className="flex items-center gap-1 text-xs text-gray-400 hover:text-gold-500 transition-colors font-arabic group flex-shrink-0"
@@ -63,13 +59,17 @@ export function NovelReadingClient({ novel }: { novel: Novel }) {
           <span className="hidden sm:inline">المكتبة</span>
         </Link>
 
-        {/* Title (center) */}
         <h1 className="font-arabic text-sm font-semibold text-gray-700 dark:text-gray-300 truncate flex-1 text-center">
           {novel.title}
         </h1>
 
-        {/* Actions */}
         <div className="flex items-center gap-2 flex-shrink-0">
+          {isAdmin && (
+            <span className="flex items-center gap-1 text-xs text-gold-600 dark:text-gold-400 bg-gold-500/10 px-2 py-0.5 rounded-full">
+              <Shield className="w-3 h-3" />
+              مشرف
+            </span>
+          )}
           <div className="hidden sm:flex items-center gap-1">
             <Star className="w-3 h-3 text-gold-500/50" />
             <StarRating
@@ -89,14 +89,24 @@ export function NovelReadingClient({ novel }: { novel: Novel }) {
         </div>
       </div>
 
-      {/* ── Full-height Book Viewer ────────────────── */}
-      <div className="flex-1 overflow-hidden" style={{ height: "calc(100dvh - 104px)" }}>
-        <BookViewer
-          pdfUrl={pdfUrl}
-          title={novel.title}
-          novelId={novel.id}
-          freeUntilPage={novel.freeUntilPage}
-        />
+      {/* ── Scrollable area: Reader + Comments ───────── */}
+      <div className="flex-1 overflow-y-auto" style={{ height: "calc(100dvh - 104px)" }}>
+        {/* Reader — takes at least 80vh */}
+        <div style={{ minHeight: "80vh" }}>
+          <BookViewer
+            pdfUrl={pdfUrl}
+            title={novel.title}
+            novelId={novel.id}
+            freeUntilPage={freeUntilPage}
+            lockedChapterTitle={lockedChapter?.title}
+            lockedChapterTeaser={lockedChapter?.teaser}
+          />
+        </div>
+
+        {/* Comments — below the reader */}
+        <div className="max-w-4xl mx-auto w-full px-4 sm:px-6 pb-12">
+          <Comments novelId={novel.id} />
+        </div>
       </div>
 
       {showCCP && (
