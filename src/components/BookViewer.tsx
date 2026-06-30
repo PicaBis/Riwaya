@@ -106,30 +106,40 @@ export function BookViewer({
   /* ══════════════════════════════════════════════════
      2.  Calculate scale & render current page
   ══════════════════════════════════════════════════ */
-  const computeScale = useCallback(async () => {
-    if (!pdf || !stageRef.current) return 1;
-    const page = await pdf.getPage(curPage);
-    const vp1  = page.getViewport({ scale: 1 });
-    const avH  = Math.max(stageRef.current.clientHeight - 40, 200);
-    const avW  = Math.max(stageRef.current.clientWidth  - 60, 200);
-    return Math.max(0.4, Math.min(avH / vp1.height, avW / vp1.width, 2.4));
+  const computeScale = useCallback(async (): Promise<number> => {
+    try {
+      if (!pdf || !stageRef.current) return 1;
+      await new Promise((r) => requestAnimationFrame(r));
+      const page = await pdf.getPage(curPage);
+      const vp1  = page.getViewport({ scale: 1 });
+      const avH  = Math.max(stageRef.current.clientHeight - 40, 200);
+      const avW  = Math.max(stageRef.current.clientWidth  - 60, 200);
+      return Math.max(0.4, Math.min(avH / vp1.height, avW / vp1.width, 2.4));
+    } catch {
+      return 1;
+    }
   }, [pdf, curPage]);
 
   const renderPage = useCallback(
     async (pageNum: number, canvas: HTMLCanvasElement, s: number) => {
       if (!pdf) return;
-      if (renderRef.current) { renderRef.current.cancel(); renderRef.current = null; }
+      try {
+        if (renderRef.current) { renderRef.current.cancel(); renderRef.current = null; }
+        const page     = await pdf.getPage(pageNum);
+        const viewport = page.getViewport({ scale: s });
+        canvas.width   = viewport.width;
+        canvas.height  = viewport.height;
+        const ctx = canvas.getContext("2d");
+        if (!ctx) return;
 
-      const page     = await pdf.getPage(pageNum);
-      const viewport = page.getViewport({ scale: s });
-      canvas.width   = viewport.width;
-      canvas.height  = viewport.height;
-      const ctx = canvas.getContext("2d");
-      if (!ctx) return;
-
-      const task = page.render({ canvasContext: ctx, viewport });
-      renderRef.current = { cancel: () => task.cancel() };
-      try { await task.promise; } catch { /* cancelled */ }
+        const task = page.render({ canvasContext: ctx, viewport });
+        renderRef.current = { cancel: () => task.cancel() };
+        await task.promise;
+      } catch (e) {
+        if (typeof e === "object" && e !== null && "name" in e && (e as { name: string }).name !== "RenderingCancelledException") {
+          console.error("renderPage error:", e);
+        }
+      }
     },
     [pdf]
   );
@@ -140,26 +150,30 @@ export function BookViewer({
     let dead = false;
 
     const run = async () => {
-      const s = await computeScale();
-      if (dead) return;
-      setScale(s);
+      try {
+        if (initDone.current) return;
+        const s = await computeScale();
+        if (dead) return;
+        setScale(s);
 
-      // Wait for scale to settle into DOM, then render
-      await new Promise((r) => setTimeout(r, 0));
-      if (dead) return;
+        await new Promise((r) => setTimeout(r, 0));
+        if (dead) return;
 
-      const canvas = canvasRef.current;
-      if (!canvas) return;
+        const canvas = canvasRef.current;
+        if (!canvas) return;
 
-      await renderPage(curPage, canvas, s);
-      if (dead) return;
-      initDone.current = true;
-      setLoadState("ready");
+        await renderPage(curPage, canvas, s);
+        if (dead) return;
+        initDone.current = true;
+        setLoadState("ready");
+      } catch (e) {
+        console.error("BookViewer init error:", e);
+        if (!dead) setLoadState("error");
+      }
     };
 
     run();
     return () => { dead = true; };
-  // Only re-run when PDF changes (initial load)
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pdf]);
 
@@ -267,8 +281,8 @@ export function BookViewer({
     if (isLocked) return;
     const { left, width } = e.currentTarget.getBoundingClientRect();
     const x = e.clientX - left;
-    if (x < width * 0.28) navigate("prev");
-    else if (x > width * 0.72) navigate("next");
+    if (x < width * 0.28) navigate("next");
+    else if (x > width * 0.72) navigate("prev");
   };
 
   useEffect(() => {
