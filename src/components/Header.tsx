@@ -11,9 +11,10 @@ import { DevCodeModal } from "./DevCodeModal";
 import { SubscriptionModal } from "./SubscriptionModal";
 
 import { SearchBar } from "./SearchBar";
+import { LanguageSwitcher } from "./LanguageSwitcher";
 
 export function Header() {
-  const { isDark, toggleTheme, guest, logout, isAdmin } = useApp();
+  const { isDark, toggleTheme, guest, logout } = useApp();
   const [showLogin, setShowLogin] = useState(false);
   const [showAbout, setShowAbout] = useState(false);
   const [showDevCode, setShowDevCode] = useState(false);
@@ -74,6 +75,7 @@ export function Header() {
 
           {/* ── Desktop Actions ────────────────────────── */}
           <div className="hidden sm:flex items-center gap-2">
+            <LanguageSwitcher />
             {/* Theme toggle */}
             <button
               onClick={toggleTheme}
@@ -114,6 +116,7 @@ export function Header() {
 
           {/* ── Mobile: theme + hamburger ──────────────── */}
           <div className="flex sm:hidden items-center gap-1.5">
+            <LanguageSwitcher />
             <button
               onClick={toggleTheme}
               title={isDark ? "الوضع النهاري" : "الوضع الليلي"}

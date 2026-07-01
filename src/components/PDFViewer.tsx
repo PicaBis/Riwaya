@@ -59,11 +59,11 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, 
       const YT = (window as any).YT;
       if (!YT) return;
       ytPlayerRef.current = new YT.Player(ytContainerRef.current, {
-        videoId: "MOXc6WW-Ess",
-        playerVars: {
-          autoplay: 0,
-          loop: 1,
-          playlist: "MOXc6WW-Ess",
+         videoId: "mm0QSsRwzUo",
+         playerVars: {
+           autoplay: 0,
+           loop: 1,
+           playlist: "mm0QSsRwzUo",
           controls: 0,
           showinfo: 0,
           modestbranding: 1,

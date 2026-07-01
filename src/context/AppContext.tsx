@@ -7,6 +7,7 @@ import React, {
   useEffect,
   useCallback,
 } from "react";
+import type { Lang } from "@/lib/i18n";
 
 /* ─── Types ─────────────────────────────────────────────── */
 interface GuestUser {
@@ -36,6 +37,8 @@ interface ReaderPreferences {
 }
 
 interface AppContextValue {
+  lang: Lang;
+  setLang: (l: Lang) => void;
   isDark: boolean;
   toggleTheme: () => void;
   guest: GuestUser | null;
@@ -62,6 +65,7 @@ interface AppContextValue {
 const AppContext = createContext<AppContextValue | null>(null);
 
 export function AppProvider({ children }: { children: React.ReactNode }) {
+  const [lang, setLangState] = useState<Lang>("ar");
   const [isDark, setIsDark] = useState(false);
   const [guest, setGuest] = useState<GuestUser | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
@@ -91,6 +95,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   /* Hydrate from localStorage on client */
   useEffect(() => {
+    const savedLang = localStorage.getItem("riwayati_lang") as Lang | null;
+    if (savedLang === "en" || savedLang === "ar") setLangState(savedLang);
     const savedTheme = localStorage.getItem("riwayati_theme");
     const savedGuest = localStorage.getItem("riwayati_guest");
     const savedRatings = localStorage.getItem("riwayati_ratings");
@@ -208,14 +214,29 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     });
   }, []);
 
+  const setLang = useCallback((l: Lang) => {
+    setLangState(l);
+    localStorage.setItem("riwayati_lang", l);
+    document.documentElement.lang = l;
+    document.documentElement.dir = l === "ar" ? "rtl" : "ltr";
+  }, []);
+
   const setReaderPrefsPersist = useCallback((prefs: ReaderPreferences) => {
     setReaderPrefs(prefs);
     localStorage.setItem("riwayati_reader_prefs", JSON.stringify(prefs));
   }, []);
 
+  useEffect(() => {
+    if (!mounted) return;
+    document.documentElement.lang = lang;
+    document.documentElement.dir = lang === "ar" ? "rtl" : "ltr";
+  }, [lang, mounted]);
+
   return (
     <AppContext.Provider
       value={{
+        lang,
+        setLang,
         isDark,
         toggleTheme,
         guest,
