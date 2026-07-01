@@ -10,6 +10,8 @@ import { AboutModal } from "./AboutModal";
 import { DevCodeModal } from "./DevCodeModal";
 import { SubscriptionModal } from "./SubscriptionModal";
 
+import { SearchBar } from "./SearchBar";
+
 export function Header() {
   const { isDark, toggleTheme, guest, logout, isAdmin } = useApp();
   const [showLogin, setShowLogin] = useState(false);
@@ -24,7 +26,7 @@ export function Header() {
         <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
 
           {/* ── Logo ──────────────────────────────────── */}
-          <Link href="/" className="flex items-center gap-2.5 group" dir="rtl" onClick={() => setMobileMenuOpen(false)}>
+          <Link href="/" className="flex items-center gap-2.5 group flex-shrink-0" dir="rtl" onClick={() => setMobileMenuOpen(false)}>
             <div className="w-8 h-8 flex-shrink-0">
               <Image src="/logo.svg" alt="روايتي" width={32} height={32} />
             </div>
@@ -34,12 +36,18 @@ export function Header() {
           </Link>
 
           {/* ── Desktop Nav links ──────────────────────── */}
-          <nav className="hidden sm:flex items-center gap-1" dir="rtl">
+          <nav className="hidden sm:flex items-center gap-0.5" dir="rtl">
             <Link
               href="/"
               className="px-2 py-1 rounded-lg text-sm font-arabic text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-parchment-100 dark:hover:bg-white/8 transition-colors"
             >
               الرئيسية
+            </Link>
+            <Link
+              href="/library"
+              className="px-2 py-1 rounded-lg text-sm font-arabic text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-parchment-100 dark:hover:bg-white/8 transition-colors"
+            >
+              مكتبتي
             </Link>
             <button
               onClick={() => setShowAbout(true)}
@@ -61,6 +69,7 @@ export function Header() {
             >
               <Shield className="w-3.5 h-3.5" />
             </button>
+            <SearchBar />
           </nav>
 
           {/* ── Desktop Actions ────────────────────────── */}
@@ -134,6 +143,13 @@ export function Header() {
                 className="px-3 py-2.5 rounded-xl text-sm font-arabic text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-parchment-100 dark:hover:bg-white/8 transition-colors"
               >
                 🏠 الرئيسية
+              </Link>
+              <Link
+                href="/library"
+                onClick={() => setMobileMenuOpen(false)}
+                className="px-3 py-2.5 rounded-xl text-sm font-arabic text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-parchment-100 dark:hover:bg-white/8 transition-colors"
+              >
+                📚 مكتبتي
               </Link>
               <button
                 onClick={() => { setShowAbout(true); setMobileMenuOpen(false); }}

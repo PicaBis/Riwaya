@@ -14,6 +14,12 @@ interface GuestUser {
   loggedInAt: number;
 }
 
+interface ReadEntry {
+  novelId: string;
+  lastPage: number;
+  timestamp: number;
+}
+
 interface AppContextValue {
   isDark: boolean;
   toggleTheme: () => void;
@@ -26,6 +32,10 @@ interface AppContextValue {
   setRating: (novelId: string, stars: number) => void;
   bookmarks: Record<string, number>;
   saveBookmark: (novelId: string, page: number) => void;
+  readHistory: ReadEntry[];
+  cookieConsent: boolean | null;
+  acceptCookies: () => void;
+  rejectCookies: () => void;
 }
 
 /* ─── Context ────────────────────────────────────────────── */
@@ -37,6 +47,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [isAdmin, setIsAdmin] = useState(false);
   const [ratings, setRatings] = useState<Record<string, number>>({});
   const [bookmarks, setBookmarks] = useState<Record<string, number>>({});
+  const [readHistory, setReadHistory] = useState<ReadEntry[]>([]);
+  const [cookieConsent, setCookieConsent] = useState<boolean | null>(null);
   const [mounted, setMounted] = useState(false);
 
   /* Hydrate from localStorage on client */
@@ -46,12 +58,16 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     const savedRatings = localStorage.getItem("riwayati_ratings");
     const savedAdmin = localStorage.getItem("riwayati_admin");
     const savedBookmarks = localStorage.getItem("riwayati_bookmarks");
+    const savedHistory = localStorage.getItem("riwayati_history");
+    const savedCookie = localStorage.getItem("riwayati_cookies");
 
     if (savedTheme === "dark") setIsDark(true);
     if (savedGuest) setGuest(JSON.parse(savedGuest));
     if (savedRatings) setRatings(JSON.parse(savedRatings));
     if (savedAdmin === "1") setIsAdmin(true);
     if (savedBookmarks) setBookmarks(JSON.parse(savedBookmarks));
+    if (savedHistory) setReadHistory(JSON.parse(savedHistory));
+    if (savedCookie) setCookieConsent(savedCookie === "1");
     setMounted(true);
   }, []);
 
@@ -105,6 +121,22 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       localStorage.setItem("riwayati_bookmarks", JSON.stringify(next));
       return next;
     });
+    setReadHistory((prev) => {
+      const filtered = prev.filter((e) => e.novelId !== novelId);
+      const updated = [{ novelId, lastPage: page, timestamp: Date.now() }, ...filtered].slice(0, 20);
+      localStorage.setItem("riwayati_history", JSON.stringify(updated));
+      return updated;
+    });
+  }, []);
+
+  const acceptCookies = useCallback(() => {
+    setCookieConsent(true);
+    localStorage.setItem("riwayati_cookies", "1");
+  }, []);
+
+  const rejectCookies = useCallback(() => {
+    setCookieConsent(false);
+    localStorage.setItem("riwayati_cookies", "0");
   }, []);
 
   return (
@@ -121,6 +153,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         setRating,
         bookmarks,
         saveBookmark,
+        readHistory,
+        cookieConsent,
+        acceptCookies,
+        rejectCookies,
       }}
     >
       {children}

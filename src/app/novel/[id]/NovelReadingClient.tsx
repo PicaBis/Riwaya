@@ -2,12 +2,14 @@
 
 import { useState, useCallback } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { ArrowRight, Wallet, Star, BookOpen, Tag, Calendar } from "lucide-react";
 import dynamic from "next/dynamic";
 import { Novel } from "@/data/novels";
 import { StarRating } from "@/components/StarRating";
 import { CCPModal } from "@/components/CCPModal";
 import { Comments } from "@/components/Comments";
+import { ShareButtons } from "@/components/ShareButtons";
 import { useApp } from "@/context/AppContext";
 
 /* Lazy-load PDF viewer (client only, no SSR) */
@@ -33,6 +35,7 @@ interface NovelReadingClientProps {
 
 export function NovelReadingClient({ novel, startPage }: NovelReadingClientProps) {
   const { ratings, setRating, bookmarks, saveBookmark, guest } = useApp();
+  const pathname = usePathname();
   const [showCCP, setShowCCP] = useState(false);
   const [readingProgress, setReadingProgress] = useState(0);
   const currentRating = ratings[novel.id] ?? 0;
@@ -125,6 +128,9 @@ export function NovelReadingClient({ novel, startPage }: NovelReadingClientProps
               <Wallet className="w-3.5 h-3.5" />
               <span className="hidden sm:inline">دعم</span>
             </button>
+
+            {/* Share */}
+            <ShareButtons title={novel.title} url={pathname} />
           </div>
         </div>
 

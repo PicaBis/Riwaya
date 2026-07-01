@@ -1,6 +1,7 @@
 import { Sparkles, BookOpen, Feather, ChevronDown } from "lucide-react";
 import { novels } from "@/data/novels";
 import { NovelCard } from "@/components/NovelCard";
+import { ContinueReading } from "@/components/ContinueReading";
 
 export default function HomePage() {
   return (
@@ -65,6 +66,9 @@ export default function HomePage() {
           <ChevronDown className="w-5 h-5 text-gray-300 dark:text-gray-600" />
         </div>
       </section>
+
+      {/* ── Continue Reading ───────────────────────────── */}
+      <ContinueReading />
 
       {/* ── Section header ────────────────────────────── */}
       <div className="flex items-center gap-3 mb-6" dir="rtl">

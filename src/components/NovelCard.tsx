@@ -15,9 +15,10 @@ interface NovelCardProps {
 }
 
 export function NovelCard({ novel, index = 0 }: NovelCardProps) {
-  const { ratings, setRating, guest } = useApp();
+  const { ratings, setRating, guest, bookmarks } = useApp();
   const [showCCP, setShowCCP] = useState(false);
   const currentRating = ratings[novel.id] ?? 0;
+  const bookmarkPage = bookmarks[novel.id];
 
   return (
     <>
@@ -71,6 +72,21 @@ export function NovelCard({ novel, index = 0 }: NovelCardProps) {
           <p className="text-sm text-gray-600 dark:text-gray-300 font-arabic leading-relaxed line-clamp-3 flex-1">
             {novel.description}
           </p>
+
+          {/* Reading Progress */}
+          {bookmarkPage && bookmarkPage > 1 && (
+            <div className="flex items-center gap-2 -mt-1">
+              <div className="flex-1 h-1 bg-parchment-200 dark:bg-white/10 rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-gold-500 rounded-full transition-all duration-500"
+                  style={{ width: `${Math.min(Math.round((bookmarkPage / (novel.freeUntilPage + 80)) * 100), 100)}%` }}
+                />
+              </div>
+              <span className="text-[11px] text-gold-500 font-sans font-medium">
+                {Math.min(Math.round((bookmarkPage / (novel.freeUntilPage + 80)) * 100), 100)}%
+              </span>
+            </div>
+          )}
 
           {/* Star Rating */}
           <div className="flex items-center gap-2">
