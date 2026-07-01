@@ -12,9 +12,10 @@ import { SubscriptionModal } from "./SubscriptionModal";
 
 import { SearchBar } from "./SearchBar";
 import { LanguageSwitcher } from "./LanguageSwitcher";
+import { t } from "@/lib/i18n";
 
 export function Header() {
-  const { isDark, toggleTheme, guest, logout } = useApp();
+  const { isDark, toggleTheme, guest, logout, lang } = useApp();
   const [showLogin, setShowLogin] = useState(false);
   const [showAbout, setShowAbout] = useState(false);
   const [showDevCode, setShowDevCode] = useState(false);
@@ -37,36 +38,36 @@ export function Header() {
           </Link>
 
           {/* ── Desktop Nav links ──────────────────────── */}
-          <nav className="hidden sm:flex items-center gap-0.5" dir="rtl">
+          <nav className="hidden sm:flex items-center gap-0.5" dir={lang === "ar" ? "rtl" : "ltr"}>
             <Link
               href="/"
-              className="px-2 py-1 rounded-lg text-sm font-arabic text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-parchment-100 dark:hover:bg-white/8 transition-colors"
+              className={`px-2 py-1 rounded-lg text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-parchment-100 dark:hover:bg-white/8 transition-colors ${lang === "ar" ? "font-arabic" : "font-sans"}`}
             >
-              الرئيسية
+              {t("nav.home", lang)}
             </Link>
             <Link
               href="/library"
-              className="px-2 py-1 rounded-lg text-sm font-arabic text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-parchment-100 dark:hover:bg-white/8 transition-colors"
+              className={`px-2 py-1 rounded-lg text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-parchment-100 dark:hover:bg-white/8 transition-colors ${lang === "ar" ? "font-arabic" : "font-sans"}`}
             >
-              مكتبتي
+              {t("nav.library", lang)}
             </Link>
             <button
               onClick={() => setShowAbout(true)}
-              className="px-2 py-1 rounded-lg text-sm font-arabic text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-parchment-100 dark:hover:bg-white/8 transition-colors"
+              className={`px-2 py-1 rounded-lg text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-parchment-100 dark:hover:bg-white/8 transition-colors ${lang === "ar" ? "font-arabic" : "font-sans"}`}
             >
-              عن المنصة
+              {t("nav.about", lang)}
             </button>
             <button
               onClick={() => setShowSubs(true)}
-              className="flex items-center gap-1 px-2 py-1 rounded-lg text-sm font-arabic text-gray-600 dark:text-gray-400 hover:text-gold-500 dark:hover:text-gold-400 hover:bg-parchment-100 dark:hover:bg-white/8 transition-colors"
+              className={`flex items-center gap-1 px-2 py-1 rounded-lg text-sm text-gray-600 dark:text-gray-400 hover:text-gold-500 dark:hover:text-gold-400 hover:bg-parchment-100 dark:hover:bg-white/8 transition-colors ${lang === "ar" ? "font-arabic" : "font-sans"}`}
             >
               <Coins className="w-3.5 h-3.5" />
-              الاشتراكات
+              {t("nav.subscriptions", lang)}
             </button>
             <button
               onClick={() => setShowDevCode(true)}
-              className="flex items-center gap-1 px-2 py-1 rounded-lg text-sm font-arabic text-gray-400 dark:text-gray-500 hover:text-rose-500 dark:hover:text-rose-400 hover:bg-parchment-100 dark:hover:bg-white/8 transition-colors"
-              title="درع المطور"
+              className={`flex items-center gap-1 px-2 py-1 rounded-lg text-sm text-gray-400 dark:text-gray-500 hover:text-rose-500 dark:hover:text-rose-400 hover:bg-parchment-100 dark:hover:bg-white/8 transition-colors ${lang === "ar" ? "font-arabic" : "font-sans"}`}
+              title={t("nav.devShield", lang)}
             >
               <Shield className="w-3.5 h-3.5" />
             </button>

@@ -84,6 +84,10 @@ const dict: Record<Lang, Record<string, string>> = {
     "timer.hours": "ساعة",
     "timer.minutes": "دقيقة",
     "search.label": "بحث",
+    "fullscreen.welcome": "مرحباً بك في روايتي",
+    "fullscreen.click": "اضغط في أي مكان للدخول بوضع ملء الشاشة",
+    "fullscreen.enter": "دخول",
+    "fullscreen.skip": "تخطي",
   },
   en: {
     "site.name": "Riwayati",
@@ -168,6 +172,10 @@ const dict: Record<Lang, Record<string, string>> = {
     "timer.hours": "hr",
     "timer.minutes": "min",
     "search.label": "Search",
+    "fullscreen.welcome": "Welcome to Riwayati",
+    "fullscreen.click": "Click anywhere to enter fullscreen mode",
+    "fullscreen.enter": "Enter",
+    "fullscreen.skip": "Skip",
   },
 };
 

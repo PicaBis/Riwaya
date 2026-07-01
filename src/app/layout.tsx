@@ -6,6 +6,7 @@ import { AntiScreenshot } from "@/components/AntiScreenshot";
 import { SplashScreen } from "@/components/SplashScreen";
 import { BugReporter } from "@/components/BugReporter";
 import { CookieConsent } from "@/components/CookieConsent";
+import { AutoFullscreen } from "@/components/AutoFullscreen";
 
 export const metadata: Metadata = {
   title: "روايتي — مكتبة الروايات الشخصية",
@@ -124,6 +125,7 @@ export default function RootLayout({
         <AppProvider>
           <SplashScreen />
           <AntiScreenshot />
+          <AutoFullscreen />
           <Header />
           <main className="flex-1 premium-bg">{children}</main>
           <CookieConsent />

@@ -10,9 +10,6 @@ import { StarRating } from "@/components/StarRating";
 import { CCPModal } from "@/components/CCPModal";
 import { Comments } from "@/components/Comments";
 import { ShareButtons } from "@/components/ShareButtons";
-import { ReadingTimer } from "@/components/ReadingTimer";
-import { ReaderPrefsPanel } from "@/components/ReaderPrefsPanel";
-import { TTSButton } from "@/components/TTSButton";
 import { Achievements } from "@/components/Achievements";
 import { useApp } from "@/context/AppContext";
 
@@ -145,17 +142,8 @@ export function NovelReadingClient({ novel, startPage }: NovelReadingClientProps
               {/* Share */}
               <ShareButtons title={novel.title} url={pathname} />
 
-              {/* Reader Settings (desktop only) */}
-              <span className="hidden sm:contents"><ReaderPrefsPanel /></span>
-
-              {/* TTS (desktop only) */}
-              <span className="hidden sm:contents"><TTSButton /></span>
-
               {/* Achievements (desktop only) */}
               <span className="hidden sm:contents"><Achievements /></span>
-
-              {/* Timer - hidden on mobile */}
-              <span className="hidden sm:contents"><ReadingTimer /></span>
             </div>
           </div>
         </div>
