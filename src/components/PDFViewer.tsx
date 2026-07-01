@@ -299,20 +299,20 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, 
       className={clsx(
         "flex flex-col bg-parchment-100 dark:bg-onyx-950 select-none transition-all duration-300",
         isFullscreen
-          ? "fixed inset-0 z-[9999] h-screen w-screen overflow-hidden"
+          ? "fixed inset-0 z-[9999] h-screen w-screen overflow-hidden pdf-fullscreen-active"
           : "h-full"
       )}
     >
       {/* ── Toolbar ──────────────────────────────────── */}
-      <div className="flex items-center justify-between gap-2 px-3 py-2 bg-white dark:bg-onyx-900 border-b border-parchment-200 dark:border-white/8 flex-shrink-0">
-        {/* Left: zoom controls */}
-        <div className="flex items-center gap-0.5">
+      <div className="flex items-center justify-between gap-1 px-2 sm:px-3 py-1.5 sm:py-2 bg-white dark:bg-onyx-900 border-b border-parchment-200 dark:border-white/8 flex-shrink-0 overflow-hidden">
+        {/* Left: zoom controls (hidden on mobile) */}
+        <div className="hidden sm:flex items-center gap-0.5">
           <ToolBtn onClick={zoomOut} title="تصغير (-)">
             <ZoomOut className="w-4 h-4" />
           </ToolBtn>
           <button
             onClick={resetZoom}
-            className="px-2 py-1 text-[11px] font-mono text-gray-600 dark:text-gray-400 hover:bg-parchment-100 dark:hover:bg-white/10 rounded-md transition-colors min-w-[48px] text-center font-bold"
+            className="px-1.5 py-1 text-[11px] font-mono text-gray-600 dark:text-gray-400 hover:bg-parchment-100 dark:hover:bg-white/10 rounded-md transition-colors min-w-[42px] text-center font-bold"
             title="إعادة الضبط"
           >
             {Math.round(scale * 100)}%
@@ -325,8 +325,21 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, 
           </ToolBtn>
         </div>
 
+        {/* On mobile: simplified zoom */}
+        <div className="flex sm:hidden items-center gap-0.5">
+          <ToolBtn onClick={zoomOut} title="تصغير">
+            <ZoomOut className="w-3.5 h-3.5" />
+          </ToolBtn>
+          <span className="text-[10px] font-mono text-gray-400 font-bold min-w-[32px] text-center">
+            {Math.round(scale * 100)}%
+          </span>
+          <ToolBtn onClick={zoomIn} title="تكبير">
+            <ZoomIn className="w-3.5 h-3.5" />
+          </ToolBtn>
+        </div>
+
         {/* Center: page navigation */}
-        <div className="flex items-center gap-1.5" dir="rtl">
+        <div className="flex items-center gap-1" dir="rtl">
           <ToolBtn
             onClick={() => goTo(currentPage - 1)}
             disabled={currentPage <= 1}
@@ -334,7 +347,7 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, 
           >
             <ChevronRight className="w-4 h-4" />
           </ToolBtn>
-          <div className="flex items-center gap-1 text-xs font-sans text-gray-600 dark:text-gray-400">
+          <div className="flex items-center gap-0.5 text-xs font-sans text-gray-600 dark:text-gray-400">
             <input
               type="number"
               min={1}
@@ -343,10 +356,10 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, 
               onChange={(e) => setPageInput(e.target.value)}
               onKeyDown={handlePageInputKey}
               onBlur={() => goTo(Number(pageInput))}
-              className="w-10 text-center px-1 py-0.5 rounded border border-parchment-300 dark:border-white/15 bg-parchment-50 dark:bg-white/5 text-gray-800 dark:text-gray-200 text-[11px] focus:outline-none focus:ring-1 focus:ring-gold-500/50"
+              className="w-9 sm:w-10 text-center px-1 py-0.5 rounded border border-parchment-300 dark:border-white/15 bg-parchment-50 dark:bg-white/5 text-gray-800 dark:text-gray-200 text-[11px] focus:outline-none focus:ring-1 focus:ring-gold-500/50"
             />
             <span className="text-gray-400">/</span>
-            <span>{totalPages}</span>
+            <span className="text-[11px]">{totalPages}</span>
           </div>
           <ToolBtn
             onClick={() => goTo(currentPage + 1)}
@@ -360,12 +373,16 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, 
         {/* Right: fullscreen + music */}
         <div className="flex items-center gap-0.5">
           {novelId === "shajarat-sina" && (
-            <ToolBtn onClick={() => setPlaying((p) => !p)} title={playing ? "إيقاف الموسيقى" : "تشغيل الموسيقى"}>
+            <ToolBtn onClick={toggleMusic} title={playing ? "إيقاف الموسيقى" : "تشغيل الموسيقى"}>
               {playing ? <VolumeX className="w-4 h-4 text-gold-500" /> : <Speaker className="w-4 h-4" />}
             </ToolBtn>
           )}
-          <ToolBtn onClick={toggleFullscreen} title={isFullscreen ? "الخروج من ملء الشاشة" : "ملء الشاشة"} className="bg-parchment-100 dark:bg-white/10 rounded-lg">
-            {isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
+          <ToolBtn
+            onClick={toggleFullscreen}
+            title={isFullscreen ? "الخروج من ملء الشاشة" : "ملء الشاشة"}
+            className="bg-gold-500/10 dark:bg-white/10 rounded-lg hover:bg-gold-500/20 dark:hover:bg-white/20"
+          >
+            {isFullscreen ? <Minimize2 className="w-4 h-4 text-gold-500" /> : <Maximize2 className="w-4 h-4 text-gold-500" />}
           </ToolBtn>
         </div>
       </div>
@@ -481,7 +498,7 @@ function ToolBtn({
       disabled={disabled}
       title={title}
       className={clsx(
-        "w-8 h-8 flex items-center justify-center rounded-lg text-gray-500 dark:text-gray-400 hover:bg-parchment-200 dark:hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed active:scale-90 transition-all duration-150",
+        "w-7 h-7 sm:w-8 sm:h-8 flex items-center justify-center rounded-lg text-gray-500 dark:text-gray-400 hover:bg-parchment-200 dark:hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed active:scale-90 transition-all duration-150",
         className
       )}
     >

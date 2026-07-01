@@ -3,15 +3,19 @@
 import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { Moon, Sun, User, LogOut, Menu, X } from "lucide-react";
+import { Moon, Sun, User, LogOut, Menu, X, Shield, Coins } from "lucide-react";
 import { useApp } from "@/context/AppContext";
 import { GuestLoginModal } from "./GuestLoginModal";
 import { AboutModal } from "./AboutModal";
+import { DevCodeModal } from "./DevCodeModal";
+import { SubscriptionModal } from "./SubscriptionModal";
 
 export function Header() {
-  const { isDark, toggleTheme, guest, logout } = useApp();
+  const { isDark, toggleTheme, guest, logout, isAdmin } = useApp();
   const [showLogin, setShowLogin] = useState(false);
   const [showAbout, setShowAbout] = useState(false);
+  const [showDevCode, setShowDevCode] = useState(false);
+  const [showSubs, setShowSubs] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   return (
@@ -33,15 +37,29 @@ export function Header() {
           <nav className="hidden sm:flex items-center gap-1" dir="rtl">
             <Link
               href="/"
-              className="px-2.5 py-1.5 rounded-lg text-sm font-arabic text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-parchment-100 dark:hover:bg-white/8 transition-colors"
+              className="px-2 py-1 rounded-lg text-sm font-arabic text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-parchment-100 dark:hover:bg-white/8 transition-colors"
             >
               الرئيسية
             </Link>
             <button
               onClick={() => setShowAbout(true)}
-              className="px-2.5 py-1.5 rounded-lg text-sm font-arabic text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-parchment-100 dark:hover:bg-white/8 transition-colors"
+              className="px-2 py-1 rounded-lg text-sm font-arabic text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-parchment-100 dark:hover:bg-white/8 transition-colors"
             >
               عن المنصة
+            </button>
+            <button
+              onClick={() => setShowSubs(true)}
+              className="flex items-center gap-1 px-2 py-1 rounded-lg text-sm font-arabic text-gray-600 dark:text-gray-400 hover:text-gold-500 dark:hover:text-gold-400 hover:bg-parchment-100 dark:hover:bg-white/8 transition-colors"
+            >
+              <Coins className="w-3.5 h-3.5" />
+              الاشتراكات
+            </button>
+            <button
+              onClick={() => setShowDevCode(true)}
+              className="flex items-center gap-1 px-2 py-1 rounded-lg text-sm font-arabic text-gray-400 dark:text-gray-500 hover:text-rose-500 dark:hover:text-rose-400 hover:bg-parchment-100 dark:hover:bg-white/8 transition-colors"
+              title="درع المطور"
+            >
+              <Shield className="w-3.5 h-3.5" />
             </button>
           </nav>
 
@@ -123,6 +141,20 @@ export function Header() {
               >
                 ℹ️ عن المنصة
               </button>
+              <button
+                onClick={() => { setShowSubs(true); setMobileMenuOpen(false); }}
+                className="px-3 py-2.5 rounded-xl text-sm font-arabic text-gray-700 dark:text-gray-300 hover:text-gold-500 dark:hover:text-gold-400 hover:bg-parchment-100 dark:hover:bg-white/8 transition-colors text-right flex items-center gap-1.5"
+              >
+                <Coins className="w-4 h-4" />
+                الاشتراكات
+              </button>
+              <button
+                onClick={() => { setShowDevCode(true); setMobileMenuOpen(false); }}
+                className="px-3 py-2.5 rounded-xl text-sm font-arabic text-gray-400 dark:text-gray-500 hover:text-rose-500 dark:hover:text-rose-400 hover:bg-parchment-100 dark:hover:bg-white/8 transition-colors text-right flex items-center gap-1.5"
+              >
+                <Shield className="w-4 h-4" />
+                درع المطور
+              </button>
             </nav>
 
             {/* Author profile card */}
@@ -183,6 +215,8 @@ export function Header() {
 
       {showLogin && <GuestLoginModal onClose={() => setShowLogin(false)} />}
       {showAbout && <AboutModal onClose={() => setShowAbout(false)} />}
+      {showDevCode && <DevCodeModal onClose={() => setShowDevCode(false)} />}
+      {showSubs && <SubscriptionModal onClose={() => setShowSubs(false)} />}
     </>
   );
 }

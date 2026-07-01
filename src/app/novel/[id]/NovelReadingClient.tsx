@@ -28,15 +28,16 @@ const PDFViewer = dynamic(
 
 interface NovelReadingClientProps {
   novel: Novel;
+  startPage?: number;
 }
 
-export function NovelReadingClient({ novel }: NovelReadingClientProps) {
+export function NovelReadingClient({ novel, startPage }: NovelReadingClientProps) {
   const { ratings, setRating, bookmarks, saveBookmark, guest } = useApp();
   const [showCCP, setShowCCP] = useState(false);
   const [readingProgress, setReadingProgress] = useState(0);
   const currentRating = ratings[novel.id] ?? 0;
   const pdfUrl = `/novels/${novel.pdfFile}`;
-  const initialPage = bookmarks[novel.id] || 1;
+  const initialPage = startPage || bookmarks[novel.id] || 1;
 
   const handlePageChange = useCallback(
     (page: number, total?: number) => {
