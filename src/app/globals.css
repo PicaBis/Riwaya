@@ -228,24 +228,3 @@ input[type="number"] {
 .bug-reporter {
   animation: gentlePulse 3s ease-in-out infinite;
 }
-
-/* ─── Page Flip Animation (Book Page Curl) ────────────── */
-@keyframes pageFlipNext {
-  0%   { transform: rotateY(0deg); opacity: 1; }
-  100% { transform: rotateY(-85deg); opacity: 0.3; }
-}
-
-@keyframes pageFlipPrev {
-  0%   { transform: rotateY(-85deg); opacity: 0.3; }
-  100% { transform: rotateY(0deg); opacity: 1; }
-}
-
-.animate-page-flip-next {
-  animation: pageFlipNext 450ms cubic-bezier(0.4, 0, 0.2, 1) both;
-  transform-origin: right center;
-}
-
-.animate-page-flip-prev {
-  animation: pageFlipPrev 450ms cubic-bezier(0.4, 0, 0.2, 1) both;
-  transform-origin: left center;
-}
