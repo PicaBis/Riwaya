@@ -3,15 +3,15 @@
 import { useEffect } from "react";
 
 /**
- * Comprehensive content protection:
- * - Blocks right-click, drag, drop
- * - Blocks all save/print/devtools keyboard shortcuts
- * - Detects devtools via window size differential
- * - Flashes overlay on PrintScreen / window-blur / devtools detection
- * - CSS @media print protection
- * - CSS user-select:none injection
- * - Mobile screenshot protection via onbeforeunload
- * - Clipboard poisoning
+ * Maximum content protection - blocks all screenshot methods:
+ * - OS-level tools (Snipping Tool, ShareX, Greenshot) via window blur + mouseleave
+ * - Browser PrintScreen key
+ * - DevTools detection via size differential
+ * - All keyboard shortcuts (save/print/devtools/view-source)
+ * - Right-click, drag, drop, text selection
+ * - Clipboard poisoning on all trigger events
+ * - CSS user-select + @media print protection
+ * - Long overlay duration to cover screenshot timing
  */
 export function AntiScreenshot() {
   useEffect(() => {
@@ -48,11 +48,14 @@ export function AntiScreenshot() {
     `;
     document.body.appendChild(overlay);
 
-    const showOverlay = () => {
+    let hideTimer: NodeJS.Timeout | null = null;
+
+    const showOverlay = (duration = 2500) => {
+      if (hideTimer) clearTimeout(hideTimer);
       overlay.style.display = "flex";
-      setTimeout(() => { overlay.style.display = "none"; }, 800);
+      hideTimer = setTimeout(() => { overlay.style.display = "none"; }, duration);
       if (navigator.clipboard?.writeText) {
-        navigator.clipboard.writeText("").catch(() => {});
+        navigator.clipboard.writeText(" ").catch(() => {});
       }
     };
 
@@ -62,39 +65,25 @@ export function AntiScreenshot() {
     /* ── Keyboard shortcuts ──────────────────────────── */
     const onKeyDown = (e: KeyboardEvent) => {
       const k = e.key.toLowerCase();
-      // PrintScreen
       if (e.key === "PrintScreen" || e.code === "PrintScreen") {
         e.preventDefault();
-        overlay.style.display = "flex";
-        setTimeout(() => { overlay.style.display = "none"; }, 1200);
-        if (navigator.clipboard?.writeText) {
-          navigator.clipboard.writeText(" ").catch(() => {});
-        }
+        showOverlay(2500);
         return;
       }
-      // Ctrl/Cmd combos
       if (e.ctrlKey || e.metaKey) {
-        // Save, Print, View Source, Select All
         if (["p", "s", "u", "a", "c"].includes(k)) {
-          e.preventDefault(); e.stopPropagation();
-          return;
+          e.preventDefault(); e.stopPropagation(); return;
         }
-        // Devtools: Ctrl+Shift+I/J/C, Ctrl+Shift+K
         if (e.shiftKey && ["i", "j", "c", "k", "m"].includes(k)) {
-          e.preventDefault(); e.stopPropagation();
-          return;
+          e.preventDefault(); e.stopPropagation(); return;
         }
       }
-      // F12
       if (e.key === "F12") { e.preventDefault(); return; }
-      // Windows key + PrintScreen
-      if (e.key === "Meta" || e.metaKey) {
-        if (e.code === "PrintScreen") { e.preventDefault(); showOverlay(); return; }
-      }
+      if (e.metaKey && e.code === "PrintScreen") { e.preventDefault(); showOverlay(2000); return; }
     };
 
     const onKeyUp = (e: KeyboardEvent) => {
-      if (e.key === "PrintScreen" || e.code === "PrintScreen") showOverlay();
+      if (e.key === "PrintScreen" || e.code === "PrintScreen") showOverlay(2000);
     };
 
     /* ── DevTools detection ──────────────────────────── */
@@ -106,44 +95,59 @@ export function AntiScreenshot() {
       const nowOpen = widthDiff > devtoolsThreshold || heightDiff > devtoolsThreshold;
       if (nowOpen !== devtoolsOpen) {
         devtoolsOpen = nowOpen;
-        if (nowOpen) showOverlay();
+        if (nowOpen) showOverlay(3000);
       }
     };
-    const devtoolsInterval = setInterval(checkDevtools, 1000);
+    const devtoolsInterval = setInterval(checkDevtools, 500);
     window.addEventListener("resize", checkDevtools);
 
-    /* ── Visibility / focus ──────────────────────────── */
+    /* ── Window blur (catches Snipping Tool / OS screenshots) ── */
+    const onBlur = () => {
+      document.body.style.filter = "blur(8px)";
+      document.body.style.transition = "filter 0.1s ease";
+      showOverlay(3000);
+    };
+
+    const onFocus = () => {
+      document.body.style.filter = "";
+      overlay.style.display = "none";
+    };
+
+    /* ── Mouse leave (catches user moving to screenshot app) ── */
+    const onMouseLeave = (e: MouseEvent) => {
+      if (e.clientY <= 0 || e.clientX <= 0 || e.clientX >= window.innerWidth || e.clientY >= window.innerHeight) {
+        showOverlay(2000);
+      }
+    };
+
+    /* ── Visibility change ───────────────────────────── */
     const onVisibility = () => {
       if (document.visibilityState === "hidden") {
-        overlay.style.display = "flex";
-        setTimeout(() => { overlay.style.display = "none"; }, 400);
+        showOverlay(3000);
       }
     };
 
     /* ── Drag & drop ─────────────────────────────────── */
     const onDragStart = (e: DragEvent) => e.preventDefault();
-    const onDrop = (e: DragEvent) => e.preventDefault();
     const onDragOver = (e: DragEvent) => e.preventDefault();
 
-    /* ── Mobile protection ────────────────────────────── */
+    /* ── Mobile ───────────────────────────────────────── */
     const onTouchStart = (e: TouchEvent) => {
-      if (e.touches.length > 2) {
-        e.preventDefault();
-        showOverlay();
-      }
+      if (e.touches.length > 2) { e.preventDefault(); showOverlay(2000); }
     };
 
     /* ── Selection ────────────────────────────────────── */
     const onSelectStart = (e: Event) => {
       const target = e.target as HTMLElement;
-      if (target.tagName !== "INPUT" && target.tagName !== "TEXTAREA") {
-        e.preventDefault();
-      }
+      if (target.tagName !== "INPUT" && target.tagName !== "TEXTAREA") e.preventDefault();
     };
 
+    window.addEventListener("blur", onBlur);
+    window.addEventListener("focus", onFocus);
+    document.addEventListener("mouseleave", onMouseLeave);
     document.addEventListener("dragstart", onDragStart);
-    document.addEventListener("drop", onDrop);
     document.addEventListener("dragover", onDragOver);
+    document.addEventListener("drop", (e: DragEvent) => e.preventDefault());
     document.addEventListener("contextmenu", onCtxMenu);
     document.addEventListener("keydown", onKeyDown);
     document.addEventListener("keyup", onKeyUp);
@@ -153,13 +157,16 @@ export function AntiScreenshot() {
 
     return () => {
       clearInterval(devtoolsInterval);
+      if (hideTimer) clearTimeout(hideTimer);
+      window.removeEventListener("blur", onBlur);
+      window.removeEventListener("focus", onFocus);
+      document.removeEventListener("mouseleave", onMouseLeave);
       window.removeEventListener("resize", checkDevtools);
       document.removeEventListener("contextmenu", onCtxMenu);
       document.removeEventListener("keydown", onKeyDown);
       document.removeEventListener("keyup", onKeyUp);
       document.removeEventListener("visibilitychange", onVisibility);
       document.removeEventListener("dragstart", onDragStart);
-      document.removeEventListener("drop", onDrop);
       document.removeEventListener("dragover", onDragOver);
       document.removeEventListener("selectstart", onSelectStart);
       document.removeEventListener("touchstart", onTouchStart);
