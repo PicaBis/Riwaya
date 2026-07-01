@@ -3,7 +3,7 @@
 import { useState, useCallback, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ArrowRight, Wallet, Star, BookOpen, Tag, Calendar } from "lucide-react";
+import { ArrowRight, Wallet, Star, BookOpen, Tag, Calendar, List } from "lucide-react";
 import dynamic from "next/dynamic";
 import { Novel } from "@/data/novels";
 import { StarRating } from "@/components/StarRating";
@@ -145,6 +145,53 @@ export function NovelReadingClient({ novel, startPage }: NovelReadingClientProps
               {/* Achievements (desktop only) */}
               <span className="hidden sm:contents"><Achievements /></span>
             </div>
+          </div>
+        </div>
+
+        {/* ── Novel metadata + chapters ───────────────── */}
+        <div className="px-4 sm:px-6 py-5 bg-parchment-50 dark:bg-onyx-900/50 border-b border-parchment-200 dark:border-white/8 animate-fade-up">
+          <div className="flex flex-col sm:flex-row sm:items-start gap-5">
+            {/* Description */}
+            <div className="flex-1">
+              <p className="font-arabic text-sm text-gray-700 dark:text-gray-300 leading-relaxed">
+                {novel.description}
+              </p>
+              <div className="flex flex-wrap items-center gap-3 mt-3 text-xs text-gray-400 font-arabic">
+                <span className="flex items-center gap-1"><Tag className="w-3 h-3" /> {novel.genre}</span>
+                <span className="flex items-center gap-1"><Calendar className="w-3 h-3" /> {novel.year}</span>
+                {novel.lastUpdated && <span>آخر تحديث: {novel.lastUpdated}</span>}
+              </div>
+            </div>
+
+            {/* Chapters quick list */}
+            {novel.chapters && novel.chapters.length > 0 && (
+              <div className="flex-shrink-0 w-full sm:w-64">
+                <h3 className="flex items-center gap-2 font-arabic text-sm font-bold text-gray-900 dark:text-gray-100 mb-2">
+                  <List className="w-4 h-4 text-gold-500" />
+                  الفصول ({novel.chapters.length})
+                </h3>
+                <div className="space-y-1">
+                  {novel.chapters.map((ch, i) => {
+                    const isLocked = ch.startPage > novel.freeUntilPage;
+                    return (
+                      <div
+                        key={i}
+                        className={`flex items-center justify-between px-3 py-1.5 rounded-lg text-xs font-arabic ${
+                          isLocked
+                            ? "text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/10"
+                            : "text-gray-600 dark:text-gray-400"
+                        }`}
+                      >
+                        <span className="truncate">{ch.title}</span>
+                        <span className="text-[10px] font-sans flex-shrink-0 ms-2">
+                          {isLocked ? "🔒" : `ص ${ch.startPage}`}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
           </div>
         </div>
 
