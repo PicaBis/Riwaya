@@ -48,67 +48,30 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, 
   const [pageInput, setPageInput] = useState(String(initialPage));
   const renderTaskRef = useRef<import("pdfjs-dist").RenderTask | null>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [pageAnimating, setPageAnimating] = useState(false);
+  const [animDirection, setAnimDirection] = useState<"next" | "prev">("next");
   const [playing, setPlaying] = useState(false);
-  const ytContainerRef = useRef<HTMLDivElement>(null);
-  const ytPlayerRef = useRef<any>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
   const [tocOpen, setTocOpen] = useState(false);
 
-  // YouTube medieval music for shajarat-sina
+  // Background music via hidden audio (shajarat-sina only)
   useEffect(() => {
     if (novelId !== "shajarat-sina" || typeof window === "undefined") return;
-
-    const tag = document.createElement("script");
-    tag.src = "https://www.youtube.com/iframe_api";
-    document.head.appendChild(tag);
-
-    const onReady = () => {
-      if (!ytContainerRef.current) return;
-      const YT = (window as any).YT;
-      if (!YT) return;
-      ytPlayerRef.current = new YT.Player(ytContainerRef.current, {
-         videoId: "mm0QSsRwzUo",
-         playerVars: {
-           autoplay: 0,
-           loop: 1,
-           playlist: "mm0QSsRwzUo",
-          controls: 0,
-          showinfo: 0,
-          modestbranding: 1,
-          rel: 0,
-        },
-        events: {
-          onStateChange: (e: any) => {
-            if (e.data === YT.PlayerState.ENDED) {
-              ytPlayerRef.current?.playVideo();
-            }
-          },
-        },
-      });
-    };
-
-    const existing = (window as any).onYouTubeIframeAPIReady;
-    (window as any).onYouTubeIframeAPIReady = () => {
-      existing?.();
-      onReady();
-    };
-
-    return () => {
-      ytPlayerRef.current?.destroy();
-      ytPlayerRef.current = null;
-    };
+    const audio = new Audio();
+    audio.src = "https://www.youtube.com/watch?v=mm0QSsRwzUo";
+    audio.loop = true;
+    audio.volume = 0.3;
+    audioRef.current = audio;
+    return () => { audio.pause(); audioRef.current = null; };
   }, [novelId]);
 
   const toggleMusic = () => {
-    if (!ytPlayerRef.current) return;
-    const player = ytPlayerRef.current;
-    const YT = (window as any).YT;
-    const state = player.getPlayerState();
-    if (YT && state === YT.PlayerState.PLAYING) {
-      player.pauseVideo();
+    if (!audioRef.current) return;
+    if (playing) {
+      audioRef.current.pause();
       setPlaying(false);
     } else {
-      player.playVideo();
-      setPlaying(true);
+      audioRef.current.play().then(() => setPlaying(true)).catch(() => {});
     }
   };
 
@@ -197,8 +160,14 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, 
   /* ── Navigation ───────────────────────────────────── */
   const goTo = (page: number) => {
     const p = Math.max(1, Math.min(page, totalPages));
-    setCurrentPage(p);
-    setPageInput(String(p));
+    if (p === currentPage) return;
+    setAnimDirection(p > currentPage ? "next" : "prev");
+    setPageAnimating(true);
+    setTimeout(() => {
+      setCurrentPage(p);
+      setPageInput(String(p));
+      setTimeout(() => setPageAnimating(false), 50);
+    }, 150);
   };
 
   const zoomIn = () => setScale((s) => Math.min(s + 0.2, defaultScale >= 3 ? 4.5 : 3.0));
@@ -213,14 +182,13 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, 
     const isMobile = typeof window !== "undefined" && window.innerWidth < 768;
 
     if (isMobile || !document.fullscreenEnabled) {
-      // CSS-based fullscreen for mobile / unsupported browsers
       setIsFullscreen(prev => !prev);
       return;
     }
 
-    if (!document.fullscreenElement) {
+    if (!document.fullscreenElement || document.fullscreenElement === document.documentElement) {
       containerRef.current?.requestFullscreen().catch(() => {
-        setIsFullscreen(prev => !prev); // fallback to CSS fullscreen
+        setIsFullscreen(prev => !prev);
       });
     } else {
       document.exitFullscreen();
@@ -493,8 +461,10 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, 
           <canvas
             ref={canvasRef}
             className={clsx(
-              "rounded-sm shadow-2xl transition-opacity duration-300 pdf-viewer-canvas",
-              status === "ready" ? "opacity-100" : "opacity-0"
+              "rounded-sm shadow-2xl transition-all duration-200 ease-out pdf-viewer-canvas",
+              status === "ready" ? "opacity-100" : "opacity-0",
+              pageAnimating && animDirection === "next" && "translate-x-[-20px] opacity-0",
+              pageAnimating && animDirection === "prev" && "translate-x-[20px] opacity-0"
             )}
             style={{ maxWidth: "100%", backgroundColor: "#ffffff" }}
           />
@@ -529,10 +499,7 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, 
         </button>
       </div>
 
-      {/* YouTube hidden player (shajarat-sina only) */}
-      {novelId === "shajarat-sina" && (
-        <div ref={ytContainerRef} className="hidden" />
-      )}
+      {/* YouTube hidden player removed — using Audio API instead */}
     </div>
   );
 }
