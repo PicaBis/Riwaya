@@ -196,7 +196,20 @@ input[type="number"] {
   }
 }
 
-/* ─── PDF Canvas in dark mode (optional, gentle) ────────── */
-.dark canvas.pdf-canvas {
-  filter: invert(0.92) hue-rotate(180deg) contrast(0.9) brightness(0.9);
+/* ─── Premium background pattern ─────────────────────────── */
+.premium-bg {
+  background-image:
+    radial-gradient(ellipse at 50% 0%, rgba(184, 134, 11, 0.03) 0%, transparent 70%),
+    radial-gradient(ellipse at 80% 50%, rgba(184, 134, 11, 0.02) 0%, transparent 60%);
+  background-attachment: fixed;
+}
+
+/* ─── Dark mode guardrail: PDF pages always stay white ────── */
+.dark .pdf-viewer-canvas {
+  background-color: #ffffff !important;
+}
+
+/* ─── Bug report floating button ──────────────────────────── */
+.bug-reporter {
+  animation: gentlePulse 3s ease-in-out infinite;
 }

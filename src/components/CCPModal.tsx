@@ -1,6 +1,6 @@
 "use client";
 
-import { X, Wallet, Copy, CheckCheck } from "lucide-react";
+import { X, Wallet, Copy, CheckCheck, Mail } from "lucide-react";
 import { useState } from "react";
 
 interface CCPModalProps {
@@ -10,6 +10,7 @@ interface CCPModalProps {
 
 const RIP_NUMBER = "00799999002885975343";
 const AUTHOR_NAME = "Medjahed Abdelhadi";
+const AUTHOR_EMAIL = "Medjahed10abdelhadi@gmail.com";
 
 export function CCPModal({ novelTitle, onClose }: CCPModalProps) {
   const [copied, setCopied] = useState(false);
@@ -47,11 +48,11 @@ export function CCPModal({ novelTitle, onClose }: CCPModalProps) {
           </p>
         </div>
 
-        {/* RIP Details */}
+        {/* RIP / BaridiMob Details */}
         <div className="space-y-3 mb-5">
           <div className="rounded-xl bg-parchment-100 dark:bg-white/5 border border-parchment-300 dark:border-white/10 p-4">
             <p className="text-xs text-gray-400 dark:text-gray-500 mb-1 font-sans text-right">
-              رقم RIP — بريد الجزائر
+              رقم RIP / BaridiMob — بريد الجزائر
             </p>
             <div className="flex items-center justify-between gap-2">
               <button
@@ -86,6 +87,20 @@ export function CCPModal({ novelTitle, onClose }: CCPModalProps) {
             <p className="font-arabic text-sm text-gray-700 dark:text-gray-300">
               دعم رواية: {novelTitle}
             </p>
+          </div>
+
+          <div className="rounded-xl bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700/30 p-3">
+            <p className="text-xs text-amber-700 dark:text-amber-400 font-arabic leading-relaxed">
+              يمكنك الدفع عبر تطبيق BaridiMob أو مباشرة من مكتب البريد CCP.
+              أرسل لقطة شاشة للإيصال لتفعيل الاشتراك.
+            </p>
+            <a
+              href={`mailto:${AUTHOR_EMAIL}`}
+              className="inline-flex items-center gap-1 text-xs text-gold-500 hover:text-gold-600 font-arabic mt-1.5 transition-colors"
+            >
+              <Mail className="w-3.5 h-3.5" />
+              {AUTHOR_EMAIL}
+            </a>
           </div>
         </div>
 

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Lock, Wallet, Eye, EyeOff, CheckCircle2, AlertCircle } from "lucide-react";
+import { Lock, Wallet, Eye, EyeOff, CheckCircle2, AlertCircle, Copy, Mail } from "lucide-react";
 import { verifyDevCode } from "@/lib/auth";
 
 interface PaywallProps {
@@ -13,6 +13,7 @@ interface PaywallProps {
 }
 
 const RIP_NUMBER = "00799999002885975343";
+const AUTHOR_EMAIL = "Medjahed10abdelhadi@gmail.com";
 
 export function Paywall({ onUnlock, price = 500, ripNumber = RIP_NUMBER, title, preview }: PaywallProps) {
   const [code, setCode] = useState("");
@@ -42,6 +43,10 @@ export function Paywall({ onUnlock, price = 500, ripNumber = RIP_NUMBER, title, 
     await navigator.clipboard.writeText(ripNumber).catch(() => {});
     setCopied(true);
     setTimeout(() => setCopied(false), 2500);
+  };
+
+  const openEmail = () => {
+    window.open(`mailto:${AUTHOR_EMAIL}?subject=إثبات دفع - روايتي`, "_blank");
   };
 
   return (
@@ -86,7 +91,7 @@ export function Paywall({ onUnlock, price = 500, ripNumber = RIP_NUMBER, title, 
               className="w-full flex items-center justify-center gap-2 py-3 bg-gold-500 hover:bg-gold-600 active:scale-95 text-white rounded-xl font-arabic font-medium transition-all duration-150 shadow-md"
             >
               <Wallet className="w-4 h-4" />
-              اشترك الآن عبر RIP
+              اشترك الآن
             </button>
 
             <div className="text-center">
@@ -130,35 +135,63 @@ export function Paywall({ onUnlock, price = 500, ripNumber = RIP_NUMBER, title, 
         ) : (
           <div className="w-full bg-white dark:bg-onyx-800 rounded-2xl border border-parchment-200 dark:border-white/10 p-5 shadow-xl">
             <h3 className="font-arabic font-bold text-gray-900 dark:text-gray-100 mb-4 text-center">
-              تفاصيل الدفع عبر RIP
+              خطوات الاشتراك
             </h3>
 
             <div className="space-y-3 mb-4">
-              <div className="rounded-xl bg-parchment-50 dark:bg-white/5 border border-parchment-200 dark:border-white/10 p-3">
-                <p className="text-xs text-gray-400 mb-1">رقم RIP (بريد الجزائر)</p>
-                <div className="flex items-center justify-between gap-2">
-                  <button
-                    onClick={copyRIP}
-                    className="flex items-center gap-1 text-xs text-gold-500 hover:text-gold-600 transition-colors"
-                  >
-                    {copied
-                      ? <><CheckCircle2 className="w-3.5 h-3.5" />تم النسخ</>
-                      : "نسخ"}
-                  </button>
-                  <span dir="ltr" className="font-mono text-base font-bold text-gray-900 dark:text-gray-100 tracking-wider select-all">
-                    {ripNumber}
-                  </span>
+              {/* Step 1: Payment info */}
+              <div className="rounded-xl bg-gold-500/5 border border-gold-500/20 p-3">
+                <p className="text-xs text-gold-600 dark:text-gold-400 font-arabic font-bold mb-2">
+                  📱 الخطوة 1: الدفع عبر BaridiMob أو CCP
+                </p>
+                <div className="rounded-lg bg-white dark:bg-white/5 border border-parchment-200 dark:border-white/10 p-3 mb-2">
+                  <p className="text-[10px] text-gray-400 mb-1 font-sans">رقم RIP / BaridiMob</p>
+                  <div className="flex items-center justify-between gap-2">
+                    <button
+                      onClick={copyRIP}
+                      className="flex items-center gap-1 text-xs text-gold-500 hover:text-gold-600 transition-colors flex-shrink-0"
+                    >
+                      {copied
+                        ? <><CheckCircle2 className="w-3.5 h-3.5" />تم النسخ</>
+                        : <><Copy className="w-3.5 h-3.5" />نسخ</>}
+                    </button>
+                    <span dir="ltr" className="font-mono text-sm font-bold text-gray-900 dark:text-gray-100 tracking-wider select-all">
+                      {ripNumber}
+                    </span>
+                  </div>
+                </div>
+                <div className="flex items-center justify-between rounded-lg bg-white dark:bg-white/5 border border-parchment-200 dark:border-white/10 p-2.5">
+                  <span className="text-xs text-gray-400">المبلغ</span>
+                  <span className="font-bold text-gold-500 text-sm">{price} دينار جزائري</span>
                 </div>
               </div>
 
-              <div className="rounded-xl bg-parchment-50 dark:bg-white/5 border border-parchment-200 dark:border-white/10 p-3">
-                <p className="text-xs text-gray-400 mb-1">المبلغ</p>
-                <p className="font-bold text-gold-500 text-lg">{price} دينار جزائري</p>
+              {/* Step 2: Send receipt */}
+              <div className="rounded-xl bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700/30 p-3">
+                <p className="text-xs text-amber-700 dark:text-amber-400 font-arabic font-bold mb-2">
+                  📧 الخطوة 2: إرسال الإيصال
+                </p>
+                <p className="text-xs text-amber-700/80 dark:text-amber-400/80 font-arabic leading-relaxed mb-2">
+                  خذ سكرين شوت (صورة) للإيصال أو تأكيد الدفع من تطبيق BaridiMob أو CCP،
+                  وأرسله إلى بريدي الإلكتروني ليتم تفعيل حسابك يدوياً:
+                </p>
+                <button
+                  onClick={openEmail}
+                  className="flex items-center justify-center gap-2 w-full py-2 rounded-lg bg-amber-100 dark:bg-amber-800/30 border border-amber-200 dark:border-amber-700/30 text-amber-800 dark:text-amber-300 text-sm font-sans font-medium hover:bg-amber-200 dark:hover:bg-amber-800/50 transition-colors"
+                >
+                  <Mail className="w-4 h-4" />
+                  {AUTHOR_EMAIL}
+                </button>
               </div>
 
-              <div className="rounded-xl bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700/30 p-3">
-                <p className="text-xs text-amber-700 dark:text-amber-400 font-arabic leading-relaxed">
-                  📨 بعد الدفع، أرسل صورة الإيصال + اسمك إلى المؤلف للحصول على رمز الوصول.
+              {/* Step 3: Verification */}
+              <div className="rounded-xl bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-700/30 p-3">
+                <p className="text-xs text-green-700 dark:text-green-400 font-arabic font-bold mb-1">
+                  ✅ الخطوة 3: التفعيل
+                </p>
+                <p className="text-xs text-green-700/80 dark:text-green-400/80 font-arabic leading-relaxed">
+                  بعد التأكد من الدفع، سيتم إرسال رمز التفعيل الخاص بك. يمكنك إدخاله
+                  هنا لفتح جميع الروايات.
                 </p>
               </div>
             </div>

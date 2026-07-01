@@ -417,11 +417,10 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, 
           <canvas
             ref={canvasRef}
             className={clsx(
-              "rounded-sm shadow-2xl transition-opacity duration-300",
-              status === "ready" ? "opacity-100" : "opacity-0",
-              "pdf-canvas"
+              "rounded-sm shadow-2xl transition-opacity duration-300 pdf-viewer-canvas",
+              status === "ready" ? "opacity-100" : "opacity-0"
             )}
-            style={{ maxWidth: "100%" }}
+            style={{ maxWidth: "100%", backgroundColor: "#ffffff" }}
           />
         </div>
 

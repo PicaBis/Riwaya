@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { Moon, Sun, User, LogOut, Menu, X, Code2, Feather, PenTool, Smartphone } from "lucide-react";
+import { Moon, Sun, User, LogOut, Menu, X } from "lucide-react";
 import { useApp } from "@/context/AppContext";
 import { GuestLoginModal } from "./GuestLoginModal";
 import { AboutModal } from "./AboutModal";
@@ -129,8 +129,8 @@ export function Header() {
             <div className="px-4 pt-4">
               <div className="rounded-2xl bg-white dark:bg-onyx-800 border border-parchment-200 dark:border-white/10 p-4 shadow-sm">
                 <div className="flex items-center gap-3 mb-3">
-                  <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-gold-500/20 to-gold-500/5 border border-gold-500/20 flex items-center justify-center flex-shrink-0">
-                    <span className="text-gold-500 font-bold text-lg font-arabic">ب</span>
+                  <div className="w-11 h-11 rounded-xl overflow-hidden border border-gold-500/20 flex-shrink-0">
+                    <img src="/author.jpg" alt="بيكا" className="w-full h-full object-cover" />
                   </div>
                   <div>
                     <p className="font-bold text-sm text-gray-900 dark:text-gray-100 font-arabic">بيكا — Pica</p>

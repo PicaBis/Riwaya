@@ -4,6 +4,7 @@ import { AppProvider } from "@/context/AppContext";
 import { Header } from "@/components/Header";
 import { AntiScreenshot } from "@/components/AntiScreenshot";
 import { SplashScreen } from "@/components/SplashScreen";
+import { BugReporter } from "@/components/BugReporter";
 
 export const metadata: Metadata = {
   title: "روايتي — مكتبة الروايات الشخصية",
@@ -61,7 +62,8 @@ export default function RootLayout({
           <SplashScreen />
           <AntiScreenshot />
           <Header />
-          <main className="flex-1">{children}</main>
+          <main className="flex-1 premium-bg">{children}</main>
+          <BugReporter />
           <footer className="border-t border-parchment-200 dark:border-white/8 py-8 mt-16">
             <div className="max-w-6xl mx-auto px-4 text-center space-y-1">
               <p className="font-arabic text-sm text-gray-400 dark:text-gray-600">
