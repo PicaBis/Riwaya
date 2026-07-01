@@ -12,24 +12,30 @@ import {
   BookOpen,
   Speaker,
   VolumeX,
+  List,
 } from "lucide-react";
 import clsx from "clsx";
 import { Paywall } from "./Paywall";
 
+export interface Chapter {
+  title: string;
+  startPage: number;
+}
+
 interface PDFViewerProps {
   pdfUrl: string;
   title: string;
-  /** Page after which the paywall activates (chapter 3 gate) */
   freeUntilPage?: number;
   initialPage?: number;
   onPageChange?: (page: number, total?: number) => void;
   preview?: string;
   novelId?: string;
+  chapters?: Chapter[];
 }
 
 type RenderStatus = "idle" | "loading" | "rendering" | "ready" | "error";
 
-export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, onPageChange, preview, novelId }: PDFViewerProps) {
+export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, onPageChange, preview, novelId, chapters }: PDFViewerProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -45,6 +51,7 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, 
   const [playing, setPlaying] = useState(false);
   const ytContainerRef = useRef<HTMLDivElement>(null);
   const ytPlayerRef = useRef<any>(null);
+  const [tocOpen, setTocOpen] = useState(false);
 
   // YouTube medieval music for shajarat-sina
   useEffect(() => {
@@ -166,6 +173,13 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, 
         const task = page.render({ canvasContext: ctx, viewport });
         renderTaskRef.current = task;
         await task.promise;
+
+        try {
+          const textContent = await page.getTextContent();
+          const text = textContent.items.map((item: any) => item.str).join(" ");
+          canvas.setAttribute("data-text", text);
+        } catch {}
+
         setStatus("ready");
       } catch (err: unknown) {
         if ((err as { name?: string })?.name !== "RenderingCancelledException") {
@@ -370,8 +384,13 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, 
           </ToolBtn>
         </div>
 
-        {/* Right: fullscreen + music */}
+        {/* Right: TOC + fullscreen + music */}
         <div className="flex items-center gap-0.5">
+          {chapters && chapters.length > 0 && (
+            <ToolBtn onClick={() => setTocOpen((v) => !v)} title="جدول الفصول">
+              <List className="w-4 h-4" />
+            </ToolBtn>
+          )}
           {novelId === "shajarat-sina" && (
             <ToolBtn onClick={toggleMusic} title={playing ? "إيقاف الموسيقى" : "تشغيل الموسيقى"}>
               {playing ? <VolumeX className="w-4 h-4 text-gold-500" /> : <Speaker className="w-4 h-4" />}
@@ -386,6 +405,46 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, 
           </ToolBtn>
         </div>
       </div>
+
+      {/* ── Chapter TOC Dropdown ──────────────────────── */}
+      {tocOpen && chapters && chapters.length > 0 && (
+        <div className="absolute top-full right-0 sm:right-auto sm:left-auto z-50 w-64 bg-white dark:bg-onyx-800 rounded-b-2xl shadow-xl border border-parchment-200 dark:border-white/8 max-h-[60vh] overflow-y-auto animate-fade-in" dir="rtl">
+          <div className="p-3 border-b border-parchment-200 dark:border-white/8">
+            <h3 className="font-arabic text-sm font-bold text-gray-900 dark:text-gray-100">جدول الفصول</h3>
+          </div>
+          {chapters.map((ch, i) => {
+            const isLocked = ch.startPage > freeUntilPage;
+            const isCurrent = currentPage >= ch.startPage && (i === chapters.length - 1 || currentPage < chapters[i + 1].startPage);
+            return (
+              <button
+                key={i}
+                onClick={() => { goTo(ch.startPage); setTocOpen(false); }}
+                disabled={isLocked && !isUnlocked}
+                className={`w-full flex items-center gap-3 px-4 py-3 text-right border-b border-parchment-100 dark:border-white/5 last:border-0 transition-colors hover:bg-parchment-100 dark:hover:bg-white/5 ${
+                  isCurrent ? "bg-gold-500/5 border-r-2 border-r-gold-500" : ""
+                }`}
+              >
+                <span className={`w-7 h-7 rounded-lg flex items-center justify-center text-xs font-bold flex-shrink-0 ${
+                  isCurrent ? "bg-gold-500 text-white" : "bg-parchment-100 dark:bg-white/10 text-gray-500"
+                }`}>
+                  {i + 1}
+                </span>
+                <div className="flex-1 min-w-0">
+                  <p className={`text-xs font-arabic truncate ${isCurrent ? "text-gold-600 dark:text-gold-400 font-bold" : "text-gray-700 dark:text-gray-300"}`}>
+                    {ch.title}
+                  </p>
+                  <p className="text-[10px] text-gray-400 font-sans">
+                    صفحة {ch.startPage}
+                  </p>
+                </div>
+                {isLocked && !isUnlocked && (
+                  <span className="text-[10px] text-amber-500 bg-amber-50 dark:bg-amber-900/20 px-1.5 py-0.5 rounded-full font-arabic flex-shrink-0">🔒</span>
+                )}
+              </button>
+            );
+          })}
+        </div>
+      )}
 
       {/* ── Reading Progress Bar ──────────────────────── */}
       {totalPages > 0 && (

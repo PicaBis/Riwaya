@@ -2,12 +2,23 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { BookOpen, Wallet, Calendar, Tag } from "lucide-react";
+import { BookOpen, Wallet, Calendar, Tag, Clock } from "lucide-react";
 import { Novel } from "@/data/novels";
 import { PDFCover } from "./PDFCover";
 import { StarRating } from "./StarRating";
 import { CCPModal } from "./CCPModal";
 import { useApp } from "@/context/AppContext";
+
+function estimateReadTime(novel: Novel): string {
+  const totalPages = novel.chapters && novel.chapters.length > 0
+    ? novel.freeUntilPage + 80
+    : novel.freeUntilPage + 80;
+  const mins = Math.round(totalPages / 2);
+  if (mins < 60) return `~${mins} د`;
+  const hrs = Math.floor(mins / 60);
+  const remain = mins % 60;
+  return remain > 0 ? `~${hrs}س ${remain}د` : `~${hrs} ساعات`;
+}
 
 interface NovelCardProps {
   novel: Novel;
@@ -67,6 +78,12 @@ export function NovelCard({ novel, index = 0 }: NovelCardProps) {
           <p className="text-sm text-gray-500 dark:text-gray-400 font-arabic -mt-1">
             {novel.author}
           </p>
+
+          {/* Reading time estimate */}
+          <div className="flex items-center gap-1.5 text-xs text-gray-400 dark:text-gray-500 -mt-1">
+            <Clock className="w-3 h-3" />
+            <span className="font-arabic">مدة قراءة: {estimateReadTime(novel)}</span>
+          </div>
 
           {/* Description */}
           <p className="text-sm text-gray-600 dark:text-gray-300 font-arabic leading-relaxed line-clamp-3 flex-1">

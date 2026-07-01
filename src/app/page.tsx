@@ -8,58 +8,90 @@ export default function HomePage() {
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6">
 
-      {/* ── Hero Banner ──────────────────────────── */}
-      <section className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-parchment-100 via-white to-parchment-50 dark:from-onyx-900 dark:via-onyx-800 dark:to-onyx-900 border border-parchment-200 dark:border-white/8 shadow-book mb-8 sm:mb-10 -mt-10 sm:-mt-12 pt-20 sm:pt-24 px-6 sm:px-10 py-8 sm:py-10">
+      {/* ── Hero Banner ────────────────────────────── */}
+      <section className="relative overflow-hidden mb-8 sm:mb-10 -mt-8 sm:-mt-10 pt-16 sm:pt-20 pb-8 text-center">
         <div className="absolute inset-0 pointer-events-none">
-          <div className="absolute top-0 right-0 w-64 h-64 bg-gold-500/5 rounded-full -translate-y-1/2 translate-x-1/4 blur-3xl" />
-          <div className="absolute bottom-0 left-0 w-48 h-48 bg-gold-500/5 rounded-full translate-y-1/2 -translate-x-1/4 blur-3xl" />
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[500px] h-[500px] bg-gold-500/[0.04] rounded-full blur-3xl" />
+          <div className="absolute bottom-0 left-1/4 w-72 h-72 bg-gold-500/[0.03] rounded-full blur-3xl" />
+          <div className="absolute bottom-0 right-1/4 w-72 h-72 bg-gold-500/[0.03] rounded-full blur-3xl" />
         </div>
 
-        <div className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6" dir="rtl">
-          <div className="flex-1 text-center sm:text-right">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-gold-500/10 border border-gold-500/20 mb-4">
-              <Sparkles className="w-3 h-3 text-gold-500" />
-              <span className="text-xs font-arabic text-gold-600 dark:text-gold-400 font-medium">
-                مكتبة الروايات الشخصية
-              </span>
+        <div className="relative z-10" dir="rtl">
+          {/* Badge */}
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-gold-500/10 border border-gold-500/20 mb-5 animate-float">
+            <Sparkles className="w-3.5 h-3.5 text-gold-500" />
+            <span className="text-xs font-arabic text-gold-600 dark:text-gold-400 font-medium">
+              مكتبة الروايات الشخصية
+            </span>
+          </div>
+
+          {/* Main Title - Centered & Ornamented */}
+          <div className="relative inline-block mb-5">
+            {/* Decorative ornament - top */}
+            <div className="flex items-center justify-center gap-3 mb-3">
+              <div className="w-10 sm:w-16 h-px bg-gradient-to-l from-transparent to-gold-500/60" />
+              <div className="w-1.5 h-1.5 rounded-full bg-gold-500/40" />
+              <div className="w-6 sm:w-10 h-px bg-gradient-to-r from-gold-500/60 to-transparent" />
+              <Feather className="w-4 h-4 sm:w-5 sm:h-5 text-gold-500" />
+              <div className="w-6 sm:w-10 h-px bg-gradient-to-l from-gold-500/60 to-transparent" />
+              <div className="w-1.5 h-1.5 rounded-full bg-gold-500/40" />
+              <div className="w-10 sm:w-16 h-px bg-gradient-to-r from-transparent to-gold-500/60" />
             </div>
-            <h1 className="font-arabic text-4xl sm:text-5xl md:text-6xl font-bold text-gray-900 dark:text-gray-100 mb-3 leading-tight tracking-tight relative inline-block">
+
+            {/* Title with gold gradient */}
+            <h1 className="font-arabic text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-bold leading-tight tracking-tight">
               <span
-                className="relative inline-block text-shimmer-title"
                 style={{
-                  backgroundImage: "linear-gradient(135deg, var(--accent) 0%, #e6c84d 40%, var(--accent) 80%)",
+                  backgroundImage: "linear-gradient(135deg, #b8860b 0%, #d4af37 30%, #f5d26b 50%, #d4af37 70%, #b8860b 100%)",
                   backgroundSize: "200% auto",
                   WebkitBackgroundClip: "text",
                   WebkitTextFillColor: "transparent",
                   backgroundClip: "text",
+                  filter: "drop-shadow(0 2px 4px rgba(184,134,11,0.15))",
                 }}
               >
                 روايتي
               </span>
-              <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-16 h-0.5 bg-gradient-to-r from-transparent via-gold-500/60 to-transparent rounded-full" />
             </h1>
-            <p className="font-arabic text-sm sm:text-base text-gray-500 dark:text-gray-400 leading-relaxed max-w-md mx-auto sm:mx-0">
-              مساحة هادئة لقراءة الروايات الشخصية — اختر روايتك وانغمس في عالمها بتجربة قراءة أنيقة ومريحة.
-            </p>
+
+            {/* Decorative ornament - bottom */}
+            <div className="flex items-center justify-center gap-2 mt-4">
+              <div className="w-4 h-px bg-gold-500/30" />
+              <div className="w-1.5 h-1.5 rounded-full bg-gold-500/50" />
+              <div className="w-8 sm:w-12 h-px bg-gold-500/40" />
+              <BookOpen className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-gold-500/50" />
+              <div className="w-8 sm:w-12 h-px bg-gold-500/40" />
+              <div className="w-1.5 h-1.5 rounded-full bg-gold-500/50" />
+              <div className="w-4 h-px bg-gold-500/30" />
+            </div>
           </div>
 
-          <div className="flex sm:flex-col items-center sm:items-end gap-4 sm:gap-3 flex-shrink-0" dir="ltr">
-            <div className="flex items-center gap-3 px-4 py-3 rounded-2xl bg-white dark:bg-onyx-700/60 border border-parchment-200 dark:border-white/10 shadow-sm">
-              <BookOpen className="w-5 h-5 text-gold-500" />
+          {/* Description */}
+          <p className="font-arabic text-sm sm:text-base text-gray-500 dark:text-gray-400 leading-relaxed max-w-lg mx-auto mb-6">
+            مساحة هادئة لقراءة الروايات الشخصية — اختر روايتك وانغمس في عالمها بتجربة قراءة أنيقة ومريحة.
+          </p>
+
+          {/* Stats badges */}
+          <div className="flex flex-wrap items-center justify-center gap-3">
+            <div className="flex items-center gap-2.5 px-4 py-2.5 rounded-xl bg-white dark:bg-white/5 border border-parchment-200 dark:border-white/10 shadow-sm hover-lift">
+              <BookOpen className="w-4 h-4 text-gold-500" />
               <div>
-                <p className="text-xl font-bold text-gray-900 dark:text-gray-100 leading-none">{novels.length}</p>
+                <p className="text-base font-bold text-gray-900 dark:text-gray-100 leading-none">{novels.length}</p>
                 <p className="text-xs text-gray-400 font-arabic mt-0.5">{novels.length === 1 ? "رواية" : "روايات"}</p>
               </div>
             </div>
-            <div className="flex items-center gap-3 px-4 py-3 rounded-2xl bg-white dark:bg-onyx-700/60 border border-parchment-200 dark:border-white/10 shadow-sm">
-              <Feather className="w-5 h-5 text-gold-500" />
+            <div className="flex items-center gap-2.5 px-4 py-2.5 rounded-xl bg-white dark:bg-white/5 border border-parchment-200 dark:border-white/10 shadow-sm hover-lift">
+              <Feather className="w-4 h-4 text-gold-500" />
               <div>
-                <p className="text-xl font-bold text-gray-900 dark:text-gray-100 leading-none">بيكا</p>
+                <p className="text-base font-bold text-gray-900 dark:text-gray-100 leading-none">بيكا</p>
                 <p className="text-xs text-gray-400 font-arabic mt-0.5">الكاتب</p>
               </div>
             </div>
           </div>
         </div>
+
+        {/* Bottom decorative line */}
+        <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-32 h-px bg-gradient-to-r from-transparent via-gold-500/20 to-transparent" />
       </section>
 
       {/* ── Continue Reading ───────────────────────────── */}

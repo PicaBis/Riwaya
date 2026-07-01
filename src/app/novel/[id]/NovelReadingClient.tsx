@@ -170,6 +170,7 @@ export function NovelReadingClient({ novel, startPage }: NovelReadingClientProps
             onPageChange={handlePageChange}
             preview={novel.description}
             novelId={novel.id}
+            chapters={novel.chapters}
           />
         </div>
 

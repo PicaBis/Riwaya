@@ -18,6 +18,20 @@ export const metadata: Metadata = {
     locale: "ar_DZ",
     type: "website",
     url: "https://riwayati.vercel.app",
+    images: [
+      {
+        url: "/og-image.png",
+        width: 1200,
+        height: 630,
+        alt: "روايتي - مكتبة الروايات الشخصية",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "روايتي",
+    description: "مكتبة روايات شخصية — قراءة أنيقة وهادئة",
+    images: ["/og-image.png"],
   },
   icons: {
     icon: [
