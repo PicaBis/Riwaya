@@ -1,6 +1,6 @@
 "use client";
 
-import { X, BookOpen, PenTool, Code2, Image as ImageIcon, Quote } from "lucide-react";
+import { X, BookOpen, PenTool, Code2, Smartphone, Quote, Feather } from "lucide-react";
 
 export function AboutModal({ onClose }: { onClose: () => void }) {
   return (
@@ -21,38 +21,67 @@ export function AboutModal({ onClose }: { onClose: () => void }) {
         <div className="text-center mb-8">
           <span className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-gold-500/10 border border-gold-500/20 mb-4">
             <BookOpen className="w-3.5 h-3.5 text-gold-500" />
-            <span className="text-xs font-arabic text-gold-600 dark:text-gold-400">منصة الأستاذ بيكا الرسمية</span>
+            <span className="text-xs font-arabic text-gold-600 dark:text-gold-400">منصة بيكا الرسمية</span>
           </span>
           <h2 className="font-arabic text-2xl sm:text-3xl font-bold text-gray-900 dark:text-gray-100">
-            منصة الأستاذ بيكا (@ProfPica)
+            بيكا — Pica
           </h2>
+          <p className="font-arabic text-sm text-gold-500 font-medium mt-1">@ProfPica</p>
           <p className="font-arabic text-sm text-gray-500 dark:text-gray-400 mt-2">
-            الرسمية والحصرية للروايات والأعمال الأدبية
+            المنصة الرسمية والحصرية للروايات والأعمال الأدبية
           </p>
         </div>
 
-        {/* Identity */}
-        <div className="mb-6 p-4 rounded-2xl bg-parchment-50 dark:bg-white/5 border border-parchment-200 dark:border-white/10">
-          <p className="font-arabic text-sm text-gray-700 dark:text-gray-300 leading-relaxed">
-            أستاذ علوم فيزيائية — خريج المدرسة العليا للأساتذة بالأغواط
-            <br />
-            <span className="text-gold-500 font-medium">École Normale Supérieure de Laghouat</span>
-          </p>
+        {/* Identity / Bio */}
+        <div className="mb-6 p-5 rounded-2xl bg-gradient-to-br from-parchment-50 to-white dark:from-onyx-700/30 dark:to-onyx-800 border border-parchment-200 dark:border-white/10">
+          <div className="flex items-start gap-3" dir="rtl">
+            <div className="w-10 h-10 rounded-xl bg-gold-500/10 border border-gold-500/20 flex items-center justify-center flex-shrink-0 mt-0.5">
+              <Feather className="w-5 h-5 text-gold-500" />
+            </div>
+            <p className="font-arabic text-sm text-gray-700 dark:text-gray-300 leading-loose">
+              مبرمج تطبيقات ويب وهواتف ذكية، كاتب روايات (فانتازيا، غموض، رعب، وثقافة)،
+              ورسام يقوم برسم وتصميم مقاطع ومشاهد رواياته الخاصة.
+            </p>
+          </div>
         </div>
 
-        {/* Skills */}
-        <div className="grid grid-cols-3 gap-3 mb-6">
-          <div className="p-3 rounded-xl bg-white dark:bg-onyx-700/40 border border-parchment-200 dark:border-white/10 text-center">
-            <PenTool className="w-5 h-5 text-gold-500 mx-auto mb-1" />
-            <p className="text-xs font-arabic text-gray-600 dark:text-gray-300">الرسم والفنون الرقمية</p>
+        {/* Skills — 2x2 grid */}
+        <div className="grid grid-cols-2 gap-3 mb-6">
+          <div className="p-4 rounded-xl bg-white dark:bg-onyx-700/40 border border-parchment-200 dark:border-white/10 flex items-center gap-3">
+            <div className="w-8 h-8 rounded-lg bg-gold-500/10 flex items-center justify-center flex-shrink-0">
+              <Code2 className="w-4 h-4 text-gold-500" />
+            </div>
+            <div>
+              <p className="text-xs font-bold font-arabic text-gray-800 dark:text-gray-200">تطوير الويب</p>
+              <p className="text-[11px] text-gray-400 font-arabic">Web Development</p>
+            </div>
           </div>
-          <div className="p-3 rounded-xl bg-white dark:bg-onyx-700/40 border border-parchment-200 dark:border-white/10 text-center">
-            <Code2 className="w-5 h-5 text-gold-500 mx-auto mb-1" />
-            <p className="text-xs font-arabic text-gray-600 dark:text-gray-300">صناعة وتطوير المواقع</p>
+          <div className="p-4 rounded-xl bg-white dark:bg-onyx-700/40 border border-parchment-200 dark:border-white/10 flex items-center gap-3">
+            <div className="w-8 h-8 rounded-lg bg-gold-500/10 flex items-center justify-center flex-shrink-0">
+              <Smartphone className="w-4 h-4 text-gold-500" />
+            </div>
+            <div>
+              <p className="text-xs font-bold font-arabic text-gray-800 dark:text-gray-200">تطبيقات الهاتف</p>
+              <p className="text-[11px] text-gray-400 font-arabic">Mobile Apps</p>
+            </div>
           </div>
-          <div className="p-3 rounded-xl bg-white dark:bg-onyx-700/40 border border-parchment-200 dark:border-white/10 text-center">
-            <ImageIcon className="w-5 h-5 text-gold-500 mx-auto mb-1" />
-            <p className="text-xs font-arabic text-gray-600 dark:text-gray-300">صناعة المحتوى الرقمي Digital Creator</p>
+          <div className="p-4 rounded-xl bg-white dark:bg-onyx-700/40 border border-parchment-200 dark:border-white/10 flex items-center gap-3">
+            <div className="w-8 h-8 rounded-lg bg-gold-500/10 flex items-center justify-center flex-shrink-0">
+              <Feather className="w-4 h-4 text-gold-500" />
+            </div>
+            <div>
+              <p className="text-xs font-bold font-arabic text-gray-800 dark:text-gray-200">كتابة الروايات</p>
+              <p className="text-[11px] text-gray-400 font-arabic">Fantasy · Mystery · Horror</p>
+            </div>
+          </div>
+          <div className="p-4 rounded-xl bg-white dark:bg-onyx-700/40 border border-parchment-200 dark:border-white/10 flex items-center gap-3">
+            <div className="w-8 h-8 rounded-lg bg-gold-500/10 flex items-center justify-center flex-shrink-0">
+              <PenTool className="w-4 h-4 text-gold-500" />
+            </div>
+            <div>
+              <p className="text-xs font-bold font-arabic text-gray-800 dark:text-gray-200">الرسم والتصميم</p>
+              <p className="text-[11px] text-gray-400 font-arabic">Illustration · Digital Art</p>
+            </div>
           </div>
         </div>
 
@@ -60,8 +89,8 @@ export function AboutModal({ onClose }: { onClose: () => void }) {
         <div className="relative bg-parchment-100 dark:bg-white/5 rounded-2xl border border-parchment-200 dark:border-white/8 p-5">
           <Quote className="absolute top-4 right-4 w-6 h-6 text-gold-500/20" />
           <p className="font-arabic text-sm text-gray-700 dark:text-gray-300 leading-relaxed text-center">
-            هذا الموقع هو المستودع الرسمي والحصري لجميع أعمال وكتب وروايات الأستاذ بيكا،
-            حيث يتم تضمين كافة المؤلفات وهي حالياً قيد التوثيق والنشر المستمر عبر صفحات الموقع المتتالية
+            هذا الموقع هو المستودع الرسمي والحصري لجميع أعمال وكتب وروايات بيكا،
+            حيث يتم تضمين كافة المؤلفات وهي حالياً قيد التوثيق والنشر المستمر
             لضمان حقوق الملكية الفكرية.
           </p>
         </div>

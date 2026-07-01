@@ -1,10 +1,10 @@
 import Image from "next/image";
-import { PenTool, Code2, BookOpen, ImageIcon, Quote } from "lucide-react";
+import { PenTool, Code2, BookOpen, Quote } from "lucide-react";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
   title: "عن المنصة — روايتي",
-  description: "منصة الأستاذ بيكا (@ProfPica) الرسمية والحصرية للروايات والأعمال الأدبية.",
+  description: "المنصة الرسمية والحصرية لجميع أعمال بيكا الأدبية والفنية.",
 };
 
 export default function AboutPage() {
@@ -15,14 +15,14 @@ export default function AboutPage() {
         <span className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-gold-500/10 border border-gold-500/20 mb-6">
           <BookOpen className="w-3.5 h-3.5 text-gold-500" />
           <span className="text-xs font-arabic text-gold-600 dark:text-gold-400">
-            منصة الأستاذ بيكا الرسمية
+            منصة بيكا الرسمية
           </span>
         </span>
         <h1 className="font-arabic text-4xl sm:text-5xl font-bold text-gray-900 dark:text-gray-100 mb-4">
           عن المنصة
         </h1>
         <p className="font-arabic text-lg text-gray-500 dark:text-gray-400 max-w-2xl mx-auto leading-relaxed">
-          منصة الأستاذ بيكا (@ProfPica) الرسمية والحصرية للروايات والأعمال الأدبية.
+          المنصة الرسمية والحصرية لجميع أعمال بيكا الأدبية والفنية.
         </p>
       </div>
 
@@ -32,7 +32,7 @@ export default function AboutPage() {
           <div className="relative md:w-72 h-72 md:h-auto flex-shrink-0">
             <Image
               src="/author.jpg"
-              alt="الأستاذ بيكا — Medjahed Abdelhadi"
+              alt="بيكا — Medjahed Abdelhadi"
               fill
               className="object-cover object-top"
               priority
@@ -44,21 +44,21 @@ export default function AboutPage() {
               Medjahed Abdelhadi — Pica
             </h2>
             <p className="text-gold-500 font-medium tracking-widest text-sm mt-1">
-              أستاذ علوم فيزيائية — École Normale Supérieure de Laghouat
+              مبرمج ويب · كاتب روايات · رسّام
             </p>
             <p className="font-arabic text-gray-600 dark:text-gray-300 leading-loose text-base mt-4">
-              خريج المدرسة العليا للأساتذة بالأغواط، يدمج بين الرصيد الأكاديمي والتعبير الإبداعي
-              عبر الفنون الرقمية وتطوير المواقع وصناعة المحتوى الرقمي.
+              مبرمج تطبيقات ويب وهواتف ذكية، كاتب روايات (فانتازيا، غموض، رعب، وثقافة)،
+              ورسام يقوم برسم وتصميم مقاطع ومشاهد رواياته الخاصة.
             </p>
             <div className="mt-5 flex flex-wrap items-center gap-2">
               <span className="text-xs px-3 py-1 rounded-full bg-parchment-100 dark:bg-white/5 border border-parchment-200 dark:border-white/10 text-gray-500 dark:text-gray-400 font-arabic">
-                علوم فيزيائية
-              </span>
-              <span className="text-xs px-3 py-1 rounded-full bg-parchment-100 dark:bg-white/5 border border-parchment-200 dark:border-white/10 text-gray-500 dark:text-gray-400 font-arabic">
-                تعليم
-              </span>
-              <span className="text-xs px-3 py-1 rounded-full bg-parchment-100 dark:bg-white/5 border border-parchment-200 dark:border-white/10 text-gray-500 dark:text-gray-400 font-arabic">
                 أدب
+              </span>
+              <span className="text-xs px-3 py-1 rounded-full bg-parchment-100 dark:bg-white/5 border border-parchment-200 dark:border-white/10 text-gray-500 dark:text-gray-400 font-arabic">
+                برمجة
+              </span>
+              <span className="text-xs px-3 py-1 rounded-full bg-parchment-100 dark:bg-white/5 border border-parchment-200 dark:border-white/10 text-gray-500 dark:text-gray-400 font-arabic">
+                فنون رقمية
               </span>
             </div>
           </div>
@@ -68,19 +68,19 @@ export default function AboutPage() {
       {/* ── Skills ────────────────────────────────────── */}
       <div className="grid sm:grid-cols-3 gap-6 mb-12 animate-fade-up" style={{ animationDelay: "200ms" }}>
         <SkillCard
-          icon={<PenTool className="w-6 h-6 text-gold-500" />}
-          title="صناعة وتطوير المواقع"
-          desc="build and deploy modern Arabic-first reading experiences on the web."
-        />
-        <SkillCard
           icon={<Code2 className="w-6 h-6 text-gold-500" />}
-          title="الرسم والفنون الرقمية"
-          desc="صناعة محتوى بصري متميز يدعم الهوية البصرية للمنصة."
+          title="تطوير الويب والهاتف"
+          desc="بناء تجارب رقمية متكاملة للويب وتطبيقات الهواتف الذكية بتقنيات حديثة."
         />
         <SkillCard
-          icon={<ImageIcon className="w-6 h-6 text-gold-500" />}
-          title="صناعة المحتوى الرقمي Digital Creator"
-          desc="إنشاء محتوى رقمي تفاعلي وجذاب للجمهور العربي."
+          icon={<BookOpen className="w-6 h-6 text-gold-500" />}
+          title="كتابة الروايات"
+          desc="فانتازيا، غموض، رعب، وثقافة — عوالم خيالية منسوجة بإتقان وإبداع."
+        />
+        <SkillCard
+          icon={<PenTool className="w-6 h-6 text-gold-500" />}
+          title="الرسم والتصميم"
+          desc="رسم وتصميم مقاطع ومشاهد الروايات يدوياً لإحياء الشخصيات والأحداث."
         />
       </div>
 
@@ -91,7 +91,7 @@ export default function AboutPage() {
           الهدف من الموقع
         </h3>
         <p className="font-arabic text-gray-700 dark:text-gray-300 leading-loose text-center">
-          هذا الموقع هو المستودع الرسمي والحصري لجميع أعمال وكتب وروايات الأستاذ بيكا،
+          هذا الموقع هو المستودع الرسمي والحصري لجميع أعمال وكتب وروايات بيكا،
           حيث يتم تضمين كافة المؤلفات وهي حالياً قيد التوثيق والنشر المستمر عبر صفحات
           الموقع المتتالية لضمان حقوق الملكية الفكرية.
         </p>

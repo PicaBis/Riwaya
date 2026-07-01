@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useCallback } from "react";
 import Link from "next/link";
 import { ArrowRight, Wallet, Star, BookOpen, Tag, Calendar } from "lucide-react";
 import dynamic from "next/dynamic";
@@ -33,31 +33,20 @@ interface NovelReadingClientProps {
 export function NovelReadingClient({ novel }: NovelReadingClientProps) {
   const { ratings, setRating, bookmarks, saveBookmark, guest } = useApp();
   const [showCCP, setShowCCP] = useState(false);
+  const [readingProgress, setReadingProgress] = useState(0);
   const currentRating = ratings[novel.id] ?? 0;
   const pdfUrl = `/novels/${novel.pdfFile}`;
   const initialPage = bookmarks[novel.id] || 1;
 
-  const handlePageChange = (page: number) => {
-    saveBookmark(novel.id, page);
-  };
-
-  useEffect(() => {
-    const enterFullscreen = () => {
-      const el = document.documentElement;
-      if (el.requestFullscreen) el.requestFullscreen().catch(() => {});
-    };
-    const handleFirstInteraction = () => {
-      enterFullscreen();
-      document.removeEventListener("click", handleFirstInteraction);
-      document.removeEventListener("keydown", handleFirstInteraction);
-    };
-    document.addEventListener("click", handleFirstInteraction);
-    document.addEventListener("keydown", handleFirstInteraction);
-    return () => {
-      document.removeEventListener("click", handleFirstInteraction);
-      document.removeEventListener("keydown", handleFirstInteraction);
-    };
-  }, []);
+  const handlePageChange = useCallback(
+    (page: number, total?: number) => {
+      saveBookmark(novel.id, page);
+      if (total && total > 0) {
+        setReadingProgress(Math.round((page / total) * 100));
+      }
+    },
+    [novel.id, saveBookmark]
+  );
 
   return (
     <>
@@ -102,6 +91,19 @@ export function NovelReadingClient({ novel }: NovelReadingClientProps) {
 
           {/* Actions */}
           <div className="flex items-center gap-2 flex-shrink-0">
+            {/* Reading Progress */}
+            {readingProgress > 0 && (
+              <div className="hidden sm:flex items-center gap-2">
+                <div className="w-20 h-1.5 bg-parchment-200 dark:bg-white/10 rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-gold-500 rounded-full transition-all duration-500"
+                    style={{ width: `${readingProgress}%` }}
+                  />
+                </div>
+                <span className="text-xs text-gray-400 font-sans">{readingProgress}%</span>
+              </div>
+            )}
+
             {/* Rating */}
             <div className="hidden sm:flex items-center gap-1.5">
               <Star className="w-3.5 h-3.5 text-gold-500/60" />

@@ -8,6 +8,7 @@ import {
   ZoomOut,
   RotateCcw,
   Maximize2,
+  Minimize2,
   BookOpen,
   Speaker,
   VolumeX,
@@ -21,7 +22,7 @@ interface PDFViewerProps {
   /** Page after which the paywall activates (chapter 3 gate) */
   freeUntilPage?: number;
   initialPage?: number;
-  onPageChange?: (page: number) => void;
+  onPageChange?: (page: number, total?: number) => void;
   preview?: string;
   novelId?: string;
 }
@@ -40,6 +41,7 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, 
   const [status, setStatus] = useState<RenderStatus>("idle");
   const [pageInput, setPageInput] = useState(String(initialPage));
   const renderTaskRef = useRef<import("pdfjs-dist").RenderTask | null>(null);
+  const [isFullscreen, setIsFullscreen] = useState(false);
   const [playing, setPlaying] = useState(false);
   const ytContainerRef = useRef<HTMLDivElement>(null);
   const ytPlayerRef = useRef<any>(null);
@@ -104,8 +106,8 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, 
   };
 
   useEffect(() => {
-    onPageChange?.(currentPage);
-  }, [currentPage, onPageChange]);
+    if (totalPages > 0) onPageChange?.(currentPage, totalPages);
+  }, [currentPage, totalPages, onPageChange]);
 
   /* ── Paywall state ────────────────────────────────── */
   const [isUnlocked, setIsUnlocked] = useState(() => {
@@ -193,13 +195,41 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, 
     if (e.key === "Enter") goTo(Number(pageInput));
   };
 
-    const toggleFullscreen = () => {
-      if (!document.fullscreenElement) {
-        containerRef.current?.requestFullscreen();
-      } else {
-        document.exitFullscreen();
+  const toggleFullscreen = useCallback(() => {
+    const isMobile = typeof window !== "undefined" && window.innerWidth < 768;
+
+    if (isMobile || !document.fullscreenEnabled) {
+      // CSS-based fullscreen for mobile / unsupported browsers
+      setIsFullscreen(prev => !prev);
+      return;
+    }
+
+    if (!document.fullscreenElement) {
+      containerRef.current?.requestFullscreen().catch(() => {
+        setIsFullscreen(prev => !prev); // fallback to CSS fullscreen
+      });
+    } else {
+      document.exitFullscreen();
+    }
+  }, []);
+
+  // Sync native fullscreen state
+  useEffect(() => {
+    const handler = () => setIsFullscreen(!!document.fullscreenElement);
+    document.addEventListener("fullscreenchange", handler);
+    return () => document.removeEventListener("fullscreenchange", handler);
+  }, []);
+
+  // Escape key exits fullscreen
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && isFullscreen && !document.fullscreenElement) {
+        setIsFullscreen(false);
       }
     };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [isFullscreen]);
 
     const onCanvasCtx = (e: MouseEvent) => e.preventDefault();
     const onCanvasDrag = (e: DragEvent) => e.preventDefault();
@@ -266,7 +296,12 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, 
   return (
     <div
       ref={containerRef}
-      className="flex flex-col h-full bg-parchment-100 dark:bg-onyx-950 select-none"
+      className={clsx(
+        "flex flex-col bg-parchment-100 dark:bg-onyx-950 select-none transition-all duration-300",
+        isFullscreen
+          ? "fixed inset-0 z-[9999] h-screen w-screen overflow-hidden"
+          : "h-full"
+      )}
     >
       {/* ── Toolbar ──────────────────────────────────── */}
       <div className="flex items-center justify-between gap-2 px-3 py-2 bg-white dark:bg-onyx-900 border-b border-parchment-200 dark:border-white/8 flex-shrink-0">
@@ -329,11 +364,21 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, 
               {playing ? <VolumeX className="w-4 h-4 text-gold-500" /> : <Speaker className="w-4 h-4" />}
             </ToolBtn>
           )}
-          <ToolBtn onClick={toggleFullscreen} title="ملء الشاشة" className="bg-parchment-100 dark:bg-white/10 rounded-lg">
-            <Maximize2 className="w-4 h-4" />
+          <ToolBtn onClick={toggleFullscreen} title={isFullscreen ? "الخروج من ملء الشاشة" : "ملء الشاشة"} className="bg-parchment-100 dark:bg-white/10 rounded-lg">
+            {isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
           </ToolBtn>
         </div>
       </div>
+
+      {/* ── Reading Progress Bar ──────────────────────── */}
+      {totalPages > 0 && (
+        <div className="h-0.5 bg-parchment-200 dark:bg-white/5 flex-shrink-0">
+          <div
+            className="h-full bg-gradient-to-r from-gold-500 to-gold-400 transition-all duration-500"
+            style={{ width: `${Math.round((currentPage / totalPages) * 100)}%` }}
+          />
+        </div>
+      )}
 
       {/* ── Canvas area ──────────────────────────────── */}
       <div
