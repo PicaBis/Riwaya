@@ -51,27 +51,45 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, 
   const [pageAnimating, setPageAnimating] = useState(false);
   const [animDirection, setAnimDirection] = useState<"next" | "prev">("next");
   const [playing, setPlaying] = useState(false);
-  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const ytIframeRef = useRef<HTMLIFrameElement | null>(null);
   const [tocOpen, setTocOpen] = useState(false);
 
-  // Background music via hidden audio (shajarat-sina only)
+  // Background music via hidden YouTube iframe (shajarat-sina only)
   useEffect(() => {
     if (novelId !== "shajarat-sina" || typeof window === "undefined") return;
-    const audio = new Audio();
-    audio.src = "https://www.youtube.com/watch?v=mm0QSsRwzUo";
-    audio.loop = true;
-    audio.volume = 0.3;
-    audioRef.current = audio;
-    return () => { audio.pause(); audioRef.current = null; };
+    const iframe = document.createElement("iframe");
+    iframe.style.display = "none";
+    iframe.src = "https://www.youtube.com/embed/mm0QSsRwzUo?autoplay=0&loop=1&playlist=mm0QSsRwzUo&controls=0&enablejsapi=1";
+    iframe.allow = "autoplay";
+    document.body.appendChild(iframe);
+    ytIframeRef.current = iframe;
+
+    const msgHandler = (e: MessageEvent) => {
+      try {
+        const data = JSON.parse(e.data);
+        if (data.event === "onStateChange" && data.info === 0) {
+          iframe.contentWindow?.postMessage(JSON.stringify({ event: "command", func: "playVideo" }), "*");
+        }
+      } catch {}
+    };
+    window.addEventListener("message", msgHandler);
+
+    return () => {
+      window.removeEventListener("message", msgHandler);
+      iframe.remove();
+      ytIframeRef.current = null;
+    };
   }, [novelId]);
 
   const toggleMusic = () => {
-    if (!audioRef.current) return;
+    const iframe = ytIframeRef.current;
+    if (!iframe?.contentWindow) return;
     if (playing) {
-      audioRef.current.pause();
+      iframe.contentWindow.postMessage(JSON.stringify({ event: "command", func: "pauseVideo" }), "*");
       setPlaying(false);
     } else {
-      audioRef.current.play().then(() => setPlaying(true)).catch(() => {});
+      iframe.contentWindow.postMessage(JSON.stringify({ event: "command", func: "playVideo" }), "*");
+      setPlaying(true);
     }
   };
 
@@ -457,17 +475,30 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, 
             </div>
           )}
 
-          {/* PDF Canvas */}
-          <canvas
-            ref={canvasRef}
-            className={clsx(
-              "rounded-sm shadow-2xl transition-all duration-200 ease-out pdf-viewer-canvas",
-              status === "ready" ? "opacity-100" : "opacity-0",
-              pageAnimating && animDirection === "next" && "translate-x-[-20px] opacity-0",
-              pageAnimating && animDirection === "prev" && "translate-x-[20px] opacity-0"
+          {/* PDF Canvas with page flip */}
+          <div className="relative" style={{ perspective: "1200px" }}>
+            <canvas
+              ref={canvasRef}
+              className={clsx(
+                "rounded-sm shadow-2xl transition-all duration-500 ease-in-out pdf-viewer-canvas",
+                status === "ready" ? "opacity-100" : "opacity-0",
+                pageAnimating && animDirection === "next" && "origin-right animate-page-flip-next",
+                pageAnimating && animDirection === "prev" && "origin-left animate-page-flip-prev"
+              )}
+              style={{ maxWidth: "100%", backgroundColor: "#ffffff", transformStyle: "preserve-3d" }}
+            />
+            {/* Page curl shadow overlay */}
+            {pageAnimating && (
+              <div
+                className={clsx(
+                  "absolute inset-y-0 w-16 pointer-events-none z-10 transition-opacity duration-500",
+                  animDirection === "next"
+                    ? "right-0 bg-gradient-to-l from-black/10 to-transparent"
+                    : "left-0 bg-gradient-to-r from-black/10 to-transparent"
+                )}
+              />
             )}
-            style={{ maxWidth: "100%", backgroundColor: "#ffffff" }}
-          />
+          </div>
         </div>
 
         {/* ── Paywall overlay ───────────────────────── */}
