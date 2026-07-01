@@ -10,6 +10,10 @@ import { StarRating } from "@/components/StarRating";
 import { CCPModal } from "@/components/CCPModal";
 import { Comments } from "@/components/Comments";
 import { ShareButtons } from "@/components/ShareButtons";
+import { ReadingTimer } from "@/components/ReadingTimer";
+import { ReaderPrefsPanel } from "@/components/ReaderPrefsPanel";
+import { TTSButton } from "@/components/TTSButton";
+import { Achievements } from "@/components/Achievements";
 import { useApp } from "@/context/AppContext";
 
 /* Lazy-load PDF viewer (client only, no SSR) */
@@ -131,6 +135,18 @@ export function NovelReadingClient({ novel, startPage }: NovelReadingClientProps
 
             {/* Share */}
             <ShareButtons title={novel.title} url={pathname} />
+
+            {/* Reader Settings */}
+            <ReaderPrefsPanel />
+
+            {/* TTS */}
+            <TTSButton />
+
+            {/* Achievements */}
+            <Achievements />
+
+            {/* Timer */}
+            <ReadingTimer />
           </div>
         </div>
 

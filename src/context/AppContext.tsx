@@ -20,6 +20,21 @@ interface ReadEntry {
   timestamp: number;
 }
 
+interface Achievement {
+  id: string;
+  title: string;
+  description: string;
+  icon: string;
+  unlockedAt?: number;
+}
+
+interface ReaderPreferences {
+  fontSize: number;       // 14-24
+  lineHeight: number;     // 1.6-2.8
+  fontFamily: "amiri" | "sans";
+  sepiaMode: boolean;
+}
+
 interface AppContextValue {
   isDark: boolean;
   toggleTheme: () => void;
@@ -36,6 +51,11 @@ interface AppContextValue {
   cookieConsent: boolean | null;
   acceptCookies: () => void;
   rejectCookies: () => void;
+  totalReadingTime: number;
+  addReadingTime: (seconds: number) => void;
+  achievements: Achievement[];
+  readerPrefs: ReaderPreferences;
+  setReaderPrefs: (prefs: ReaderPreferences) => void;
 }
 
 /* ─── Context ────────────────────────────────────────────── */
@@ -49,6 +69,24 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [bookmarks, setBookmarks] = useState<Record<string, number>>({});
   const [readHistory, setReadHistory] = useState<ReadEntry[]>([]);
   const [cookieConsent, setCookieConsent] = useState<boolean | null>(null);
+  const [totalReadingTime, setTotalReadingTime] = useState(0);
+  const [achievements, setAchievements] = useState<Achievement[]>([
+    { id: "first-read", title: "بداية الرحلة", description: "قرأت أول صفحة", icon: "📖" },
+    { id: "ten-pages", title: "عشرة صفحات", description: "قرأت 10 صفحات", icon: "📄" },
+    { id: "fifty-pages", title: "قارئ متحمس", description: "قرأت 50 صفحة", icon: "🔥" },
+    { id: "hundred-pages", title: "قارئ متمرس", description: "قرأت 100 صفحة", icon: "🏆" },
+    { id: "thirty-min", title: "نصف ساعة", description: "قضيت 30 دقيقة في القراءة", icon: "⏱️" },
+    { id: "one-hour", title: "ساعة كاملة", description: "قضيت ساعة في القراءة", icon: "⏰" },
+    { id: "first-rating", title: "الناقد", description: "قمت بتقييم رواية", icon: "⭐" },
+    { id: "first-comment", title: "المشارك", description: "كتبت أول تعليق", icon: "💬" },
+    { id: "three-sessions", title: "قارئ وفي", description: "عدت للقراءة 3 مرات", icon: "🔄" },
+  ]);
+  const [readerPrefs, setReaderPrefs] = useState<ReaderPreferences>({
+    fontSize: 18,
+    lineHeight: 1.8,
+    fontFamily: "amiri",
+    sepiaMode: false,
+  });
   const [mounted, setMounted] = useState(false);
 
   /* Hydrate from localStorage on client */
@@ -68,6 +106,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     if (savedBookmarks) setBookmarks(JSON.parse(savedBookmarks));
     if (savedHistory) setReadHistory(JSON.parse(savedHistory));
     if (savedCookie) setCookieConsent(savedCookie === "1");
+    const savedTime = localStorage.getItem("riwayati_reading_time");
+    if (savedTime) setTotalReadingTime(parseInt(savedTime, 10) || 0);
+    const savedAchievements = localStorage.getItem("riwayati_achievements");
+    if (savedAchievements) setAchievements(JSON.parse(savedAchievements));
+    const savedPrefs = localStorage.getItem("riwayati_reader_prefs");
+    if (savedPrefs) setReaderPrefs(JSON.parse(savedPrefs));
     setMounted(true);
   }, []);
 
@@ -115,6 +159,18 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     });
   }, []);
 
+  const unlockAchievement = useCallback((id: string) => {
+    setAchievements((prev) => {
+      const exists = prev.find((a) => a.id === id);
+      if (!exists || exists.unlockedAt) return prev;
+      const updated = prev.map((a) =>
+        a.id === id ? { ...a, unlockedAt: Date.now() } : a
+      );
+      localStorage.setItem("riwayati_achievements", JSON.stringify(updated));
+      return updated;
+    });
+  }, []);
+
   const saveBookmark = useCallback((novelId: string, page: number) => {
     setBookmarks((prev) => {
       const next = { ...prev, [novelId]: page };
@@ -127,7 +183,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       localStorage.setItem("riwayati_history", JSON.stringify(updated));
       return updated;
     });
-  }, []);
+
+    if (page >= 1) unlockAchievement("first-read");
+    if (page >= 10) unlockAchievement("ten-pages");
+    if (page >= 50) unlockAchievement("fifty-pages");
+    if (page >= 100) unlockAchievement("hundred-pages");
+  }, [unlockAchievement]);
 
   const acceptCookies = useCallback(() => {
     setCookieConsent(true);
@@ -137,6 +198,19 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const rejectCookies = useCallback(() => {
     setCookieConsent(false);
     localStorage.setItem("riwayati_cookies", "0");
+  }, []);
+
+  const addReadingTime = useCallback((seconds: number) => {
+    setTotalReadingTime((prev) => {
+      const next = prev + seconds;
+      localStorage.setItem("riwayati_reading_time", String(next));
+      return next;
+    });
+  }, []);
+
+  const setReaderPrefsPersist = useCallback((prefs: ReaderPreferences) => {
+    setReaderPrefs(prefs);
+    localStorage.setItem("riwayati_reader_prefs", JSON.stringify(prefs));
   }, []);
 
   return (
@@ -157,6 +231,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         cookieConsent,
         acceptCookies,
         rejectCookies,
+        totalReadingTime,
+        addReadingTime,
+        achievements,
+        readerPrefs,
+        setReaderPrefs: setReaderPrefsPersist,
       }}
     >
       {children}

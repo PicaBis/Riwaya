@@ -95,6 +95,16 @@ export default function RootLayout({
           defer
           src="/_vercel/insights/script.js"
         />
+        {/* Service Worker */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              if('serviceWorker' in navigator) {
+                navigator.serviceWorker.register('/sw.js');
+              }
+            `,
+          }}
+        />
       </head>
       <body className="min-h-screen flex flex-col">
         <AppProvider>

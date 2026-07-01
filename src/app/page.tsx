@@ -2,6 +2,7 @@ import { Sparkles, BookOpen, Feather, ChevronDown } from "lucide-react";
 import { novels } from "@/data/novels";
 import { NovelCard } from "@/components/NovelCard";
 import { ContinueReading } from "@/components/ContinueReading";
+import { PopularSection } from "@/components/PopularSection";
 
 export default function HomePage() {
   return (
@@ -25,7 +26,7 @@ export default function HomePage() {
             </span>
           </div>
 
-          {/* Main Title - perfectly centered */}
+          {/* Main Title */}
           <h1 className="font-arabic text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-bold text-gray-900 dark:text-gray-100 mb-5 leading-tight tracking-tight">
             روايتي
           </h1>
@@ -69,6 +70,9 @@ export default function HomePage() {
 
       {/* ── Continue Reading ───────────────────────────── */}
       <ContinueReading />
+
+      {/* ── Popular Section ────────────────────────────── */}
+      <PopularSection />
 
       {/* ── Section header ────────────────────────────── */}
       <div className="flex items-center gap-3 mb-6" dir="rtl">
