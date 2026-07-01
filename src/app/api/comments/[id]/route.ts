@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { getSupabase } from "@/lib/supabase";
 
 export async function DELETE(
   request: NextRequest,
@@ -7,24 +8,31 @@ export async function DELETE(
   try {
     const body = await request.json().catch(() => ({}));
     const { admin } = body as { admin?: boolean };
+    if (!admin) return NextResponse.json({ error: "غير مصرح" }, { status: 403 });
 
-    if (!admin) {
-      return NextResponse.json({ error: "غير مصرح" }, { status: 403 });
+    const supabase = getSupabase();
+
+    if (supabase) {
+      const { data: comment, error: fetchErr } = await supabase
+        .from("comments")
+        .select("username")
+        .eq("id", params.id)
+        .single();
+
+      if (fetchErr || !comment) return NextResponse.json({ error: "غير موجود" }, { status: 404 });
+
+      await supabase.from("comments").delete().eq("id", params.id);
+      return NextResponse.json({ ok: true });
     }
 
+    // Fallback
     const { getStore, persistStore, addBlockedUser } = await import("@/lib/comments-store");
     const store = getStore();
     const comment = store.comments.find((c) => c.id === params.id);
-
-    if (!comment) {
-      return NextResponse.json({ error: "غير موجود" }, { status: 404 });
-    }
-
+    if (!comment) return NextResponse.json({ error: "غير موجود" }, { status: 404 });
     store.comments = store.comments.filter((c) => c.id !== params.id);
     persistStore();
-
     addBlockedUser(comment.author);
-
     return NextResponse.json({ ok: true });
   } catch {
     return NextResponse.json({ error: "خطأ في الخادم" }, { status: 500 });

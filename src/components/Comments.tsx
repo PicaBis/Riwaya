@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { Heart, MessageSquare, Send, Trash2, Ban, Shield, Type, AlignLeft, FileText } from "lucide-react";
 import { useApp } from "@/context/AppContext";
+import { getSupabase } from "@/lib/supabase";
 import type { Comment } from "@/lib/comments-store";
 import clsx from "clsx";
 
@@ -10,6 +11,7 @@ export function Comments({ novelId }: { novelId: string }) {
   const { guest, isAdmin, setAdmin, isDark } = useApp();
   const [comments, setComments] = useState<Comment[]>([]);
   const [content, setContent] = useState("");
+  const [guestName, setGuestName] = useState("ضيف");
   const [loading, setLoading] = useState(false);
   const [fontSize, setFontSize] = useState(15);
   const [lineHeight, setLineHeight] = useState(1.8);
@@ -28,15 +30,78 @@ export function Comments({ novelId }: { novelId: string }) {
     fetchComments();
   }, [fetchComments]);
 
+  // Supabase real-time subscription
+  useEffect(() => {
+    const supabase = getSupabase();
+    if (!supabase) return;
+
+    const channel = supabase
+      .channel(`comments-${novelId}`)
+      .on("postgres_changes", {
+        event: "INSERT",
+        schema: "public",
+        table: "comments",
+        filter: `novel_id=eq.${novelId}`,
+      }, (payload) => {
+        const newComment = payload.new as any;
+        if (newComment) {
+          setComments((prev) => [
+            {
+              id: newComment.id,
+              novelId: newComment.novel_id,
+              author: newComment.username,
+              content: newComment.content,
+              createdAt: new Date(newComment.created_at).getTime(),
+              likes: newComment.likes || [],
+              replies: [],
+            },
+            ...prev,
+          ]);
+        }
+      })
+      .on("postgres_changes", {
+        event: "UPDATE",
+        schema: "public",
+        table: "comments",
+        filter: `novel_id=eq.${novelId}`,
+      }, (payload) => {
+        const updated = payload.new as any;
+        if (updated) {
+          setComments((prev) =>
+            prev.map((c) =>
+              c.id === updated.id
+                ? { ...c, likes: updated.likes || [], content: updated.content, author: updated.username }
+                : c
+            )
+          );
+        }
+      })
+      .on("postgres_changes", {
+        event: "DELETE",
+        schema: "public",
+        table: "comments",
+        filter: `novel_id=eq.${novelId}`,
+      }, (payload) => {
+        const deleted = payload.old as any;
+        if (deleted?.id) {
+          setComments((prev) => prev.filter((c) => c.id !== deleted.id));
+        }
+      })
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, [novelId]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!guest || !content.trim()) return;
+    if (!content.trim()) return;
+    const author = guest?.name || guestName.trim() || "ضيف";
     setLoading(true);
     try {
       const res = await fetch("/api/comments", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ novelId, author: guest.name, content: content.trim() }),
+        body: JSON.stringify({ novelId, author, content: content.trim() }),
       });
       if (res.ok) {
         setContent("");
@@ -62,15 +127,15 @@ export function Comments({ novelId }: { novelId: string }) {
   };
 
   const toggleLike = async (commentId: string) => {
-    if (!guest) return;
+    const author = guest?.name || guestName.trim() || "ضيف";
     const comment = comments.find((c) => c.id === commentId);
     if (!comment) return;
-    const liked = comment.likes.includes(guest.name);
+    const liked = comment.likes.includes(author);
     try {
       const res = await fetch("/api/comments", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ commentId, author: guest.name, liked }),
+        body: JSON.stringify({ commentId, author, liked }),
       });
       if (res.ok) fetchComments();
     } catch {}
@@ -124,38 +189,38 @@ export function Comments({ novelId }: { novelId: string }) {
         </div>
       </div>
 
-      {guest ? (
-        <form onSubmit={handleSubmit} className="mb-6">
-          <div className="flex items-start gap-2">
-            <div className="flex-1">
-              <textarea
-                value={content}
-                onChange={(e) => setContent(e.target.value)}
-                placeholder="شارك رأيك في هذه الرواية..."
-                className={clsx(
-                  "w-full px-4 py-3 rounded-xl border border-parchment-300 dark:border-white/10 bg-white dark:bg-white/5 text-gray-900 dark:text-gray-100 font-arabic placeholder-gray-400 dark:placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-gold-500/40 transition-all resize-none",
-                  fontFamily === "sans" && "font-sans"
-                )}
-                style={{ fontSize, lineHeight }}
-                rows={3}
-              />
-            </div>
-            <button
-              type="submit"
-              disabled={loading || !content.trim()}
-              className="mt-1 px-4 py-2.5 bg-gold-500 hover:bg-gold-600 active:scale-95 text-white rounded-xl font-arabic text-sm font-medium transition-all disabled:opacity-40"
-            >
-              <Send className="w-4 h-4" />
-            </button>
+      <form onSubmit={handleSubmit} className="mb-6 space-y-2">
+        <div className="flex items-start gap-2">
+          <input
+            type="text"
+            value={guestName}
+            onChange={(e) => setGuestName(e.target.value)}
+            placeholder="الاسم"
+            maxLength={50}
+            className="px-3 py-2 rounded-xl border border-parchment-300 dark:border-white/10 bg-white dark:bg-white/5 text-gray-900 dark:text-gray-100 text-sm font-arabic placeholder-gray-400 dark:placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-gold-500/40 transition-all w-32 sm:w-40"
+          />
+          <div className="flex-1">
+            <textarea
+              value={content}
+              onChange={(e) => setContent(e.target.value)}
+              placeholder="شارك رأيك في هذه الرواية..."
+              className={clsx(
+                "w-full px-4 py-3 rounded-xl border border-parchment-300 dark:border-white/10 bg-white dark:bg-white/5 text-gray-900 dark:text-gray-100 font-arabic placeholder-gray-400 dark:placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-gold-500/40 transition-all resize-none",
+                fontFamily === "sans" && "font-sans"
+              )}
+              style={{ fontSize, lineHeight }}
+              rows={3}
+            />
           </div>
-        </form>
-      ) : (
-        <div className="mb-6 p-4 rounded-xl bg-parchment-50 dark:bg-white/5 border border-parchment-200 dark:border-white/8 text-center">
-          <p className="font-arabic text-sm text-gray-500 dark:text-gray-400">
-            سجّل دخول كضيف للمشاركة في التعليقات
-          </p>
+          <button
+            type="submit"
+            disabled={loading || !content.trim()}
+            className="mt-1 px-4 py-2.5 bg-gold-500 hover:bg-gold-600 active:scale-95 text-white rounded-xl font-arabic text-sm font-medium transition-all disabled:opacity-40"
+          >
+            <Send className="w-4 h-4" />
+          </button>
         </div>
-      )}
+      </form>
 
       <div className="space-y-4">
         {comments.length === 0 ? (
@@ -209,15 +274,14 @@ export function Comments({ novelId }: { novelId: string }) {
               <div className="flex items-center gap-3">
                 <button
                   onClick={() => toggleLike(c.id)}
-                  disabled={!guest}
                   className={clsx(
                     "flex items-center gap-1 text-xs transition-colors",
-                    c.likes.includes(guest?.name || "")
+                    (c.likes.includes(guest?.name || guestName.trim() || "ضيف"))
                       ? "text-red-500"
                       : "text-gray-400 dark:text-gray-500 hover:text-red-500"
                   )}
                 >
-                  <Heart className={clsx("w-4 h-4", c.likes.includes(guest?.name || "") && "fill-red-500")} />
+                  <Heart className={clsx("w-4 h-4", (c.likes.includes(guest?.name || guestName.trim() || "ضيف")) && "fill-red-500")} />
                   <span>{c.likes.length || ""}</span>
                 </button>
               </div>
