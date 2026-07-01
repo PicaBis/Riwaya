@@ -7,6 +7,7 @@ import { SplashScreen } from "@/components/SplashScreen";
 import { BugReporter } from "@/components/BugReporter";
 import { CookieConsent } from "@/components/CookieConsent";
 import { AutoFullscreen } from "@/components/AutoFullscreen";
+import { ScrollToTop } from "@/components/ScrollToTop";
 
 export const metadata: Metadata = {
   title: "روايتي — مكتبة الروايات الشخصية",
@@ -130,6 +131,7 @@ export default function RootLayout({
           <main className="flex-1 premium-bg">{children}</main>
           <CookieConsent />
           <BugReporter />
+          <ScrollToTop />
           <footer className="border-t border-parchment-200 dark:border-white/8 py-10 mt-16 bg-white/50 dark:bg-onyx-900/50">
             <div className="max-w-6xl mx-auto px-4">
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-8 mb-8" dir="rtl">

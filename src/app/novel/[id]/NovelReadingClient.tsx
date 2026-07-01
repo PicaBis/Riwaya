@@ -11,6 +11,8 @@ import { CCPModal } from "@/components/CCPModal";
 import { Comments } from "@/components/Comments";
 import { ShareButtons } from "@/components/ShareButtons";
 import { Achievements } from "@/components/Achievements";
+import { Breadcrumb } from "@/components/Breadcrumb";
+import { SkeletonReader } from "@/components/Skeleton";
 import { useApp } from "@/context/AppContext";
 
 /* Lazy-load PDF viewer (client only, no SSR) */
@@ -18,14 +20,7 @@ const PDFViewer = dynamic(
   () => import("@/components/PDFViewer").then((m) => m.PDFViewer),
   {
     ssr: false,
-    loading: () => (
-      <div className="flex-1 flex items-center justify-center bg-parchment-100 dark:bg-onyx-950 min-h-[60vh]">
-        <div className="flex flex-col items-center gap-3 text-gray-400">
-          <div className="w-10 h-10 rounded-full border-2 border-gold-500/30 border-t-gold-500 animate-spin" />
-          <span className="font-arabic text-sm">جارٍ تهيئة القارئ…</span>
-        </div>
-      </div>
-    ),
+    loading: () => <SkeletonReader />,
   }
 );
 
@@ -60,6 +55,7 @@ export function NovelReadingClient({ novel, startPage }: NovelReadingClientProps
   return (
     <>
       <div className="min-h-screen flex flex-col" dir="rtl">
+        <Breadcrumb items={[{ label: novel.title }]} />
         {/* ── Top info bar ────────────────────────────── */}
         <div className="sticky top-16 z-30 bg-white dark:bg-onyx-900 border-b border-parchment-200 dark:border-white/8">
           {/* Row 1: navigation + title */}

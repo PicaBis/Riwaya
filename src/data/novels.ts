@@ -14,9 +14,9 @@ export interface Novel {
   pdfFile: string;
   language: "ar" | "fr" | "en";
   tags?: string[];
-  /** Page number after which the paywall appears (chapter 3 gate) */
   freeUntilPage: number;
   chapters?: NovelChapter[];
+  lastUpdated?: string;
 }
 
 export const novels: Novel[] = [
@@ -33,6 +33,7 @@ export const novels: Novel[] = [
     language: "ar",
     tags: ["أدب", "رواية", "عربي"],
     freeUntilPage: 129,
+    lastUpdated: "2024-12-15",
     chapters: [
       { title: "الفصل الأول: بداية الرحلة", startPage: 1 },
       { title: "الفصل الثاني: أسرار الصحراء", startPage: 44 },

@@ -61,6 +61,8 @@ interface AppContextValue {
   setReaderPrefs: (prefs: ReaderPreferences) => void;
   novelViews: Record<string, number>;
   trackNovelView: (novelId: string) => void;
+  favorites: string[];
+  toggleFavorite: (novelId: string) => void;
 }
 
 /* ─── Context ────────────────────────────────────────────── */
@@ -94,6 +96,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     sepiaMode: false,
   });
   const [novelViews, setNovelViews] = useState<Record<string, number>>({});
+  const [favorites, setFavorites] = useState<string[]>([]);
   const [mounted, setMounted] = useState(false);
 
   /* Hydrate from localStorage on client */
@@ -123,6 +126,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     if (savedPrefs) setReaderPrefs(JSON.parse(savedPrefs));
     const savedViews = localStorage.getItem("riwayati_views");
     if (savedViews) setNovelViews(JSON.parse(savedViews));
+    const savedFavorites = localStorage.getItem("riwayati_favorites");
+    if (savedFavorites) setFavorites(JSON.parse(savedFavorites));
     setMounted(true);
   }, []);
 
@@ -239,6 +244,16 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     });
   }, []);
 
+  const toggleFavorite = useCallback((novelId: string) => {
+    setFavorites((prev) => {
+      const next = prev.includes(novelId)
+        ? prev.filter((id) => id !== novelId)
+        : [...prev, novelId];
+      localStorage.setItem("riwayati_favorites", JSON.stringify(next));
+      return next;
+    });
+  }, []);
+
   useEffect(() => {
     if (!mounted) return;
     document.documentElement.lang = lang;
@@ -272,6 +287,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         setReaderPrefs: setReaderPrefsPersist,
         novelViews,
         trackNovelView,
+        favorites,
+        toggleFavorite,
       }}
     >
       {children}

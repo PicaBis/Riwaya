@@ -7,6 +7,7 @@ import { Novel } from "@/data/novels";
 import { PDFCover } from "./PDFCover";
 import { StarRating } from "./StarRating";
 import { CCPModal } from "./CCPModal";
+import { FavoriteButton } from "./FavoriteButton";
 import { useApp } from "@/context/AppContext";
 
 function estimateReadTime(novel: Novel): string {
@@ -84,14 +85,20 @@ export function NovelCard({ novel, index = 0 }: NovelCardProps) {
           <div className="flex items-center gap-1.5 text-xs text-gray-400 dark:text-gray-500 -mt-1">
             <Clock className="w-3 h-3" />
             <span className="font-arabic">مدة قراءة: {estimateReadTime(novel)}</span>
-            {viewCount > 0 && (
-              <>
-                <span className="text-gray-300 dark:text-gray-700">·</span>
-                <Eye className="w-3 h-3" />
-                <span className="font-sans">{viewCount}</span>
-              </>
-            )}
-          </div>
+          {viewCount > 0 && (
+            <>
+              <span className="text-gray-300 dark:text-gray-700">·</span>
+              <Eye className="w-3 h-3" />
+              <span className="font-sans">{viewCount}</span>
+            </>
+          )}
+          {novel.lastUpdated && (
+            <>
+              <span className="text-gray-300 dark:text-gray-700">·</span>
+              <span className="font-sans">{novel.lastUpdated}</span>
+            </>
+          )}
+        </div>
 
           {/* Description */}
           <p className="text-sm text-gray-600 dark:text-gray-300 font-arabic leading-relaxed line-clamp-3 flex-1">
@@ -136,6 +143,7 @@ export function NovelCard({ novel, index = 0 }: NovelCardProps) {
               <BookOpen className="w-4 h-4" />
               اقرأ الآن
             </Link>
+            <FavoriteButton novelId={novel.id} />
             <button
               onClick={() => setShowCCP(true)}
               title="دعم عبر CCP"
