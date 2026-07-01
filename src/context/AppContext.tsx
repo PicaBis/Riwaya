@@ -59,6 +59,8 @@ interface AppContextValue {
   achievements: Achievement[];
   readerPrefs: ReaderPreferences;
   setReaderPrefs: (prefs: ReaderPreferences) => void;
+  novelViews: Record<string, number>;
+  trackNovelView: (novelId: string) => void;
 }
 
 /* ─── Context ────────────────────────────────────────────── */
@@ -91,6 +93,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     fontFamily: "amiri",
     sepiaMode: false,
   });
+  const [novelViews, setNovelViews] = useState<Record<string, number>>({});
   const [mounted, setMounted] = useState(false);
 
   /* Hydrate from localStorage on client */
@@ -118,6 +121,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     if (savedAchievements) setAchievements(JSON.parse(savedAchievements));
     const savedPrefs = localStorage.getItem("riwayati_reader_prefs");
     if (savedPrefs) setReaderPrefs(JSON.parse(savedPrefs));
+    const savedViews = localStorage.getItem("riwayati_views");
+    if (savedViews) setNovelViews(JSON.parse(savedViews));
     setMounted(true);
   }, []);
 
@@ -226,6 +231,14 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     localStorage.setItem("riwayati_reader_prefs", JSON.stringify(prefs));
   }, []);
 
+  const trackNovelView = useCallback((novelId: string) => {
+    setNovelViews((prev) => {
+      const next = { ...prev, [novelId]: (prev[novelId] || 0) + 1 };
+      localStorage.setItem("riwayati_views", JSON.stringify(next));
+      return next;
+    });
+  }, []);
+
   useEffect(() => {
     if (!mounted) return;
     document.documentElement.lang = lang;
@@ -257,6 +270,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         achievements,
         readerPrefs,
         setReaderPrefs: setReaderPrefsPersist,
+        novelViews,
+        trackNovelView,
       }}
     >
       {children}

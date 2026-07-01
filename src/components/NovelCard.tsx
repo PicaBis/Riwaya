@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { BookOpen, Wallet, Calendar, Tag, Clock } from "lucide-react";
+import { BookOpen, Wallet, Calendar, Tag, Clock, Eye } from "lucide-react";
 import { Novel } from "@/data/novels";
 import { PDFCover } from "./PDFCover";
 import { StarRating } from "./StarRating";
@@ -26,10 +26,11 @@ interface NovelCardProps {
 }
 
 export function NovelCard({ novel, index = 0 }: NovelCardProps) {
-  const { ratings, setRating, guest, bookmarks } = useApp();
+  const { ratings, setRating, guest, bookmarks, novelViews } = useApp();
   const [showCCP, setShowCCP] = useState(false);
   const currentRating = ratings[novel.id] ?? 0;
   const bookmarkPage = bookmarks[novel.id];
+  const viewCount = novelViews[novel.id] || 0;
 
   return (
     <>
@@ -40,7 +41,7 @@ export function NovelCard({ novel, index = 0 }: NovelCardProps) {
         {/* Cover Image (PDF first page) */}
         <Link href={`/novel/${novel.id}`} className="block relative">
           <PDFCover
-            pdfUrl={`/novels/${novel.pdfFile}`}
+            pdfUrl={`/api/novel-asset/${novel.pdfFile}`}
             title={novel.title}
             className="w-full aspect-[3/4] object-cover"
           />
@@ -83,6 +84,13 @@ export function NovelCard({ novel, index = 0 }: NovelCardProps) {
           <div className="flex items-center gap-1.5 text-xs text-gray-400 dark:text-gray-500 -mt-1">
             <Clock className="w-3 h-3" />
             <span className="font-arabic">مدة قراءة: {estimateReadTime(novel)}</span>
+            {viewCount > 0 && (
+              <>
+                <span className="text-gray-300 dark:text-gray-700">·</span>
+                <Eye className="w-3 h-3" />
+                <span className="font-sans">{viewCount}</span>
+              </>
+            )}
           </div>
 
           {/* Description */}

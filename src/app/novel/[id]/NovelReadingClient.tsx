@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ArrowRight, Wallet, Star, BookOpen, Tag, Calendar } from "lucide-react";
@@ -35,12 +35,16 @@ interface NovelReadingClientProps {
 }
 
 export function NovelReadingClient({ novel, startPage }: NovelReadingClientProps) {
-  const { ratings, setRating, bookmarks, saveBookmark, guest } = useApp();
+  const { ratings, setRating, bookmarks, saveBookmark, guest, trackNovelView } = useApp();
   const pathname = usePathname();
   const [showCCP, setShowCCP] = useState(false);
   const [readingProgress, setReadingProgress] = useState(0);
+
+  useEffect(() => {
+    trackNovelView(novel.id);
+  }, [novel.id, trackNovelView]);
   const currentRating = ratings[novel.id] ?? 0;
-  const pdfUrl = `/novels/${novel.pdfFile}`;
+  const pdfUrl = `/api/novel-asset/${novel.pdfFile}`;
   const initialPage = startPage || bookmarks[novel.id] || 1;
 
   const handlePageChange = useCallback(
