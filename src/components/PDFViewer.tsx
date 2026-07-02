@@ -70,7 +70,6 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, 
   const readingText = readingMode === "dark" ? "#e5e5e5" : "#1a1a1a";
   const readingMuted = readingMode === "dark" ? "#a3a3a3" : "#6b7280";
   const readingWrapperBg = readingMode === "light" ? "bg-white" : readingMode === "sepia" ? "bg-[#f4ecd8]" : "bg-[#1e1e1e]";
-
   const renderScale = useMemo(() => Math.max(displayScale, 1.0), [displayScale]);
 
   /* ── YouTube music ──────────────────────────────────── */
@@ -138,7 +137,7 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, 
 
   const toggleMusic = useCallback(() => {
     const iframe = ytIframeRef.current;
-    if (!iframe?.contentWindow || !ytReadyRef.current) return;
+    if (!iframe?.contentWindow) return;
     try {
       if (playing) {
         iframe.contentWindow.postMessage(JSON.stringify({ event: "command", func: "pauseVideo" }), "*");
@@ -291,19 +290,19 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, 
     setIsZooming(true);
     if (zoomTimerRef.current) window.clearTimeout(zoomTimerRef.current);
     zoomTimerRef.current = window.setTimeout(() => setIsZooming(false), 300);
-    setDisplayScale((s) => Math.min(s + 0.1, 2.5));
+    window.requestAnimationFrame(() => setDisplayScale((s) => Math.min(s + 0.1, 2.5)));
   };
   const zoomOut = () => {
     setIsZooming(true);
     if (zoomTimerRef.current) window.clearTimeout(zoomTimerRef.current);
     zoomTimerRef.current = window.setTimeout(() => setIsZooming(false), 300);
-    setDisplayScale((s) => Math.max(s - 0.1, 0.3));
+    window.requestAnimationFrame(() => setDisplayScale((s) => Math.max(s - 0.1, 0.3)));
   };
   const resetZoom = () => {
     setIsZooming(true);
     if (zoomTimerRef.current) window.clearTimeout(zoomTimerRef.current);
     zoomTimerRef.current = window.setTimeout(() => setIsZooming(false), 300);
-    setDisplayScale(0.75);
+    window.requestAnimationFrame(() => setDisplayScale(0.75));
   };
 
   /* ── Fullscreen ─────────────────────────────────────── */
@@ -388,12 +387,12 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, 
     <div
       ref={containerRef}
       className={clsx(
-        "flex flex-col bg-parchment-100 dark:bg-onyx-950 select-none transition-all duration-300",
+        "flex flex-col bg-parchment-100 dark:bg-onyx-950 select-none transition-all duration-300 isolate",
         isFullscreen ? "fixed inset-0 z-[9999] h-[100dvh] w-screen overflow-hidden pdf-fullscreen-active" : "h-full"
       )}
     >
       {/* Toolbar */}
-      <div className="flex items-center justify-between gap-1 px-2 sm:px-3 py-1.5 sm:py-2 bg-white dark:bg-onyx-900 border-b border-parchment-200 dark:border-white/8 flex-shrink-0 overflow-hidden">
+      <div className="relative z-20 flex items-center justify-between gap-1 px-2 sm:px-3 py-1.5 sm:py-2 bg-white dark:bg-onyx-900 border-b border-parchment-200 dark:border-white/8 flex-shrink-0 overflow-hidden">
         <div className="hidden sm:flex items-center gap-0.5">
           <ToolBtn onClick={goToPrev} disabled={currentPage <= 1} title="الصفحة السابقة"><ChevronRight className="w-4 h-4" /></ToolBtn>
           <ToolBtn onClick={zoomOut} title="تصغير"><ZoomOut className="w-4 h-4" /></ToolBtn>
@@ -499,16 +498,16 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, 
       {/* Vertical Scroll Area */}
       <div
         ref={scrollRef}
-        className="flex-1 overflow-auto overscroll-contain"
+        className="flex-1 overflow-auto overscroll-contain relative"
         onContextMenu={(e) => e.preventDefault()}
       >
         <div
           className={clsx(
-            "flex flex-col items-center mx-auto",
+            "flex flex-col items-center",
             centerContent && "justify-center min-h-full",
             "py-4 sm:py-8"
           )}
-          style={{ gap: "1rem", width: pageWrapperWidth }}
+          style={{ gap: "1rem", width: pageWrapperWidth, contain: "strict", position: "relative" }}
         >
           {status === "error" && (
             <div className="flex flex-col items-center justify-center gap-4 text-gray-400">
