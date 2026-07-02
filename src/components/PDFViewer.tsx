@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, useCallback } from "react";
-import { ZoomIn, ZoomOut, RotateCcw, Maximize2, Minimize2, BookOpen, Speaker, VolumeX, List } from "lucide-react";
+import { ZoomIn, ZoomOut, RotateCcw, Maximize2, Minimize2, BookOpen, Speaker, VolumeX, List, Layout } from "lucide-react";
 import clsx from "clsx";
 import { Paywall } from "./Paywall";
 
@@ -42,6 +42,9 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, 
   const canvasRefs = useRef<Map<number, HTMLCanvasElement>>(new Map());
   const pageHeights = useRef<Map<number, number>>(new Map());
   const [centerContent, setCenterContent] = useState(false);
+  const [singlePage, setSinglePage] = useState(false);
+  const [viewportH, setViewportH] = useState(0);
+  const RENDER_BUFFER = 2;
 
   // YouTube music
   useEffect(() => {
@@ -159,7 +162,7 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, 
 
   /* ── Intersection observer for lazy render ──────────── */
   useEffect(() => {
-    if (!scrollRef.current || !pdf) return;
+    if (singlePage || !scrollRef.current || !pdf) return;
     const observer = new IntersectionObserver((entries) => {
       entries.forEach((entry) => {
         const pageNum = parseInt(entry.target.getAttribute("data-page")!);
@@ -174,7 +177,7 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, 
     containers.forEach((c) => observer.observe(c));
 
     return () => observer.disconnect();
-  }, [pdf, renderPageToCanvas]);
+  }, [pdf, renderPageToCanvas, singlePage]);
 
   /* ── Scroll to initial page ─────────────────────────── */
   useEffect(() => {
@@ -249,6 +252,24 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, 
     return () => { ro.disconnect(); };
   }, [totalPages]);
 
+  /* ── Viewport height for single-page mode ──────────── */
+  useEffect(() => {
+    if (!singlePage || !scrollRef.current) return;
+    const el = scrollRef.current;
+    const update = () => setViewportH(el.clientHeight);
+    update();
+    const ro = new ResizeObserver(update);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [singlePage]);
+
+  /* ── Scroll to current page when toggling modes ────── */
+  useEffect(() => {
+    if (status !== "ready") return;
+    const el = scrollRef.current?.querySelector(`[data-page="${currentPage}"]`);
+    if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, [singlePage, status]);
+
   return (
     <div
       ref={containerRef}
@@ -280,6 +301,9 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, 
               {playing ? <VolumeX className="w-4 h-4 text-gold-500" /> : <Speaker className="w-4 h-4" />}
             </ToolBtn>
           )}
+          <ToolBtn onClick={() => setSinglePage(p => !p)} title={singlePage ? "عرض التمرير" : "صفحة واحدة"}>
+            <Layout className={clsx("w-4 h-4", singlePage && "text-gold-500")} />
+          </ToolBtn>
           <ToolBtn onClick={toggleFullscreen} title={isFullscreen ? "الخروج من ملء الشاشة" : "ملء الشاشة"} className="bg-gold-500/10 dark:bg-white/10 rounded-lg hover:bg-gold-500/20 dark:hover:bg-white/20">
             {isFullscreen ? <Minimize2 className="w-4 h-4 text-gold-500" /> : <Maximize2 className="w-4 h-4 text-gold-500" />}
           </ToolBtn>
@@ -322,17 +346,17 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, 
       {/* Vertical Scroll Area */}
       <div
         ref={scrollRef}
-        className="flex-1 overflow-y-auto overflow-x-hidden"
+        className={clsx("flex-1 overflow-y-auto overflow-x-hidden", singlePage && "snap-y snap-mandatory scroll-smooth")}
         onScroll={updateCurrentFromScroll}
         onContextMenu={(e) => e.preventDefault()}
       >
         <div
           className={clsx(
             "flex flex-col items-center w-full",
-            centerContent && "justify-center min-h-full",
-            "py-4 sm:py-8"
+            centerContent && !singlePage && "justify-center min-h-full",
+            singlePage ? "py-0" : "py-4 sm:py-8"
           )}
-          style={{ gap: "1rem" }}
+          style={singlePage ? { gap: 0 } : { gap: "1rem" }}
         >
           {status === "error" && (
             <div className="flex flex-col items-center justify-center gap-4 text-gray-400">
@@ -345,16 +369,26 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, 
             <div
               key={pageNum}
               data-page={pageNum}
-              className="relative w-full flex justify-center"
-              style={{ maxWidth: `${displayScale * 100}%` }}
+              className={clsx("relative w-full flex justify-center", singlePage && "flex-shrink-0 overflow-hidden")}
+              style={{
+                maxWidth: `${displayScale * 100}%`,
+                ...(singlePage && viewportH > 0 ? { height: viewportH, scrollSnapAlign: "start" as const } : {})
+              }}
             >
-              <canvas
-                ref={(el) => { if (el) canvasRefs.current.set(pageNum, el); }}
-                className="rounded-sm shadow-lg"
-                style={{ maxWidth: "100%", height: "auto", backgroundColor: "#fff" }}
-              />
+              {singlePage && Math.abs(pageNum - currentPage) > RENDER_BUFFER ? (
+                <div className="w-full h-full" />
+              ) : (
+                <canvas
+                  ref={(el) => {
+                    if (el) { canvasRefs.current.set(pageNum, el); if (!renderedPages.current.has(pageNum)) renderPageToCanvas(pageNum, el); }
+                    else { canvasRefs.current.delete(pageNum); renderedPages.current.delete(pageNum); }
+                  }}
+                  className="rounded-sm shadow-lg"
+                  style={singlePage ? { width: "100%", height: "100%", objectFit: "contain", backgroundColor: "#fff" } : { maxWidth: "100%", height: "auto", backgroundColor: "#fff" }}
+                />
+              )}
               {/* Paywall for locked pages */}
-              {isLocked && pageNum > freeUntilPage && pageNum === currentPage + 1 && (
+              {isLocked && pageNum > freeUntilPage && (singlePage ? pageNum === currentPage : pageNum === currentPage + 1) && (
                 <div className="absolute inset-0 flex items-center justify-center bg-parchment-50/90 dark:bg-onyx-950/95 backdrop-blur-sm z-20">
                   <Paywall onUnlock={() => setIsUnlocked(true)} price={500} title={title} preview={preview} />
                 </div>
