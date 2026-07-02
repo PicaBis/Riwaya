@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Lock, Wallet, Eye, EyeOff, CheckCircle2, AlertCircle, Copy, Mail } from "lucide-react";
 import { verifyDevCode } from "@/lib/auth";
+import { getUserKey } from "@/lib/device";
 
 interface PaywallProps {
   onUnlock: () => void;
@@ -29,12 +30,35 @@ export function Paywall({ onUnlock, price = 500, ripNumber = RIP_NUMBER, title, 
     setChecking(true);
     setError("");
 
-    const ok = await verifyDevCode(code.trim());
-    if (ok) {
+    // 1) Developer bypass code (never expires).
+    const isDev = await verifyDevCode(code.trim());
+    if (isDev) {
       sessionStorage.setItem("riwayati_unlocked", "1");
+      localStorage.setItem("riwayati_unlocked", "1");
       onUnlock();
-    } else {
-      setError("الرمز غير صحيح. يرجى الاشتراك للمتابعة.");
+      setChecking(false);
+      return;
+    }
+
+    // 2) Subscription activation code (single-use, verified server-side).
+    try {
+      const guest = localStorage.getItem("riwayati_guest");
+      const guestName = guest ? (JSON.parse(guest).name as string) : null;
+      const res = await fetch("/api/activate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code: code.trim(), userKey: getUserKey(guestName) }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok && data.ok) {
+        sessionStorage.setItem("riwayati_unlocked", "1");
+        localStorage.setItem("riwayati_unlocked", "1");
+        onUnlock();
+      } else {
+        setError(data.error || "الرمز غير صحيح. يرجى الاشتراك للمتابعة.");
+      }
+    } catch {
+      setError("تعذّر التحقق من الرمز، حاول مجدداً.");
     }
     setChecking(false);
   };

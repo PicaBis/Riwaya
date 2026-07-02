@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { X, Shield, AlertCircle, CheckCircle2 } from "lucide-react";
+import Link from "next/link";
+import { X, Shield, AlertCircle, CheckCircle2, LayoutDashboard } from "lucide-react";
 import { useApp } from "@/context/AppContext";
 
 export function DevCodeModal({ onClose }: { onClose: () => void }) {
@@ -14,6 +15,7 @@ export function DevCodeModal({ onClose }: { onClose: () => void }) {
     e.preventDefault();
     if (code.trim() === "Blazixz") {
       setAdmin(true);
+      try { sessionStorage.setItem("riwayati_devcode", code.trim()); } catch {}
       setSuccess("تم تفعيل وضع المطور بنجاح");
       setError("");
       setTimeout(() => onClose(), 1000);
@@ -56,6 +58,14 @@ export function DevCodeModal({ onClose }: { onClose: () => void }) {
             <p className="font-arabic text-sm text-green-600 dark:text-green-400">
               وضع المطور مفعل حالياً
             </p>
+            <Link
+              href="/admin"
+              onClick={onClose}
+              className="mt-4 inline-flex items-center justify-center gap-2 w-full py-2.5 bg-rose-500 hover:bg-rose-600 active:scale-95 text-white rounded-xl font-arabic text-sm font-medium transition-all"
+            >
+              <LayoutDashboard className="w-4 h-4" />
+              فتح لوحة التحكم
+            </Link>
             <button
               onClick={() => { setAdmin(false); onClose(); }}
               className="mt-3 text-xs text-gray-400 hover:text-red-500 font-arabic transition-colors"

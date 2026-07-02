@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { Moon, Sun, User, LogOut, Menu, X, Shield, Coins } from "lucide-react";
+import { Moon, Sun, User, LogOut, Menu, X, Shield, Coins, LayoutDashboard } from "lucide-react";
 import { useApp } from "@/context/AppContext";
 import { GuestLoginModal } from "./GuestLoginModal";
 import { AboutModal } from "./AboutModal";
@@ -15,7 +15,7 @@ import { LanguageSwitcher } from "./LanguageSwitcher";
 import { t } from "@/lib/i18n";
 
 export function Header() {
-  const { isDark, toggleTheme, guest, logout, lang } = useApp();
+  const { isDark, toggleTheme, guest, logout, lang, isAdmin } = useApp();
   const [showLogin, setShowLogin] = useState(false);
   const [showAbout, setShowAbout] = useState(false);
   const [showDevCode, setShowDevCode] = useState(false);
@@ -71,6 +71,15 @@ export function Header() {
             >
               <Shield className="w-3.5 h-3.5" />
             </button>
+            {isAdmin && (
+              <Link
+                href="/admin"
+                className="flex items-center gap-1 px-2 py-1 rounded-lg text-sm text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-500/10 transition-colors font-arabic"
+                title="لوحة التحكم"
+              >
+                <LayoutDashboard className="w-3.5 h-3.5" />
+              </Link>
+            )}
             <SearchBar />
           </nav>
 
@@ -175,6 +184,16 @@ export function Header() {
                 <Shield className="w-4 h-4" />
                 درع المطور
               </button>
+              {isAdmin && (
+                <Link
+                  href="/admin"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="px-3 py-2.5 rounded-xl text-sm font-arabic text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-500/10 transition-colors text-right flex items-center gap-1.5"
+                >
+                  <LayoutDashboard className="w-4 h-4" />
+                  لوحة التحكم
+                </Link>
+              )}
             </nav>
 
             {/* Author profile card */}

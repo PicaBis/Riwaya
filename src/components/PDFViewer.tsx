@@ -85,7 +85,12 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, 
 
   /* ── Paywall ──────────────────────────────────────── */
   const [isUnlocked, setIsUnlocked] = useState(() => {
-    if (typeof window !== "undefined") return sessionStorage.getItem("riwayati_unlocked") === "1";
+    if (typeof window !== "undefined") {
+      return (
+        sessionStorage.getItem("riwayati_unlocked") === "1" ||
+        localStorage.getItem("riwayati_unlocked") === "1"
+      );
+    }
     return false;
   });
   const isLocked = !isUnlocked && currentPage > freeUntilPage;

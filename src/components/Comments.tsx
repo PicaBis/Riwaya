@@ -13,6 +13,7 @@ export function Comments({ novelId }: { novelId: string }) {
   const [content, setContent] = useState("");
   const [guestName, setGuestName] = useState("ضيف");
   const [loading, setLoading] = useState(false);
+  const [submitError, setSubmitError] = useState("");
   const [fontSize, setFontSize] = useState(15);
   const [lineHeight, setLineHeight] = useState(1.8);
   const [fontFamily, setFontFamily] = useState<"ar" | "sans">("ar");
@@ -97,6 +98,7 @@ export function Comments({ novelId }: { novelId: string }) {
     if (!content.trim()) return;
     const author = guest?.name || guestName.trim() || "ضيف";
     setLoading(true);
+    setSubmitError("");
     try {
       const res = await fetch("/api/comments", {
         method: "POST",
@@ -106,22 +108,30 @@ export function Comments({ novelId }: { novelId: string }) {
       if (res.ok) {
         setContent("");
         fetchComments();
+      } else {
+        const data = await res.json().catch(() => ({}));
+        setSubmitError(data.error || "تعذّر إرسال التعليق");
       }
-    } catch {}
+    } catch {
+      setSubmitError("تعذّر الاتصال بالخادم");
+    }
     setLoading(false);
   };
 
   const deleteComment = async (commentId: string, author: string) => {
     if (!isAdmin) return;
+    const devCode = typeof window !== "undefined" ? sessionStorage.getItem("riwayati_devcode") || "" : "";
     try {
       const res = await fetch(`/api/comments/${commentId}`, {
         method: "DELETE",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", "x-dev-code": devCode },
         body: JSON.stringify({ admin: true }),
       });
       if (res.ok) {
         fetchComments();
-        alert(`تم حظر المستخدم: ${author}`);
+        alert(`تم حذف تعليق المستخدم: ${author}`);
+      } else {
+        alert("تعذّر الحذف — أعد إدخال رمز المطور من درع المطور");
       }
     } catch {}
   };
@@ -220,6 +230,9 @@ export function Comments({ novelId }: { novelId: string }) {
             <Send className="w-4 h-4" />
           </button>
         </div>
+        {submitError && (
+          <p className="text-xs text-red-500 font-arabic px-1">{submitError}</p>
+        )}
       </form>
 
       <div className="space-y-4">

@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabase } from "@/lib/supabase";
+import { rateLimit, getClientIp } from "@/lib/rate-limit";
+import { moderateComment } from "@/lib/profanity";
 
 function sanitize(str: string): string {
   return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#x27;").replace(/\//g, "&#x2F;").substring(0, 2000);
@@ -37,11 +39,34 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
+    // Anti-spam: 1 comment / 20s and max 8 / 5min per IP.
+    const ip = getClientIp(request.headers);
+    const short = rateLimit(`comment:short:${ip}`, { windowMs: 20_000, max: 1 });
+    if (!short.allowed) {
+      return NextResponse.json(
+        { error: `الرجاء الانتظار ${short.retryAfter} ثانية قبل التعليق مجدداً` },
+        { status: 429, headers: { "Retry-After": String(short.retryAfter) } }
+      );
+    }
+    const long = rateLimit(`comment:long:${ip}`, { windowMs: 5 * 60_000, max: 8 });
+    if (!long.allowed) {
+      return NextResponse.json(
+        { error: "لقد أرسلت تعليقات كثيرة، حاول لاحقاً" },
+        { status: 429, headers: { "Retry-After": String(long.retryAfter) } }
+      );
+    }
+
     const body = await request.json();
     const { novelId, author, content } = body;
 
     if (!novelId || !author || !content || !isValidNovelId(novelId)) {
       return NextResponse.json({ error: "Invalid input" }, { status: 400 });
+    }
+
+    // Profanity / spam moderation on the raw content.
+    const moderation = moderateComment(String(content));
+    if (!moderation.ok) {
+      return NextResponse.json({ error: moderation.reason }, { status: 422 });
     }
 
     const sanitizedAuthor = sanitize(String(author).substring(0, 50));

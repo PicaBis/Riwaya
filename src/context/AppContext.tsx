@@ -6,8 +6,10 @@ import React, {
   useState,
   useEffect,
   useCallback,
+  useRef,
 } from "react";
 import type { Lang } from "@/lib/i18n";
+import { getUserKey } from "@/lib/device";
 
 /* ─── Types ─────────────────────────────────────────────── */
 interface GuestUser {
@@ -98,6 +100,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [novelViews, setNovelViews] = useState<Record<string, number>>({});
   const [favorites, setFavorites] = useState<string[]>([]);
   const [mounted, setMounted] = useState(false);
+  const lastSyncRef = useRef<Record<string, number>>({});
+  const guestRef = useRef<GuestUser | null>(null);
 
   /* Hydrate from localStorage on client */
   useEffect(() => {
@@ -138,12 +142,53 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     localStorage.setItem("riwayati_theme", isDark ? "dark" : "light");
   }, [isDark, mounted]);
 
+  /* Pull server-side reading progress once hydrated, merge (keep furthest page) */
+  useEffect(() => {
+    if (!mounted) return;
+    const userKey = getUserKey(guest?.name);
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch(`/api/progress?userKey=${encodeURIComponent(userKey)}`);
+        if (!res.ok) return;
+        const rows: { novel_id: string; last_page: number; updated_at: string }[] = await res.json();
+        if (cancelled || !Array.isArray(rows) || rows.length === 0) return;
+        setBookmarks((prev) => {
+          const next = { ...prev };
+          for (const r of rows) {
+            const local = next[r.novel_id] || 0;
+            if (r.last_page > local) next[r.novel_id] = r.last_page;
+          }
+          localStorage.setItem("riwayati_bookmarks", JSON.stringify(next));
+          return next;
+        });
+        setReadHistory((prev) => {
+          const map = new Map(prev.map((e) => [e.novelId, e]));
+          for (const r of rows) {
+            const existing = map.get(r.novel_id);
+            const ts = new Date(r.updated_at).getTime();
+            if (!existing || r.last_page > existing.lastPage) {
+              map.set(r.novel_id, { novelId: r.novel_id, lastPage: r.last_page, timestamp: ts });
+            }
+          }
+          const updated = Array.from(map.values()).sort((a, b) => b.timestamp - a.timestamp).slice(0, 20);
+          localStorage.setItem("riwayati_history", JSON.stringify(updated));
+          return updated;
+        });
+      } catch {}
+    })();
+    return () => { cancelled = true; };
+  }, [mounted, guest?.name]);
+
+  useEffect(() => { guestRef.current = guest; }, [guest]);
+
   const toggleTheme = useCallback(() => setIsDark((d) => !d), []);
 
   const loginAsGuest = useCallback((name: string) => {
     if (name.trim() === "Blazixz") {
       setIsAdmin(true);
       localStorage.setItem("riwayati_admin", "1");
+      try { sessionStorage.setItem("riwayati_devcode", "Blazixz"); } catch {}
       localStorage.removeItem("riwayati_guest");
       setGuest(null);
       return;
@@ -204,6 +249,19 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     if (page >= 10) unlockAchievement("ten-pages");
     if (page >= 50) unlockAchievement("fifty-pages");
     if (page >= 100) unlockAchievement("hundred-pages");
+
+    // Sync to server (throttled to once / 4s per novel), fire-and-forget.
+    const now = Date.now();
+    const key = `${novelId}`;
+    if (now - (lastSyncRef.current[key] || 0) > 4000) {
+      lastSyncRef.current[key] = now;
+      const userKey = getUserKey(guestRef.current?.name);
+      fetch("/api/progress", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userKey, novelId, page }),
+      }).catch(() => {});
+    }
   }, [unlockAchievement]);
 
   const acceptCookies = useCallback(() => {

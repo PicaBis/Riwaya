@@ -1,14 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabase } from "@/lib/supabase";
+import { verifyAdminRequest } from "@/lib/admin-auth";
 
 export async function DELETE(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
-    const body = await request.json().catch(() => ({}));
-    const { admin } = body as { admin?: boolean };
-    if (!admin) return NextResponse.json({ error: "غير مصرح" }, { status: 403 });
+    // Requires a valid developer passcode in the x-dev-code header.
+    if (!(await verifyAdminRequest(request.headers))) {
+      return NextResponse.json({ error: "غير مصرح" }, { status: 403 });
+    }
 
     const supabase = getSupabase();
 
