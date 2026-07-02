@@ -41,7 +41,6 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, 
   const renderedPages = useRef<Set<number>>(new Set());
   const canvasRefs = useRef<Map<number, HTMLCanvasElement>>(new Map());
   const pageHeights = useRef<Map<number, number>>(new Map());
-  const touchStartX = useRef(0);
   const [centerContent, setCenterContent] = useState(false);
   const [horizontalPage, setHorizontalPage] = useState(false);
 
@@ -281,13 +280,47 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, 
   }, [horizontalPage, goNext, goPrev]);
 
   /* ── Touch swipe for horizontal mode ───────────────── */
-  const onTouchStart = (e: React.TouchEvent) => { touchStartX.current = e.touches[0].clientX; };
-  const onTouchEnd = (e: React.TouchEvent) => {
-    const diff = touchStartX.current - e.changedTouches[0].clientX;
-    if (Math.abs(diff) > 40) {
-      if (diff > 0) goNext();
-      else goPrev();
+  const touchStartX = useRef(0);
+  const touchStartY = useRef(0);
+  const [swiping, setSwiping] = useState(false);
+  const [swipeOffset, setSwipeOffset] = useState(0);
+  const swipeContainerRef = useRef<HTMLDivElement>(null);
+
+  const onTouchStart = (e: React.TouchEvent) => {
+    if (!horizontalPage) return;
+    touchStartX.current = e.touches[0].clientX;
+    touchStartY.current = e.touches[0].clientY;
+    setSwiping(false);
+    setSwipeOffset(0);
+  };
+
+  const onTouchMove = (e: React.TouchEvent) => {
+    if (!horizontalPage) return;
+    const currentX = e.touches[0].clientX;
+    const diffX = currentX - touchStartX.current;
+    const diffY = Math.abs(e.touches[0].clientY - touchStartY.current);
+    if (Math.abs(diffX) > 10 && Math.abs(diffX) > diffY * 1.5) {
+      setSwiping(true);
+      let offset = diffX;
+      if (currentPage <= 1 && offset > 0) offset *= 0.3;
+      else if (currentPage >= totalPages && offset < 0) offset *= 0.3;
+      setSwipeOffset(offset);
     }
+  };
+
+  const onTouchEnd = (e: React.TouchEvent) => {
+    if (!horizontalPage || !swiping) {
+      setSwipeOffset(0);
+      setSwiping(false);
+      return;
+    }
+    const diffX = e.changedTouches[0].clientX - touchStartX.current;
+    const containerWidth = swipeContainerRef.current?.clientWidth || 300;
+    const threshold = Math.min(containerWidth * 0.25, 80);
+    if (diffX < -threshold && currentPage < totalPages) goNext();
+    else if (diffX > threshold && currentPage > 1) goPrev();
+    setSwipeOffset(0);
+    setSwiping(false);
   };
 
   return (
@@ -371,8 +404,10 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, 
       {/* Reading Area */}
       {horizontalPage ? (
         /* Horizontal page-flip mode */
-        <div className="flex-1 flex items-center justify-center relative overflow-hidden select-none"
+        <div ref={swipeContainerRef}
+          className="flex-1 flex items-center justify-center relative overflow-hidden select-none"
           onTouchStart={onTouchStart}
+          onTouchMove={onTouchMove}
           onTouchEnd={onTouchEnd}
         >
           {/* Previous page button */}
@@ -384,8 +419,14 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, 
               <ChevronRight className="w-5 h-5 sm:w-6 sm:h-6" />
             </button>
           )}
-          {/* Current page */}
-          <div className="flex items-center justify-center w-full h-full p-1 sm:p-4">
+          {/* Current page with swipe animation */}
+          <div className="flex items-center justify-center w-full h-full p-1 sm:p-4"
+            style={{
+              transform: swipeOffset ? `translateX(${swipeOffset}px)` : "translateX(0px)",
+              transition: swiping ? "none" : "transform 0.35s cubic-bezier(0.22, 1, 0.36, 1)",
+              willChange: "transform",
+            }}
+          >
             <canvas
               ref={(el) => {
                 if (el) { canvasRefs.current.set(currentPage, el); if (!renderedPages.current.has(currentPage)) renderPageToCanvas(currentPage, el); }
