@@ -79,11 +79,12 @@ export default function LibraryPage() {
                         <p className="font-arabic font-bold text-sm text-gray-900 dark:text-gray-100 truncate group-hover:text-gold-500 transition-colors">
                           {novel.title}
                         </p>
-                        <p className="text-xs text-gray-400 font-arabic mt-0.5">
-                          الصفحة {page}
+                        <p className="text-xs text-gray-500 font-arabic mt-0.5 flex items-center gap-1.5">
+                          <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-gold-500/10 text-gold-700 dark:text-gold-400 font-bold">
+                            الصفحة {page}
+                          </span>
                           {daysAgo !== null && (
-                            <span>
-                              {" "}·{" "}
+                            <span className="text-gray-400">
                               {daysAgo === 0 ? "اليوم" : daysAgo === 1 ? "أمس" : `قبل ${daysAgo} أيام`}
                             </span>
                           )}

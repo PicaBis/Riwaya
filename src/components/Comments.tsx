@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
-import { Heart, MessageSquare, Send, Trash2, Ban, Shield, Type, AlignLeft, FileText } from "lucide-react";
+import { useState, useEffect, useCallback, useRef } from "react";
+import { Heart, MessageSquare, Send, Trash2, Ban, Shield, Type, AlignLeft, FileText, EyeOff } from "lucide-react";
 import { useApp } from "@/context/AppContext";
 import { getSupabase } from "@/lib/supabase";
 import type { Comment } from "@/lib/comments-types";
@@ -18,6 +18,22 @@ export function Comments({ novelId }: { novelId: string }) {
   const [fontSize, setFontSize] = useState(15);
   const [lineHeight, setLineHeight] = useState(1.8);
   const [fontFamily, setFontFamily] = useState<"ar" | "sans">("ar");
+  const [showToolbar, setShowToolbar] = useState(true);
+  const hideTimerRef = useRef<number | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  const resetToolbarTimer = useCallback(() => {
+    setShowToolbar(true);
+    if (hideTimerRef.current) window.clearTimeout(hideTimerRef.current);
+    hideTimerRef.current = window.setTimeout(() => setShowToolbar(false), 4000);
+  }, []);
+
+  useEffect(() => {
+    resetToolbarTimer();
+    return () => {
+      if (hideTimerRef.current) window.clearTimeout(hideTimerRef.current);
+    };
+  }, [resetToolbarTimer]);
 
   const fetchComments = useCallback(async () => {
     try {
@@ -186,8 +202,14 @@ export function Comments({ novelId }: { novelId: string }) {
   const textClass = fontFamily === "ar" ? "font-arabic" : "font-sans";
 
   return (
-    <div className="mt-8 border-t border-parchment-200 dark:border-white/8 pt-8" dir="rtl">
-      <div className="flex items-center justify-between flex-wrap gap-3 mb-6">
+    <div
+      ref={containerRef}
+      className="mt-8 border-t border-parchment-200 dark:border-white/8 pt-8"
+      dir="rtl"
+      onMouseMove={resetToolbarTimer}
+      onTouchStart={resetToolbarTimer}
+    >
+      <div className={clsx("flex items-center justify-between flex-wrap gap-3 mb-6 transition-all duration-300", showToolbar ? "opacity-100 max-h-40" : "opacity-0 max-h-0 overflow-hidden")}>
         <h3 className="font-arabic text-lg font-bold text-gray-900 dark:text-gray-100 flex items-center gap-2">
           <MessageSquare className="w-5 h-5 text-gold-500" />
           التعليقات
@@ -220,6 +242,18 @@ export function Comments({ novelId }: { novelId: string }) {
           )}
         </div>
       </div>
+
+      {/* Floating toolbar toggle when hidden */}
+      {!showToolbar && (
+        <button
+          onMouseEnter={resetToolbarTimer}
+          onTouchStart={resetToolbarTimer}
+          className="mb-4 px-3 py-1.5 rounded-full border border-parchment-300 dark:border-white/10 bg-white dark:bg-onyx-800 text-xs text-gray-500 dark:text-gray-400 hover:bg-parchment-100 dark:hover:bg-white/10 transition-all shadow-sm flex items-center gap-1.5"
+        >
+          <EyeOff className="w-3.5 h-3.5" />
+          أدوات التعليقات
+        </button>
+      )}
 
       <form onSubmit={handleSubmit} className="mb-6 space-y-2">
         <div className="flex items-start gap-2">

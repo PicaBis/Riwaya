@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, useCallback, useMemo } from "react";
-import { ZoomIn, ZoomOut, RotateCcw, Maximize2, Minimize2, BookOpen, Speaker, VolumeX, List, ChevronLeft, ChevronRight } from "lucide-react";
+import { ZoomIn, ZoomOut, RotateCcw, Maximize2, Minimize2, BookOpen, Speaker, VolumeX, List, ChevronLeft, ChevronRight, BookMarked, Sun, Moon } from "lucide-react";
 import clsx from "clsx";
 import { Paywall } from "./Paywall";
 
@@ -49,6 +49,27 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, 
   const [currentChapter, setCurrentChapter] = useState<string>("");
   const [isZooming, setIsZooming] = useState(false);
   const zoomTimerRef = useRef<number | null>(null);
+  const [readingMode, setReadingMode] = useState<"light" | "sepia" | "dark">("light");
+
+  useEffect(() => {
+    try {
+      if (typeof window !== "undefined") {
+        const saved = localStorage.getItem("riwayati_reading_mode");
+        if (saved === "light" || saved === "sepia" || saved === "dark") setReadingMode(saved);
+      }
+    } catch {}
+  }, []);
+
+  useEffect(() => {
+    try {
+      if (typeof window !== "undefined") localStorage.setItem("riwayati_reading_mode", readingMode);
+    } catch {}
+  }, [readingMode]);
+
+  const readingBg = readingMode === "light" ? "#ffffff" : readingMode === "sepia" ? "#f4ecd8" : "#1e1e1e";
+  const readingText = readingMode === "dark" ? "#e5e5e5" : "#1a1a1a";
+  const readingMuted = readingMode === "dark" ? "#a3a3a3" : "#6b7280";
+  const readingWrapperBg = readingMode === "light" ? "bg-white" : readingMode === "sepia" ? "bg-[#f4ecd8]" : "bg-[#1e1e1e]";
 
   const renderScale = useMemo(() => Math.max(displayScale, 1.0), [displayScale]);
 
@@ -194,7 +215,7 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, 
         canvas.height = viewport.height;
         canvas.style.width = "100%";
         canvas.style.height = "auto";
-        canvas.style.backgroundColor = "#ffffff";
+        canvas.style.backgroundColor = readingBg;
 
         if (cancelled || renderId !== pageRenderRef.current) return;
 
@@ -415,6 +436,13 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, 
           <ToolBtn onClick={toggleFullscreen} title={isFullscreen ? "الخروج من ملء الشاشة" : "ملء الشاشة"} className="bg-gold-500/10 dark:bg-white/10 rounded-lg hover:bg-gold-500/20 dark:hover:bg-white/20">
             {isFullscreen ? <Minimize2 className="w-4 h-4 text-gold-500" /> : <Maximize2 className="w-4 h-4 text-gold-500" />}
           </ToolBtn>
+          <ToolBtn
+            onClick={() => setReadingMode((m) => (m === "light" ? "sepia" : m === "sepia" ? "dark" : "light"))}
+            title={readingMode === "light" ? "الوضع النهاري" : readingMode === "sepia" ? "وضع الكرائية" : "الوضع الليلي"}
+            className="rounded-lg hover:bg-parchment-200 dark:hover:bg-white/10"
+          >
+            {readingMode === "light" ? <Sun className="w-4 h-4 text-amber-500" /> : readingMode === "sepia" ? <BookOpen className="w-4 h-4 text-amber-700" /> : <Moon className="w-4 h-4 text-indigo-400" />}
+          </ToolBtn>
         </div>
       </div>
 
@@ -447,8 +475,9 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, 
       {totalPages > 0 && (
         <div className="h-auto flex-shrink-0">
           {currentChapter && (
-            <div className="px-3 sm:px-6 pt-1.5 pb-0.5">
-              <span className="text-[10px] sm:text-xs text-gold-600 dark:text-gold-400 font-arabic font-medium truncate">
+            <div className="px-3 sm:px-6 pt-1.5 pb-0.5 flex items-center gap-1.5">
+              <BookMarked className="w-3 h-3 text-gold-500 flex-shrink-0" />
+              <span className="text-[11px] sm:text-xs text-gold-600 dark:text-gold-400 font-arabic font-semibold truncate">
                 {currentChapter}
               </span>
             </div>
@@ -503,7 +532,7 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, 
 
           {status === "ready" && totalPages > 0 && (
             <div
-              className="relative flex-shrink-0 mx-auto overflow-hidden flex items-center justify-center transition-all duration-200"
+              className={clsx("relative flex-shrink-0 mx-auto overflow-hidden flex items-center justify-center transition-all duration-200", readingWrapperBg)}
               style={{
                 width: containerWidth > 0 ? `${containerWidth * displayScale}px` : `${displayScale * 100}%`,
                 minHeight: containerWidth > 0 && pageSize.width > 0
@@ -517,8 +546,7 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, 
                 style={{
                   width: "100%",
                   height: "auto",
-                  backgroundColor: "#ffffff",
-                  willChange: isZooming ? "transform" : "auto",
+                  backgroundColor: readingBg,
                 }}
               />
               {isLocked && (
