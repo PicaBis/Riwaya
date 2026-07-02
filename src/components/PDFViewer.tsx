@@ -36,8 +36,11 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, 
   const [retryKey, setRetryKey] = useState(0);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [playing, setPlaying] = useState(false);
+  const [musicReady, setMusicReady] = useState(false);
+  const [musicError, setMusicError] = useState(false);
   const ytIframeRef = useRef<HTMLIFrameElement | null>(null);
   const ytReadyRef = useRef(false);
+  const ytPlayerReadyRef = useRef(false);
   const [tocOpen, setTocOpen] = useState(false);
   const [pageSize, setPageSize] = useState({ width: 0, height: 0 });
   const [centerContent, setCenterContent] = useState(false);
@@ -50,42 +53,81 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, 
   /* ── YouTube music ──────────────────────────────────── */
   useEffect(() => {
     if (novelId !== "shajarat-sina" || typeof window === "undefined") return;
+    setMusicReady(false);
+    setMusicError(false);
+    ytPlayerReadyRef.current = false;
+
     const iframe = document.createElement("iframe");
-    iframe.style.display = "none";
     iframe.src = `https://www.youtube.com/embed/mm0QSsRwzUo?enablejsapi=1&autoplay=0&controls=0&loop=1&playlist=mm0QSsRwzUo&origin=${encodeURIComponent(window.location.origin)}`;
     iframe.allow = "autoplay";
+    iframe.style.cssText = "position:fixed;left:-9999px;top:0;width:1px;height:1px;opacity:0;pointer-events:none;";
+    iframe.setAttribute("allow", "autoplay; encrypted-media");
     document.body.appendChild(iframe);
     ytIframeRef.current = iframe;
 
+    let messageTimer: number | null = null;
+    let cleanupIframe = false;
+
     const msgHandler = (e: MessageEvent) => {
       try {
-        const data = JSON.parse(e.data);
-        if (data.event === "onReady") ytReadyRef.current = true;
+        const data = typeof e.data === "string" ? JSON.parse(e.data) : e.data;
+        if (!data || typeof data !== "object") return;
+
+        if (data.event === "onReady") {
+          ytReadyRef.current = true;
+          setMusicReady(true);
+        }
+
         if (data.event === "onStateChange" && data.info === 0) {
-          iframe.contentWindow?.postMessage(JSON.stringify({ event: "command", func: "playVideo" }), "*");
+          if (!cleanupIframe) {
+            iframe.contentWindow?.postMessage(JSON.stringify({ event: "command", func: "playVideo" }), "*");
+          }
         }
       } catch {}
     };
+
+    const readyTimer = window.setTimeout(() => {
+      if (!ytReadyRef.current) {
+        setMusicReady(true);
+      }
+    }, 4000);
+
     window.addEventListener("message", msgHandler);
+    iframe.addEventListener("load", () => {
+      window.setTimeout(() => {
+        if (!ytReadyRef.current) setMusicReady(true);
+      }, 3000);
+    });
+
     return () => {
       window.removeEventListener("message", msgHandler);
+      cleanupIframe = true;
+      if (messageTimer) window.clearTimeout(messageTimer);
+      if (readyTimer) window.clearTimeout(readyTimer);
       iframe.remove();
       ytIframeRef.current = null;
       ytReadyRef.current = false;
+      ytPlayerReadyRef.current = false;
+      setMusicReady(false);
+      setPlaying(false);
     };
   }, [novelId]);
 
-  const toggleMusic = () => {
+  const toggleMusic = useCallback(() => {
     const iframe = ytIframeRef.current;
-    if (!iframe?.contentWindow) return;
-    if (playing) {
-      iframe.contentWindow.postMessage(JSON.stringify({ event: "command", func: "pauseVideo" }), "*");
-      setPlaying(false);
-    } else {
-      iframe.contentWindow.postMessage(JSON.stringify({ event: "command", func: "playVideo" }), "*");
-      setPlaying(true);
+    if (!iframe?.contentWindow || !ytReadyRef.current) return;
+    try {
+      if (playing) {
+        iframe.contentWindow.postMessage(JSON.stringify({ event: "command", func: "pauseVideo" }), "*");
+        setPlaying(false);
+      } else {
+        iframe.contentWindow.postMessage(JSON.stringify({ event: "command", func: "playVideo" }), "*");
+        setPlaying(true);
+      }
+    } catch {
+      setMusicError(true);
     }
-  };
+  }, [playing]);
 
   /* ── Paywall ────────────────────────────────────────── */
   const [isUnlocked, setIsUnlocked] = useState(() => {
@@ -322,8 +364,22 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, 
             <ToolBtn onClick={() => setTocOpen((v) => !v)} title="جدول الفصول"><List className="w-4 h-4" /></ToolBtn>
           )}
           {novelId === "shajarat-sina" && (
-            <ToolBtn onClick={toggleMusic} title={playing ? "إيقاف الموسيقى" : "تشغيل الموسيقى"}>
-              {playing ? <VolumeX className="w-4 h-4 text-gold-500" /> : <Speaker className="w-4 h-4" />}
+            <ToolBtn
+              onClick={toggleMusic}
+              disabled={!musicReady || musicError}
+              title={
+                musicError
+                  ? "تعذّر تحميل الموسيقى"
+                  : playing
+                    ? "إيقاف الموسيقى"
+                    : "تشغيل الموسيقى"
+              }
+              className={clsx(
+                musicError && "opacity-40 cursor-not-allowed",
+                playing && "text-gold-500"
+              )}
+            >
+              {musicError ? <VolumeX className="w-4 h-4" /> : playing ? <VolumeX className="w-4 h-4 text-gold-500" /> : <Speaker className="w-4 h-4" />}
             </ToolBtn>
           )}
           <ToolBtn onClick={toggleFullscreen} title={isFullscreen ? "الخروج من ملء الشاشة" : "ملء الشاشة"} className="bg-gold-500/10 dark:bg-white/10 rounded-lg hover:bg-gold-500/20 dark:hover:bg-white/20">
