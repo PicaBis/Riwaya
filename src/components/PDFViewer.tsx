@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, useCallback } from "react";
+import { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import { ZoomIn, ZoomOut, RotateCcw, Maximize2, Minimize2, BookOpen, Speaker, VolumeX, List, ChevronLeft, ChevronRight } from "lucide-react";
 import clsx from "clsx";
 import { Paywall } from "./Paywall";
@@ -31,9 +31,9 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, 
   const [pdf, setPdf] = useState<import("pdfjs-dist").PDFDocumentProxy | null>(null);
   const [totalPages, setTotalPages] = useState(0);
   const [currentPage, setCurrentPage] = useState(initialPage);
-  const defaultScale = 4.0;
   const [displayScale, setDisplayScale] = useState(0.75);
   const [status, setStatus] = useState<RenderStatus>("idle");
+  const [retryKey, setRetryKey] = useState(0);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [playing, setPlaying] = useState(false);
   const ytIframeRef = useRef<HTMLIFrameElement | null>(null);
@@ -44,6 +44,8 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, 
   const [containerWidth, setContainerWidth] = useState(0);
   const pageRenderRef = useRef(0);
   const [currentChapter, setCurrentChapter] = useState<string>("");
+
+  const renderScale = useMemo(() => Math.max(displayScale, 1.0), [displayScale]);
 
   /* ── YouTube music ──────────────────────────────────── */
   useEffect(() => {
@@ -113,7 +115,7 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, 
       } catch { if (!cancelled) setStatus("error"); }
     })();
     return () => { cancelled = true; };
-  }, [pdfUrl]);
+  }, [pdfUrl, retryKey]);
 
   /* ── Measure scroll container ───────────────────────── */
   useEffect(() => {
@@ -137,7 +139,7 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, 
       try {
         const page = await pdf.getPage(currentPage);
         if (cancelled || renderId !== pageRenderRef.current) return;
-        const viewport = page.getViewport({ scale: defaultScale });
+        const viewport = page.getViewport({ scale: renderScale });
 
         canvas.width = viewport.width;
         canvas.height = viewport.height;
@@ -164,7 +166,7 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, 
 
     render();
     return () => { cancelled = true; };
-  }, [pdf, currentPage, status, totalPages, defaultScale, onPageChange]);
+  }, [pdf, currentPage, status, totalPages, renderScale, onPageChange]);
 
   /* ── Navigation ─────────────────────────────────────── */
   const goToPrev = useCallback(() => {
@@ -192,6 +194,8 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, 
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
+      const tag = (e.target as HTMLElement)?.tagName;
+      if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
       if (e.key === "ArrowRight" || e.key === "ArrowDown") {
         e.preventDefault();
         goToNext();
@@ -278,7 +282,14 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, 
     return () => ro.disconnect();
   }, [totalPages, pageSize, containerWidth, displayScale]);
 
-  const pageWrapperWidth = containerWidth > 0 ? Math.max(containerWidth, containerWidth * displayScale) : "100%";
+  const pageWrapperWidth = containerWidth > 0 ? `${containerWidth * displayScale}px` : `${displayScale * 100}%`;
+
+  const handleRetry = useCallback(() => {
+    setPdf(null);
+    setStatus("idle");
+    setTotalPages(0);
+    setRetryKey((k) => k + 1);
+  }, []);
 
   return (
     <div
@@ -380,6 +391,12 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, 
             <div className="flex flex-col items-center justify-center gap-4 text-gray-400">
               <BookOpen className="w-16 h-16 text-gold-500/30" />
               <p className="font-arabic text-center">تعذّر تحميل الملف. الرجاء التحقق من الاتصال.</p>
+              <button
+                onClick={handleRetry}
+                className="px-4 py-2 rounded-xl bg-gold-500 text-white text-sm font-arabic hover:bg-gold-600 transition-colors active:scale-95"
+              >
+                إعادة المحاولة
+              </button>
             </div>
           )}
 
@@ -404,10 +421,8 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, 
                 ref={canvasRef}
                 className="rounded-sm shadow-lg"
                 style={{
-                  width: containerWidth > 0 ? `${containerWidth}px` : "100%",
+                  width: "100%",
                   height: "auto",
-                  transform: displayScale !== 1 && pageSize.width > 0 ? `scale(${displayScale})` : undefined,
-                  transformOrigin: "center center",
                   backgroundColor: "#ffffff",
                 }}
               />

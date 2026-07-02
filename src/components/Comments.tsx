@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { Heart, MessageSquare, Send, Trash2, Ban, Shield, Type, AlignLeft, FileText } from "lucide-react";
 import { useApp } from "@/context/AppContext";
 import { getSupabase } from "@/lib/supabase";
-import type { Comment } from "@/lib/comments-store";
+import type { Comment } from "@/lib/comments-types";
 import clsx from "clsx";
 
 export function Comments({ novelId }: { novelId: string }) {
@@ -14,17 +14,25 @@ export function Comments({ novelId }: { novelId: string }) {
   const [guestName, setGuestName] = useState("ضيف");
   const [loading, setLoading] = useState(false);
   const [submitError, setSubmitError] = useState("");
+  const [fetchError, setFetchError] = useState("");
   const [fontSize, setFontSize] = useState(15);
   const [lineHeight, setLineHeight] = useState(1.8);
   const [fontFamily, setFontFamily] = useState<"ar" | "sans">("ar");
 
   const fetchComments = useCallback(async () => {
     try {
+      setFetchError("");
       const res = await fetch(`/api/comments?novelId=${encodeURIComponent(novelId)}`);
-      if (!res.ok) return;
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        setFetchError(data.error || "تعذّر تحميل التعليقات");
+        return;
+      }
       const data = await res.json();
       setComments(data);
-    } catch {}
+    } catch {
+      setFetchError("تعذّر الاتصال بالخادم");
+    }
   }, [novelId]);
 
   useEffect(() => {
@@ -69,11 +77,13 @@ export function Comments({ novelId }: { novelId: string }) {
         const updated = payload.new as any;
         if (updated) {
           setComments((prev) =>
-            prev.map((c) =>
-              c.id === updated.id
-                ? { ...c, likes: updated.likes || [], content: updated.content, author: updated.username }
-                : c
-            )
+            prev.map((c) => {
+              if (c.id !== updated.id) return c;
+              const next: any = { ...c, likes: updated.likes ?? c.likes };
+              if (updated.content !== undefined && updated.content !== null) next.content = updated.content;
+              if (updated.username !== undefined && updated.username !== null) next.author = updated.username;
+              return next;
+            })
           );
         }
       })
@@ -236,7 +246,13 @@ export function Comments({ novelId }: { novelId: string }) {
       </form>
 
       <div className="space-y-4">
-        {comments.length === 0 ? (
+        {fetchError && (
+          <div className="flex items-center justify-between p-4 rounded-2xl border border-red-200 dark:border-red-900/30 bg-red-50 dark:bg-red-900/10">
+            <p className="text-sm text-red-600 dark:text-red-400 font-arabic">{fetchError}</p>
+            <button onClick={fetchComments} className="text-xs px-3 py-1.5 rounded-lg bg-red-500 text-white hover:bg-red-600 transition-colors">إعادة</button>
+          </div>
+        )}
+        {comments.length === 0 && !fetchError ? (
           <p className="text-center text-sm text-gray-400 dark:text-gray-500 font-arabic py-8">
             لا توجد تعليقات بعد — كن أول من يشارك
           </p>

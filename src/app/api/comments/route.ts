@@ -3,77 +3,6 @@ import { getSupabase } from "@/lib/supabase";
 import { rateLimit, getClientIp } from "@/lib/rate-limit";
 import { moderateComment } from "@/lib/profanity";
 
-const COMMENTS_FILE = "/tmp/riwayati-comments.json";
-const BLOCKED_FILE = "/tmp/riwayati-blocked.json";
-
-interface CommentRecord {
-  id: string;
-  novelId: string;
-  author: string;
-  content: string;
-  createdAt: number;
-  likes: string[];
-}
-
-interface FileStore {
-  comments: CommentRecord[];
-  blocked: string[];
-}
-
-function readFileStore(): FileStore {
-  try {
-    if (typeof require !== "undefined") {
-      const fs = require("fs");
-      if (fs.existsSync(COMMENTS_FILE)) {
-        return JSON.parse(fs.readFileSync(COMMENTS_FILE, "utf-8"));
-      }
-    }
-  } catch {}
-  return { comments: [], blocked: [] };
-}
-
-function writeFileStore(data: FileStore) {
-  try {
-    if (typeof require !== "undefined") {
-      const fs = require("fs");
-      fs.writeFileSync(COMMENTS_FILE, JSON.stringify(data));
-    }
-  } catch {}
-}
-
-function readBlocked(): string[] {
-  try {
-    if (typeof require !== "undefined") {
-      const fs = require("fs");
-      if (fs.existsSync(BLOCKED_FILE)) {
-        return JSON.parse(fs.readFileSync(BLOCKED_FILE, "utf-8"));
-      }
-    }
-  } catch {}
-  return [];
-}
-
-function writeBlocked(blocked: string[]) {
-  try {
-    if (typeof require !== "undefined") {
-      const fs = require("fs");
-      fs.writeFileSync(BLOCKED_FILE, JSON.stringify(blocked));
-    }
-  } catch {}
-}
-
-function getBlockedUsers(): string[] {
-  return readBlocked();
-}
-
-function addBlockedUser(name: string) {
-  const blocked = readBlocked();
-  if (!blocked.includes(name)) {
-    blocked.push(name);
-    writeBlocked(blocked);
-  }
-}
-
 function sanitize(str: string): string {
   return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#x27;").replace(/\//g, "&#x2F;").substring(0, 2000);
 }
@@ -90,23 +19,21 @@ export async function GET(request: NextRequest) {
 
   const supabase = getSupabase();
 
-  if (supabase) {
-    const { data, error } = await supabase
-      .from("comments")
-      .select("*")
-      .eq("novel_id", novelId)
-      .order("created_at", { ascending: false });
-
-    if (!error) return NextResponse.json(data || []);
+  if (!supabase) {
+    return NextResponse.json({ error: "التعليقات غير متاحة حالياً" }, { status: 503 });
   }
 
-  const store = readFileStore();
-  const blocked = getBlockedUsers();
-  return NextResponse.json(
-    store.comments
-      .filter((c) => c.novelId === novelId && !blocked.includes(c.author))
-      .sort((a, b) => b.createdAt - a.createdAt)
-  );
+  const { data, error } = await supabase
+    .from("comments")
+    .select("*")
+    .eq("novel_id", novelId)
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    return NextResponse.json({ error: "تعذّر تحميل التعليقات" }, { status: 500 });
+  }
+
+  return NextResponse.json(data || []);
 }
 
 export async function POST(request: NextRequest) {
@@ -148,35 +75,25 @@ export async function POST(request: NextRequest) {
 
     const supabase = getSupabase();
 
-    if (supabase) {
-      const { data, error } = await supabase
-        .from("comments")
-        .insert({
-          novel_id: novelId,
-          username: sanitizedAuthor,
-          content: sanitizedContent,
-        })
-        .select()
-        .single();
-
-      if (!error && data) return NextResponse.json(data, { status: 201 });
+    if (!supabase) {
+      return NextResponse.json({ error: "التعليقات غير متاحة حالياً" }, { status: 503 });
     }
 
-    const store = readFileStore();
-    const blocked = getBlockedUsers();
-    if (blocked.includes(sanitizedAuthor)) return NextResponse.json({ error: "محظور" }, { status: 403 });
+    const { data, error } = await supabase
+      .from("comments")
+      .insert({
+        novel_id: novelId,
+        username: sanitizedAuthor,
+        content: sanitizedContent,
+      })
+      .select()
+      .single();
 
-    const newComment: CommentRecord = {
-      id: `c-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-      novelId,
-      author: sanitizedAuthor,
-      content: sanitizedContent,
-      createdAt: Date.now(),
-      likes: [],
-    };
-    store.comments.push(newComment);
-    writeFileStore(store);
-    return NextResponse.json(newComment, { status: 201 });
+    if (error || !data) {
+      return NextResponse.json({ error: "تعذّر حفظ التعليق" }, { status: 500 });
+    }
+
+    return NextResponse.json(data, { status: 201 });
   } catch {
     return NextResponse.json({ error: "Server error" }, { status: 500 });
   }
@@ -184,6 +101,11 @@ export async function POST(request: NextRequest) {
 
 export async function PATCH(request: NextRequest) {
   try {
+    const supabase = getSupabase();
+    if (!supabase) {
+      return NextResponse.json({ error: "التعليقات غير متاحة حالياً" }, { status: 503 });
+    }
+
     const body = await request.json();
     const { commentId, author, liked } = body as { commentId: string; author: string; liked?: boolean };
     if (!commentId || !author) return NextResponse.json({ error: "Required" }, { status: 400 });
@@ -191,33 +113,19 @@ export async function PATCH(request: NextRequest) {
     const sanitizedAuthor = sanitize(String(author));
     if (!sanitizedAuthor) return NextResponse.json({ error: "Invalid" }, { status: 400 });
 
-    const supabase = getSupabase();
+    const { data: comment, error: fetchErr } = await supabase.from("comments").select("likes").eq("id", commentId).single();
+    if (fetchErr || !comment) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
-    if (supabase) {
-      const { data: comment, error: fetchErr } = await supabase.from("comments").select("likes").eq("id", commentId).single();
-      if (fetchErr || !comment) return NextResponse.json({ error: "Not found" }, { status: 404 });
-
-      let likes: string[] = comment.likes || [];
-      if (likes.includes(sanitizedAuthor)) {
-        likes = likes.filter((n: string) => n !== sanitizedAuthor);
-      } else {
-        likes = [...likes, sanitizedAuthor];
-      }
-      const { error } = await supabase.from("comments").update({ likes }).eq("id", commentId);
-      if (!error) return NextResponse.json({ ok: true });
+    let likes: string[] = comment.likes || [];
+    if (likes.includes(sanitizedAuthor)) {
+      likes = likes.filter((n: string) => n !== sanitizedAuthor);
+    } else {
+      likes = [...likes, sanitizedAuthor];
     }
+    const { error } = await supabase.from("comments").update({ likes }).eq("id", commentId);
+    if (!error) return NextResponse.json({ ok: true });
 
-    const store = readFileStore();
-    const blocked = getBlockedUsers();
-    if (blocked.includes(sanitizedAuthor)) return NextResponse.json({ error: "ممنوع" }, { status: 403 });
-    const comment = store.comments.find((c) => c.id === commentId);
-    if (!comment) return NextResponse.json({ error: "Not found" }, { status: 404 });
-    const has = comment.likes.includes(sanitizedAuthor);
-    if (liked === true && !has) comment.likes.push(sanitizedAuthor);
-    else if (liked === false && has) comment.likes = comment.likes.filter((n) => n !== sanitizedAuthor);
-    else comment.likes = has ? comment.likes.filter((n) => n !== sanitizedAuthor) : [...comment.likes, sanitizedAuthor];
-    writeFileStore(store);
-    return NextResponse.json(comment);
+    return NextResponse.json({ error: "تعذّر تحديث الإعجاب" }, { status: 500 });
   } catch {
     return NextResponse.json({ error: "Server error" }, { status: 500 });
   }
