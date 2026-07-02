@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, useCallback } from "react";
-import { ZoomIn, ZoomOut, RotateCcw, Maximize2, Minimize2, BookOpen, Speaker, VolumeX, List } from "lucide-react";
+import { ZoomIn, ZoomOut, RotateCcw, Maximize2, Minimize2, BookOpen, Speaker, VolumeX, List, ChevronLeft, ChevronRight } from "lucide-react";
 import clsx from "clsx";
 import { Paywall } from "./Paywall";
 
@@ -26,6 +26,7 @@ type RenderStatus = "idle" | "loading" | "ready" | "error";
 export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, onPageChange, preview, novelId, chapters }: PDFViewerProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
 
   const [pdf, setPdf] = useState<import("pdfjs-dist").PDFDocumentProxy | null>(null);
   const [totalPages, setTotalPages] = useState(0);
@@ -38,13 +39,10 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, 
   const ytIframeRef = useRef<HTMLIFrameElement | null>(null);
   const ytReadyRef = useRef(false);
   const [tocOpen, setTocOpen] = useState(false);
-  const renderedPages = useRef<Set<number>>(new Set());
-  const canvasRefs = useRef<Map<number, HTMLCanvasElement>>(new Map());
-  const pageHeights = useRef<Map<number, number>>(new Map());
+  const [pageSize, setPageSize] = useState({ width: 0, height: 0 });
   const [centerContent, setCenterContent] = useState(false);
-  const [containerWidth, setContainerWidth] = useState(0);
 
-  // YouTube music
+  /* ── YouTube music ──────────────────────────────────── */
   useEffect(() => {
     if (novelId !== "shajarat-sina" || typeof window === "undefined") return;
     const iframe = document.createElement("iframe");
@@ -84,7 +82,7 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, 
     }
   };
 
-  /* ── Paywall ──────────────────────────────────────── */
+  /* ── Paywall ────────────────────────────────────────── */
   const [isUnlocked, setIsUnlocked] = useState(() => {
     if (typeof window !== "undefined") {
       return (
@@ -96,7 +94,7 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, 
   });
   const isLocked = !isUnlocked && currentPage > freeUntilPage;
 
-  /* ── Load PDF ──────────────────────────────────────── */
+  /* ── Load PDF ───────────────────────────────────────── */
   useEffect(() => {
     let cancelled = false;
     setStatus("loading");
@@ -114,82 +112,68 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, 
     return () => { cancelled = true; };
   }, [pdfUrl]);
 
-  /* ── Render individual page ────────────────────────── */
-  const renderPageToCanvas = useCallback(async (pageNum: number, canvas: HTMLCanvasElement) => {
-    if (!pdf) return;
-    const page = await pdf.getPage(pageNum);
-    const viewport = page.getViewport({ scale: defaultScale });
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
-    canvas.width = viewport.width;
-    canvas.height = viewport.height;
-    canvas.style.width = "100%";
-    canvas.style.height = "auto";
-    canvas.style.backgroundColor = "#ffffff";
-    await page.render({ canvasContext: ctx, viewport }).promise;
-    const naturalH = viewport.height / viewport.width;
-    pageHeights.current.set(pageNum, naturalH);
-    renderedPages.current.add(pageNum);
-
-    try {
-      const textContent = await page.getTextContent();
-      const text = textContent.items.map((item: any) => item.str).join(" ");
-      canvas.setAttribute("data-text", text);
-    } catch {}
-  }, [pdf]);
-
-  /* ── Scroll-based page detection ───────────────────── */
-  const updateCurrentFromScroll = useCallback(() => {
-    const container = scrollRef.current;
-    if (!container || totalPages === 0) return;
-    const scrollTop = container.scrollTop;
-    const children = container.querySelectorAll("[data-page]");
-    let closest = 1;
-    let closestDist = Infinity;
-    children.forEach((el) => {
-      const rect = el.getBoundingClientRect();
-      const containerRect = container.getBoundingClientRect();
-      const dist = Math.abs(rect.top - containerRect.top);
-      if (dist < closestDist) { closestDist = dist; closest = parseInt(el.getAttribute("data-page")!); }
-    });
-    if (closest !== currentPage) {
-      setCurrentPage(closest);
-      onPageChange?.(closest, totalPages);
-    }
-  }, [totalPages, currentPage, onPageChange]);
-
-  /* ── Intersection observer for lazy render ──────────── */
+  /* ── Render current page ────────────────────────────── */
   useEffect(() => {
-    if (!scrollRef.current || !pdf) return;
-    const observer = new IntersectionObserver((entries) => {
-      entries.forEach((entry) => {
-        const pageNum = parseInt(entry.target.getAttribute("data-page")!);
-        if (entry.isIntersecting && !renderedPages.current.has(pageNum)) {
-          const canvas = entry.target.querySelector("canvas");
-          if (canvas) renderPageToCanvas(pageNum, canvas);
-        }
-      });
-    }, { root: scrollRef.current, rootMargin: "200% 0px" });
+    if (!pdf || !canvasRef.current || status !== "ready" || totalPages === 0) return;
+    let cancelled = false;
 
-    const containers = scrollRef.current.querySelectorAll("[data-page]");
-    containers.forEach((c) => observer.observe(c));
+    const render = async () => {
+      const canvas = canvasRef.current!;
+      const page = await pdf.getPage(currentPage);
+      const viewport = page.getViewport({ scale: defaultScale });
 
-    return () => observer.disconnect();
-  }, [pdf, renderPageToCanvas]);
+      canvas.width = viewport.width;
+      canvas.height = viewport.height;
+      canvas.style.width = `${viewport.width}px`;
+      canvas.style.height = `${viewport.height}px`;
+      canvas.style.backgroundColor = "#ffffff";
 
-  /* ── Scroll to initial page ─────────────────────────── */
+      if (cancelled) return;
+
+      const ctx = canvas.getContext("2d");
+      if (!ctx) return;
+      await page.render({ canvasContext: ctx, viewport }).promise;
+
+      if (!cancelled) {
+        setPageSize({ width: viewport.width, height: viewport.height });
+      }
+    };
+
+    render();
+    onPageChange?.(currentPage, totalPages);
+
+    return () => { cancelled = true; };
+  }, [pdf, currentPage, status, totalPages, defaultScale, onPageChange]);
+
+  /* ── Navigation ─────────────────────────────────────── */
+  const goToPrev = useCallback(() => {
+    setCurrentPage((p) => Math.max(1, p - 1));
+  }, []);
+
+  const goToNext = useCallback(() => {
+    setCurrentPage((p) => Math.min(totalPages, p + 1));
+  }, [totalPages]);
+
   useEffect(() => {
-    if (status !== "ready" || totalPages === 0) return;
-    const el = scrollRef.current?.querySelector(`[data-page="${initialPage}"]`);
-    if (el) el.scrollIntoView({ block: "start" });
-  }, [status, totalPages, initialPage]);
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === "ArrowRight" || e.key === "ArrowDown") {
+        e.preventDefault();
+        goToNext();
+      } else if (e.key === "ArrowLeft" || e.key === "ArrowUp") {
+        e.preventDefault();
+        goToPrev();
+      }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [goToPrev, goToNext]);
 
-  /* ── Zoom ──────────────────────────────────────────── */
+  /* ── Zoom ───────────────────────────────────────────── */
   const zoomIn = () => setDisplayScale((s) => Math.min(s + 0.2, 3.0));
   const zoomOut = () => setDisplayScale((s) => Math.max(s - 0.2, 0.5));
   const resetZoom = () => setDisplayScale(1.0);
 
-  /* ── Fullscreen ────────────────────────────────────── */
+  /* ── Fullscreen ─────────────────────────────────────── */
   const toggleFullscreen = useCallback(() => {
     const isMobile = typeof window !== "undefined" && window.innerWidth < 768;
     if (isMobile || !document.fullscreenEnabled) { setIsFullscreen((p) => !p); return; }
@@ -203,7 +187,7 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, 
     return () => document.removeEventListener("fullscreenchange", handler);
   }, []);
 
-  /* ── Pinch-to-zoom ─────────────────────────────────── */
+  /* ── Pinch-to-zoom ──────────────────────────────────── */
   useEffect(() => {
     const el = containerRef.current;
     if (!el) return;
@@ -225,7 +209,7 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, 
     return () => { el.removeEventListener("touchstart", onTouchS); el.removeEventListener("touchmove", onTouchM); };
   }, []);
 
-  /* ── Mouse wheel zoom ──────────────────────────────── */
+  /* ── Mouse wheel zoom ───────────────────────────────── */
   useEffect(() => {
     const el = containerRef.current;
     if (!el) return;
@@ -248,18 +232,10 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, 
     const ro = new ResizeObserver(check);
     ro.observe(el);
     return () => { ro.disconnect(); };
-  }, [totalPages]);
+  }, [totalPages, pageSize, displayScale]);
 
-  /* ── Measure scroll container width for pixel-based zoom ── */
-  useEffect(() => {
-    const el = scrollRef.current;
-    if (!el) return;
-    const update = () => setContainerWidth(el.clientWidth);
-    update();
-    const ro = new ResizeObserver(update);
-    ro.observe(el);
-    return () => { ro.disconnect(); };
-  }, []);
+  const wrapperWidth = pageSize.width > 0 ? pageSize.width * displayScale : 0;
+  const wrapperHeight = pageSize.height > 0 ? pageSize.height * displayScale : 0;
 
   return (
     <div
@@ -272,15 +248,19 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, 
       {/* Toolbar */}
       <div className="flex items-center justify-between gap-1 px-2 sm:px-3 py-1.5 sm:py-2 bg-white dark:bg-onyx-900 border-b border-parchment-200 dark:border-white/8 flex-shrink-0 overflow-hidden">
         <div className="hidden sm:flex items-center gap-0.5">
+          <ToolBtn onClick={goToPrev} disabled={currentPage <= 1} title="الصفحة السابقة"><ChevronRight className="w-4 h-4" /></ToolBtn>
           <ToolBtn onClick={zoomOut} title="تصغير"><ZoomOut className="w-4 h-4" /></ToolBtn>
           <span onClick={resetZoom} className="px-1.5 py-1 text-[11px] font-mono text-gray-600 dark:text-gray-400 cursor-pointer min-w-[42px] text-center font-bold">{Math.round(displayScale * 100)}%</span>
           <ToolBtn onClick={zoomIn} title="تكبير"><ZoomIn className="w-4 h-4" /></ToolBtn>
           <ToolBtn onClick={resetZoom} title="الحجم الافتراضي"><RotateCcw className="w-3.5 h-3.5" /></ToolBtn>
+          <ToolBtn onClick={goToNext} disabled={currentPage >= totalPages || totalPages === 0} title="الصفحة التالية"><ChevronLeft className="w-4 h-4" /></ToolBtn>
         </div>
         <div className="flex sm:hidden items-center gap-0.5">
+          <ToolBtn onClick={goToPrev} disabled={currentPage <= 1} title="السابق"><ChevronRight className="w-3.5 h-3.5" /></ToolBtn>
           <ToolBtn onClick={zoomOut} title="تصغير"><ZoomOut className="w-3.5 h-3.5" /></ToolBtn>
           <span className="text-[10px] font-mono text-gray-400 font-bold min-w-[32px] text-center">{Math.round(displayScale * 100)}%</span>
           <ToolBtn onClick={zoomIn} title="تكبير"><ZoomIn className="w-3.5 h-3.5" /></ToolBtn>
+          <ToolBtn onClick={goToNext} disabled={currentPage >= totalPages || totalPages === 0} title="التالي"><ChevronLeft className="w-3.5 h-3.5" /></ToolBtn>
         </div>
         <span className="text-xs font-sans text-gray-400 font-bold">{currentPage} / {totalPages}</span>
         <div className="flex items-center gap-0.5">
@@ -303,21 +283,20 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, 
         <div className="absolute top-11 right-0 z-50 w-64 bg-white dark:bg-onyx-800 rounded-b-2xl shadow-xl border border-parchment-200 dark:border-white/8 max-h-[60vh] overflow-y-auto animate-fade-in" dir="rtl">
           <div className="p-3 border-b border-parchment-200 dark:border-white/8"><h3 className="font-arabic text-sm font-bold text-gray-900 dark:text-gray-100">جدول الفصول</h3></div>
           {chapters.map((ch, i) => {
-            const isLocked = ch.startPage > freeUntilPage;
+            const isChapterLocked = ch.startPage > freeUntilPage;
             const isCurrent = currentPage >= ch.startPage && (i === chapters.length - 1 || currentPage < chapters[i + 1].startPage);
             return (
               <button key={i} onClick={() => {
                 setTocOpen(false);
-                const el = scrollRef.current?.querySelector(`[data-page="${ch.startPage}"]`);
-                el?.scrollIntoView({ behavior: "smooth", block: "start" });
-              }} disabled={isLocked && !isUnlocked}
+                setCurrentPage(ch.startPage);
+              }} disabled={isChapterLocked && !isUnlocked}
                 className={`w-full flex items-center gap-3 px-4 py-3 text-right border-b border-parchment-100 dark:border-white/5 last:border-0 hover:bg-parchment-100 dark:hover:bg-white/5 ${isCurrent ? "bg-gold-500/5 border-r-2 border-r-gold-500" : ""}`}>
                 <span className={`w-7 h-7 rounded-lg flex items-center justify-center text-xs font-bold flex-shrink-0 ${isCurrent ? "bg-gold-500 text-white" : "bg-parchment-100 dark:bg-white/10 text-gray-500"}`}>{i + 1}</span>
                 <div className="flex-1 min-w-0">
                   <p className={`text-xs font-arabic truncate ${isCurrent ? "text-gold-600 dark:text-gold-400 font-bold" : "text-gray-700 dark:text-gray-300"}`}>{ch.title}</p>
                   <p className="text-[10px] text-gray-400 font-sans">صفحة {ch.startPage}</p>
                 </div>
-                {isLocked && !isUnlocked && <span className="text-[10px] text-amber-500 bg-amber-50 dark:bg-amber-900/20 px-1.5 py-0.5 rounded-full font-arabic flex-shrink-0">🔒</span>}
+                {isChapterLocked && !isUnlocked && <span className="text-[10px] text-amber-500 bg-amber-50 dark:bg-amber-900/20 px-1.5 py-0.5 rounded-full font-arabic flex-shrink-0">🔒</span>}
               </button>
             );
           })}
@@ -335,7 +314,6 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, 
       <div
         ref={scrollRef}
         className="flex-1 overflow-auto overscroll-contain"
-        onScroll={updateCurrentFromScroll}
         onContextMenu={(e) => e.preventDefault()}
       >
         <div
@@ -344,7 +322,7 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, 
             centerContent && "justify-center min-h-full",
             "py-4 sm:py-8"
           )}
-          style={{ gap: "1rem", width: containerWidth > 0 ? `${Math.max(containerWidth, containerWidth * displayScale)}px` : "100%" }}
+          style={{ gap: "1rem" }}
         >
           {status === "error" && (
             <div className="flex flex-col items-center justify-center gap-4 text-gray-400">
@@ -353,26 +331,32 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, 
             </div>
           )}
 
-          {status === "ready" && totalPages > 0 && Array.from({ length: totalPages }, (_, i) => i + 1).map((pageNum) => (
+          {status === "ready" && totalPages > 0 && (
             <div
-              key={pageNum}
-              data-page={pageNum}
-              className="relative flex justify-center"
-              style={{ width: containerWidth > 0 ? `${containerWidth * displayScale}px` : `${displayScale * 100}%`, flexShrink: 0 }}
+              className="relative flex-shrink-0"
+              style={{
+                width: wrapperWidth > 0 ? `${wrapperWidth}px` : "auto",
+                height: wrapperHeight > 0 ? `${wrapperHeight}px` : "auto",
+              }}
             >
               <canvas
-                ref={(el) => { if (el) canvasRefs.current.set(pageNum, el); }}
+                ref={canvasRef}
                 className="rounded-sm shadow-lg"
-                style={{ width: "100%", height: "auto", backgroundColor: "#fff" }}
+                style={{
+                  width: pageSize.width > 0 ? `${pageSize.width}px` : "auto",
+                  height: pageSize.height > 0 ? `${pageSize.height}px` : "auto",
+                  transform: displayScale !== 1 && pageSize.width > 0 ? `scale(${displayScale})` : undefined,
+                  transformOrigin: "top left",
+                  backgroundColor: "#ffffff",
+                }}
               />
-              {/* Paywall for locked pages */}
-              {isLocked && pageNum > freeUntilPage && pageNum === currentPage + 1 && (
+              {isLocked && (
                 <div className="absolute inset-0 flex items-center justify-center bg-parchment-50/90 dark:bg-onyx-950/95 backdrop-blur-sm z-20">
                   <Paywall onUnlock={() => setIsUnlocked(true)} price={500} title={title} preview={preview} />
                 </div>
               )}
             </div>
-          ))}
+          )}
         </div>
       </div>
     </div>
