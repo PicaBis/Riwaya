@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, useCallback } from "react";
-import { ZoomIn, ZoomOut, RotateCcw, Maximize2, Minimize2, BookOpen, Speaker, VolumeX, List, Layout } from "lucide-react";
+import { ZoomIn, ZoomOut, RotateCcw, Maximize2, Minimize2, BookOpen, Speaker, VolumeX, List, Layout, ChevronLeft, ChevronRight } from "lucide-react";
 import clsx from "clsx";
 import { Paywall } from "./Paywall";
 
@@ -41,10 +41,9 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, 
   const renderedPages = useRef<Set<number>>(new Set());
   const canvasRefs = useRef<Map<number, HTMLCanvasElement>>(new Map());
   const pageHeights = useRef<Map<number, number>>(new Map());
+  const touchStartX = useRef(0);
   const [centerContent, setCenterContent] = useState(false);
-  const [singlePage, setSinglePage] = useState(false);
-  const [viewportH, setViewportH] = useState(0);
-  const RENDER_BUFFER = 2;
+  const [horizontalPage, setHorizontalPage] = useState(false);
 
   // YouTube music
   useEffect(() => {
@@ -162,7 +161,7 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, 
 
   /* ── Intersection observer for lazy render ──────────── */
   useEffect(() => {
-    if (singlePage || !scrollRef.current || !pdf) return;
+    if (!scrollRef.current || !pdf) return;
     const observer = new IntersectionObserver((entries) => {
       entries.forEach((entry) => {
         const pageNum = parseInt(entry.target.getAttribute("data-page")!);
@@ -177,7 +176,7 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, 
     containers.forEach((c) => observer.observe(c));
 
     return () => observer.disconnect();
-  }, [pdf, renderPageToCanvas, singlePage]);
+  }, [pdf, renderPageToCanvas]);
 
   /* ── Scroll to initial page ─────────────────────────── */
   useEffect(() => {
@@ -252,23 +251,44 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, 
     return () => { ro.disconnect(); };
   }, [totalPages]);
 
-  /* ── Viewport height for single-page mode ──────────── */
-  useEffect(() => {
-    if (!singlePage || !scrollRef.current) return;
-    const el = scrollRef.current;
-    const update = () => setViewportH(el.clientHeight);
-    update();
-    const ro = new ResizeObserver(update);
-    ro.observe(el);
-    return () => ro.disconnect();
-  }, [singlePage]);
+  /* ── Horizontal page navigation ────────────────────── */
+  const goNext = useCallback(() => {
+    if (currentPage < totalPages) {
+      const next = currentPage + 1;
+      setCurrentPage(next);
+      onPageChange?.(next, totalPages);
+    }
+  }, [currentPage, totalPages, onPageChange]);
 
-  /* ── Scroll to current page when toggling modes ────── */
+  const goPrev = useCallback(() => {
+    if (currentPage > 1) {
+      const prev = currentPage - 1;
+      setCurrentPage(prev);
+      onPageChange?.(prev, totalPages);
+    }
+  }, [currentPage, onPageChange]);
+
+  /* ── Keyboard navigation in horizontal mode ────────── */
   useEffect(() => {
-    if (status !== "ready") return;
-    const el = scrollRef.current?.querySelector(`[data-page="${currentPage}"]`);
-    if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
-  }, [singlePage, status]);
+    if (!horizontalPage) return;
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === "ArrowLeft") { e.preventDefault(); goNext(); }
+      else if (e.key === "ArrowRight") { e.preventDefault(); goPrev(); }
+      else if (e.key === " ") { e.preventDefault(); goNext(); }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [horizontalPage, goNext, goPrev]);
+
+  /* ── Touch swipe for horizontal mode ───────────────── */
+  const onTouchStart = (e: React.TouchEvent) => { touchStartX.current = e.touches[0].clientX; };
+  const onTouchEnd = (e: React.TouchEvent) => {
+    const diff = touchStartX.current - e.changedTouches[0].clientX;
+    if (Math.abs(diff) > 40) {
+      if (diff > 0) goNext();
+      else goPrev();
+    }
+  };
 
   return (
     <div
@@ -301,8 +321,8 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, 
               {playing ? <VolumeX className="w-4 h-4 text-gold-500" /> : <Speaker className="w-4 h-4" />}
             </ToolBtn>
           )}
-          <ToolBtn onClick={() => setSinglePage(p => !p)} title={singlePage ? "عرض التمرير" : "صفحة واحدة"}>
-            <Layout className={clsx("w-4 h-4", singlePage && "text-gold-500")} />
+          <ToolBtn onClick={() => setHorizontalPage(p => !p)} title={horizontalPage ? "عرض التمرير" : "قلب الصفحات"}>
+            <Layout className={clsx("w-4 h-4", horizontalPage && "text-gold-500")} />
           </ToolBtn>
           <ToolBtn onClick={toggleFullscreen} title={isFullscreen ? "الخروج من ملء الشاشة" : "ملء الشاشة"} className="bg-gold-500/10 dark:bg-white/10 rounded-lg hover:bg-gold-500/20 dark:hover:bg-white/20">
             {isFullscreen ? <Minimize2 className="w-4 h-4 text-gold-500" /> : <Maximize2 className="w-4 h-4 text-gold-500" />}
@@ -320,8 +340,13 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, 
             return (
               <button key={i} onClick={() => {
                 setTocOpen(false);
-                const el = scrollRef.current?.querySelector(`[data-page="${ch.startPage}"]`);
-                el?.scrollIntoView({ behavior: "smooth", block: "start" });
+                if (horizontalPage) {
+                  setCurrentPage(ch.startPage);
+                  onPageChange?.(ch.startPage, totalPages);
+                } else {
+                  const el = scrollRef.current?.querySelector(`[data-page="${ch.startPage}"]`);
+                  el?.scrollIntoView({ behavior: "smooth", block: "start" });
+                }
               }} disabled={isLocked && !isUnlocked}
                 className={`w-full flex items-center gap-3 px-4 py-3 text-right border-b border-parchment-100 dark:border-white/5 last:border-0 hover:bg-parchment-100 dark:hover:bg-white/5 ${isCurrent ? "bg-gold-500/5 border-r-2 border-r-gold-500" : ""}`}>
                 <span className={`w-7 h-7 rounded-lg flex items-center justify-center text-xs font-bold flex-shrink-0 ${isCurrent ? "bg-gold-500 text-white" : "bg-parchment-100 dark:bg-white/10 text-gray-500"}`}>{i + 1}</span>
@@ -343,60 +368,102 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, 
         </div>
       )}
 
-      {/* Vertical Scroll Area */}
-      <div
-        ref={scrollRef}
-        className={clsx("flex-1 overflow-y-auto overflow-x-hidden", singlePage && "snap-y snap-mandatory scroll-smooth")}
-        onScroll={updateCurrentFromScroll}
-        onContextMenu={(e) => e.preventDefault()}
-      >
-        <div
-          className={clsx(
-            "flex flex-col items-center w-full",
-            centerContent && !singlePage && "justify-center min-h-full",
-            singlePage ? "py-0" : "py-4 sm:py-8"
-          )}
-          style={singlePage ? { gap: 0 } : { gap: "1rem" }}
+      {/* Reading Area */}
+      {horizontalPage ? (
+        /* Horizontal page-flip mode */
+        <div className="flex-1 flex items-center justify-center relative overflow-hidden select-none"
+          onTouchStart={onTouchStart}
+          onTouchEnd={onTouchEnd}
         >
-          {status === "error" && (
-            <div className="flex flex-col items-center justify-center gap-4 text-gray-400">
-              <BookOpen className="w-16 h-16 text-gold-500/30" />
-              <p className="font-arabic text-center">تعذّر تحميل الملف. الرجاء التحقق من الاتصال.</p>
+          {/* Previous page button */}
+          {currentPage > 1 && (
+            <button onClick={goPrev}
+              className="absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 z-10 w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center rounded-full bg-white/80 dark:bg-onyx-800/80 hover:bg-white dark:hover:bg-onyx-800 shadow-lg text-gray-600 dark:text-gray-300 transition-all active:scale-90"
+              title="الصفحة السابقة"
+            >
+              <ChevronRight className="w-5 h-5 sm:w-6 sm:h-6" />
+            </button>
+          )}
+          {/* Current page */}
+          <div className="flex items-center justify-center w-full h-full p-1 sm:p-4">
+            <canvas
+              ref={(el) => {
+                if (el) { canvasRefs.current.set(currentPage, el); if (!renderedPages.current.has(currentPage)) renderPageToCanvas(currentPage, el); }
+                else { canvasRefs.current.delete(currentPage); renderedPages.current.delete(currentPage); }
+              }}
+              className="rounded-sm shadow-lg"
+              style={{ maxWidth: "100%", maxHeight: "100%", width: "auto", height: "100%", objectFit: "contain", backgroundColor: "#fff" }}
+            />
+          </div>
+          {/* Next page button */}
+          {currentPage < totalPages && (
+            <button onClick={goNext}
+              className="absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 z-10 w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center rounded-full bg-white/80 dark:bg-onyx-800/80 hover:bg-white dark:hover:bg-onyx-800 shadow-lg text-gray-600 dark:text-gray-300 transition-all active:scale-90"
+              title="الصفحة التالية"
+            >
+              <ChevronLeft className="w-5 h-5 sm:w-6 sm:h-6" />
+            </button>
+          )}
+          {/* Page indicator */}
+          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-10 px-3 py-1.5 rounded-full bg-black/50 text-white text-xs font-sans">
+            {currentPage} / {totalPages}
+          </div>
+          {/* Paywall for locked pages */}
+          {isLocked && currentPage > freeUntilPage && (
+            <div className="absolute inset-0 flex items-center justify-center bg-parchment-50/90 dark:bg-onyx-950/95 backdrop-blur-sm z-20">
+              <Paywall onUnlock={() => setIsUnlocked(true)} price={500} title={title} preview={preview} />
             </div>
           )}
+        </div>
+      ) : (
+        /* Scroll Mode */
+        <div
+          ref={scrollRef}
+          className="flex-1 overflow-y-auto overflow-x-hidden"
+          onScroll={updateCurrentFromScroll}
+          onContextMenu={(e) => e.preventDefault()}
+        >
+          <div
+            className={clsx(
+              "flex flex-col items-center w-full",
+              centerContent && "justify-center min-h-full",
+              "py-4 sm:py-8"
+            )}
+            style={{ gap: "1rem" }}
+          >
+            {status === "error" && (
+              <div className="flex flex-col items-center justify-center gap-4 text-gray-400">
+                <BookOpen className="w-16 h-16 text-gold-500/30" />
+                <p className="font-arabic text-center">تعذّر تحميل الملف. الرجاء التحقق من الاتصال.</p>
+              </div>
+            )}
 
-          {status === "ready" && totalPages > 0 && Array.from({ length: totalPages }, (_, i) => i + 1).map((pageNum) => (
-            <div
-              key={pageNum}
-              data-page={pageNum}
-              className={clsx("relative w-full flex justify-center", singlePage && "flex-shrink-0 overflow-hidden")}
-              style={{
-                maxWidth: `${displayScale * 100}%`,
-                ...(singlePage && viewportH > 0 ? { height: viewportH, scrollSnapAlign: "start" as const } : {})
-              }}
-            >
-              {singlePage && Math.abs(pageNum - currentPage) > RENDER_BUFFER ? (
-                <div className="w-full h-full" />
-              ) : (
+            {status === "ready" && totalPages > 0 && Array.from({ length: totalPages }, (_, i) => i + 1).map((pageNum) => (
+              <div
+                key={pageNum}
+                data-page={pageNum}
+                className="relative w-full flex justify-center"
+                style={{ maxWidth: `${displayScale * 100}%` }}
+              >
                 <canvas
                   ref={(el) => {
                     if (el) { canvasRefs.current.set(pageNum, el); if (!renderedPages.current.has(pageNum)) renderPageToCanvas(pageNum, el); }
                     else { canvasRefs.current.delete(pageNum); renderedPages.current.delete(pageNum); }
                   }}
                   className="rounded-sm shadow-lg"
-                  style={singlePage ? { width: "100%", height: "100%", objectFit: "contain", backgroundColor: "#fff" } : { maxWidth: "100%", height: "auto", backgroundColor: "#fff" }}
+                  style={{ maxWidth: "100%", height: "auto", backgroundColor: "#fff" }}
                 />
-              )}
-              {/* Paywall for locked pages */}
-              {isLocked && pageNum > freeUntilPage && (singlePage ? pageNum === currentPage : pageNum === currentPage + 1) && (
-                <div className="absolute inset-0 flex items-center justify-center bg-parchment-50/90 dark:bg-onyx-950/95 backdrop-blur-sm z-20">
-                  <Paywall onUnlock={() => setIsUnlocked(true)} price={500} title={title} preview={preview} />
-                </div>
-              )}
-            </div>
-          ))}
+                {/* Paywall for locked pages */}
+                {isLocked && pageNum > freeUntilPage && pageNum === currentPage + 1 && (
+                  <div className="absolute inset-0 flex items-center justify-center bg-parchment-50/90 dark:bg-onyx-950/95 backdrop-blur-sm z-20">
+                    <Paywall onUnlock={() => setIsUnlocked(true)} price={500} title={title} preview={preview} />
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }
