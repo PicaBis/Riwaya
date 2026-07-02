@@ -116,8 +116,20 @@ export function Comments({ novelId }: { novelId: string }) {
         body: JSON.stringify({ novelId, author, content: content.trim() }),
       });
       if (res.ok) {
+        const data = await res.json().catch(() => null);
         setContent("");
-        fetchComments();
+        if (data) {
+          const normalized: any = {
+            id: data.id,
+            novelId: data.novel_id || data.novelId || novelId,
+            author: data.username || data.author || author,
+            content: data.content,
+            createdAt: data.created_at ? new Date(data.created_at).getTime() : data.createdAt || Date.now(),
+            likes: data.likes || [],
+            replies: [],
+          };
+          setComments((prev) => [normalized, ...prev]);
+        }
       } else {
         const data = await res.json().catch(() => ({}));
         setSubmitError(data.error || "تعذّر إرسال التعليق");

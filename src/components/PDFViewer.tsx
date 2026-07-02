@@ -47,6 +47,8 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, 
   const [containerWidth, setContainerWidth] = useState(0);
   const pageRenderRef = useRef(0);
   const [currentChapter, setCurrentChapter] = useState<string>("");
+  const [isZooming, setIsZooming] = useState(false);
+  const zoomTimerRef = useRef<number | null>(null);
 
   const renderScale = useMemo(() => Math.max(displayScale, 1.0), [displayScale]);
 
@@ -264,9 +266,24 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, 
   }, [goToPrev, goToNext]);
 
   /* ── Zoom ───────────────────────────────────────────── */
-  const zoomIn = () => setDisplayScale((s) => Math.min(s + 0.1, 2.5));
-  const zoomOut = () => setDisplayScale((s) => Math.max(s - 0.1, 0.3));
-  const resetZoom = () => setDisplayScale(0.75);
+  const zoomIn = () => {
+    setIsZooming(true);
+    if (zoomTimerRef.current) window.clearTimeout(zoomTimerRef.current);
+    zoomTimerRef.current = window.setTimeout(() => setIsZooming(false), 300);
+    setDisplayScale((s) => Math.min(s + 0.1, 2.5));
+  };
+  const zoomOut = () => {
+    setIsZooming(true);
+    if (zoomTimerRef.current) window.clearTimeout(zoomTimerRef.current);
+    zoomTimerRef.current = window.setTimeout(() => setIsZooming(false), 300);
+    setDisplayScale((s) => Math.max(s - 0.1, 0.3));
+  };
+  const resetZoom = () => {
+    setIsZooming(true);
+    if (zoomTimerRef.current) window.clearTimeout(zoomTimerRef.current);
+    zoomTimerRef.current = window.setTimeout(() => setIsZooming(false), 300);
+    setDisplayScale(0.75);
+  };
 
   /* ── Fullscreen ─────────────────────────────────────── */
   const toggleFullscreen = useCallback(() => {
@@ -501,6 +518,7 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, 
                   width: "100%",
                   height: "auto",
                   backgroundColor: "#ffffff",
+                  willChange: isZooming ? "transform" : "auto",
                 }}
               />
               {isLocked && (

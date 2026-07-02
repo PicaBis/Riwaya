@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { BookOpen, Wallet, Calendar, Tag, Clock, Eye, Flame, Sparkles, PenLine } from "lucide-react";
 import { Novel } from "@/data/novels";
@@ -10,10 +10,10 @@ import { CCPModal } from "./CCPModal";
 import { FavoriteButton } from "./FavoriteButton";
 import { useApp } from "@/context/AppContext";
 
+const prefetched = new Set<string>();
+
 function estimateReadTime(novel: Novel): string {
-  const totalPages = novel.chapters && novel.chapters.length > 0
-    ? novel.freeUntilPage + 80
-    : novel.freeUntilPage + 80;
+  const totalPages = novel.chapters && novel.chapters.length > 0 ? novel.freeUntilPage + 80 : novel.freeUntilPage + 80;
   const mins = Math.round(totalPages / 2);
   if (mins < 60) return `~${mins} د`;
   const hrs = Math.floor(mins / 60);
@@ -41,12 +41,17 @@ export function NovelCard({ novel, index = 0 }: NovelCardProps) {
         style={{ animationDelay: `${index * 80}ms` }}
       >
         {/* Cover Image (PDF first page) or Coming-soon teaser */}
-        <Link 
-          href={`/novel/${novel.id}`} 
+        <Link
+          href={`/novel/${novel.id}`}
           className="block relative"
           onMouseEnter={() => {
-            if (novel.status !== "coming-soon" && novel.pdfFile) {
-              fetch(`/api/novel-asset/${novel.pdfFile}`, { method: "HEAD" }).catch(() => {});
+            if (novel.status !== "coming-soon" && novel.pdfFile && !prefetched.has(novel.pdfFile)) {
+              prefetched.add(novel.pdfFile);
+              const link = document.createElement("link");
+              link.rel = "prefetch";
+              link.href = `/api/novel-asset/${novel.pdfFile}`;
+              link.as = "fetch";
+              document.head.appendChild(link);
             }
           }}
         >
@@ -59,10 +64,12 @@ export function NovelCard({ novel, index = 0 }: NovelCardProps) {
               <div
                 className="absolute inset-0 opacity-40"
                 style={{
+                  width: "200%",
+                  left: "-100%",
                   background:
                     "linear-gradient(115deg, transparent 30%, rgba(255,240,200,0.35) 50%, transparent 70%)",
-                  backgroundSize: "200% 100%",
-                  animation: "shimmer 3.5s linear infinite",
+                  animation: "shimmerTranslate 4s linear infinite",
+                  willChange: "transform",
                 }}
               />
               {/* Ember dots */}

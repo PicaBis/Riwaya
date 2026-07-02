@@ -12,6 +12,7 @@ import { SubscriptionModal } from "./SubscriptionModal";
 
 import { SearchBar } from "./SearchBar";
 import { LanguageSwitcher } from "./LanguageSwitcher";
+import { ContactModal } from "./ContactModal";
 import { t } from "@/lib/i18n";
 
 export function Header() {
@@ -20,6 +21,7 @@ export function Header() {
   const [showAbout, setShowAbout] = useState(false);
   const [showDevCode, setShowDevCode] = useState(false);
   const [showSubs, setShowSubs] = useState(false);
+  const [showContact, setShowContact] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   return (
@@ -56,6 +58,12 @@ export function Header() {
               className={`px-2 py-1 rounded-lg text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-parchment-100 dark:hover:bg-white/8 transition-colors ${lang === "ar" ? "font-arabic" : "font-sans"}`}
             >
               {t("nav.about", lang)}
+            </button>
+            <button
+              onClick={() => setShowContact(true)}
+              className={`px-2 py-1 rounded-lg text-sm text-gray-600 dark:text-gray-400 hover:text-gold-500 dark:hover:text-gold-400 hover:bg-parchment-100 dark:hover:bg-white/8 transition-colors ${lang === "ar" ? "font-arabic" : "font-sans"}`}
+            >
+              تواصل مع بيكا
             </button>
             <button
               onClick={() => setShowSubs(true)}
@@ -171,6 +179,12 @@ export function Header() {
                 ℹ️ عن المنصة
               </button>
               <button
+                onClick={() => { setShowContact(true); setMobileMenuOpen(false); }}
+                className="px-3 py-2.5 rounded-xl text-sm font-arabic text-gray-700 dark:text-gray-300 hover:text-gold-500 dark:hover:text-gold-400 hover:bg-parchment-100 dark:hover:bg-white/8 transition-colors text-right"
+              >
+                💬 تواصل مع بيكا
+              </button>
+              <button
                 onClick={() => { setShowSubs(true); setMobileMenuOpen(false); }}
                 className="px-3 py-2.5 rounded-xl text-sm font-arabic text-gray-700 dark:text-gray-300 hover:text-gold-500 dark:hover:text-gold-400 hover:bg-parchment-100 dark:hover:bg-white/8 transition-colors text-right flex items-center gap-1.5"
               >
@@ -254,6 +268,7 @@ export function Header() {
 
       {showLogin && <GuestLoginModal onClose={() => setShowLogin(false)} />}
       {showAbout && <AboutModal onClose={() => setShowAbout(false)} />}
+      {showContact && <ContactModal onClose={() => setShowContact(false)} />}
       {showDevCode && <DevCodeModal onClose={() => setShowDevCode(false)} />}
       {showSubs && <SubscriptionModal onClose={() => setShowSubs(false)} />}
     </>
