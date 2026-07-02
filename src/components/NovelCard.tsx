@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { BookOpen, Wallet, Calendar, Tag, Clock, Eye } from "lucide-react";
+import { BookOpen, Wallet, Calendar, Tag, Clock, Eye, Flame, Sparkles, PenLine } from "lucide-react";
 import { Novel } from "@/data/novels";
 import { PDFCover } from "./PDFCover";
 import { StarRating } from "./StarRating";
@@ -32,6 +32,7 @@ export function NovelCard({ novel, index = 0 }: NovelCardProps) {
   const currentRating = ratings[novel.id] ?? 0;
   const bookmarkPage = bookmarks[novel.id];
   const viewCount = novelViews[novel.id] || 0;
+  const isComingSoon = novel.status === "coming-soon";
 
   return (
     <>
@@ -39,20 +40,62 @@ export function NovelCard({ novel, index = 0 }: NovelCardProps) {
         className="group flex flex-col bg-white dark:bg-onyx-800 rounded-2xl overflow-hidden shadow-book hover:shadow-book-hover border border-parchment-200 dark:border-white/8 transition-all duration-300 hover:-translate-y-1"
         style={{ animationDelay: `${index * 80}ms` }}
       >
-        {/* Cover Image (PDF first page) */}
+        {/* Cover Image (PDF first page) or Coming-soon teaser */}
         <Link href={`/novel/${novel.id}`} className="block relative">
-          <PDFCover
-            pdfUrl={`/api/novel-asset/${novel.pdfFile}`}
-            title={novel.title}
-            className="w-full aspect-[3/4] object-cover"
-          />
-          {/* Hover overlay */}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end p-4">
-            <span className="flex items-center gap-1.5 text-white text-sm font-arabic">
-              <BookOpen className="w-4 h-4" />
-              ابدأ القراءة
-            </span>
-          </div>
+          {isComingSoon ? (
+            <div className="relative w-full aspect-[3/4] overflow-hidden">
+              {/* Fiery gradient backdrop */}
+              <div className="absolute inset-0 bg-gradient-to-br from-amber-950 via-red-900 to-gold-600" />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-black/20" />
+              {/* Shimmer sweep */}
+              <div
+                className="absolute inset-0 opacity-40"
+                style={{
+                  background:
+                    "linear-gradient(115deg, transparent 30%, rgba(255,240,200,0.35) 50%, transparent 70%)",
+                  backgroundSize: "200% 100%",
+                  animation: "shimmer 3.5s linear infinite",
+                }}
+              />
+              {/* Ember dots */}
+              <div className="absolute inset-0 pointer-events-none">
+                <span className="absolute top-[18%] left-[22%] w-1 h-1 rounded-full bg-amber-200/70 animate-gentle-pulse" />
+                <span className="absolute top-[30%] right-[28%] w-1.5 h-1.5 rounded-full bg-gold-400/60 animate-gentle-pulse" style={{ animationDelay: "0.8s" }} />
+                <span className="absolute bottom-[34%] left-[30%] w-1 h-1 rounded-full bg-amber-100/60 animate-gentle-pulse" style={{ animationDelay: "1.4s" }} />
+              </div>
+              {/* Cover content */}
+              <div className="relative z-10 h-full flex flex-col items-center justify-center p-6 text-center">
+                <Flame className="w-9 h-9 text-amber-200 mb-3 animate-float drop-shadow-lg" />
+                <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-white/15 backdrop-blur-sm text-amber-50 text-[10px] font-arabic font-bold mb-4 border border-white/20">
+                  <PenLine className="w-3 h-3" />
+                  قيد الكتابة
+                </span>
+                <h3 className="font-arabic text-2xl font-bold text-white drop-shadow-lg leading-tight px-2">
+                  {novel.title}
+                </h3>
+                {novel.subtitle && (
+                  <p className="font-arabic text-sm text-amber-200/80 mt-1.5">{novel.subtitle}</p>
+                )}
+              </div>
+              {/* Spine */}
+              <div className="absolute inset-y-0 right-0 w-1 bg-gradient-to-l from-black/30 to-transparent pointer-events-none" />
+            </div>
+          ) : (
+            <>
+              <PDFCover
+                pdfUrl={`/api/novel-asset/${novel.pdfFile}`}
+                title={novel.title}
+                className="w-full aspect-[3/4] object-cover"
+              />
+              {/* Hover overlay */}
+              <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end p-4">
+                <span className="flex items-center gap-1.5 text-white text-sm font-arabic">
+                  <BookOpen className="w-4 h-4" />
+                  ابدأ القراءة
+                </span>
+              </div>
+            </>
+          )}
         </Link>
 
         {/* Card body */}
@@ -81,24 +124,37 @@ export function NovelCard({ novel, index = 0 }: NovelCardProps) {
             {novel.author}
           </p>
 
-          {/* Reading time estimate */}
-          <div className="flex items-center gap-1.5 text-xs text-gray-400 dark:text-gray-500 -mt-1">
-            <Clock className="w-3 h-3" />
-            <span className="font-arabic">مدة قراءة: {estimateReadTime(novel)}</span>
-          {viewCount > 0 && (
-            <>
-              <span className="text-gray-300 dark:text-gray-700">·</span>
-              <Eye className="w-3 h-3" />
-              <span className="font-sans">{viewCount}</span>
-            </>
+          {/* Meta line */}
+          {isComingSoon ? (
+            <div className="flex items-center gap-1.5 text-xs text-amber-600 dark:text-amber-400 -mt-1">
+              <PenLine className="w-3 h-3" />
+              <span className="font-arabic">قيد التأليف</span>
+              {novel.lastUpdated && (
+                <>
+                  <span className="text-gray-300 dark:text-gray-700">·</span>
+                  <span className="font-sans text-gray-400">{novel.lastUpdated}</span>
+                </>
+              )}
+            </div>
+          ) : (
+            <div className="flex items-center gap-1.5 text-xs text-gray-400 dark:text-gray-500 -mt-1">
+              <Clock className="w-3 h-3" />
+              <span className="font-arabic">مدة قراءة: {estimateReadTime(novel)}</span>
+              {viewCount > 0 && (
+                <>
+                  <span className="text-gray-300 dark:text-gray-700">·</span>
+                  <Eye className="w-3 h-3" />
+                  <span className="font-sans">{viewCount}</span>
+                </>
+              )}
+              {novel.lastUpdated && (
+                <>
+                  <span className="text-gray-300 dark:text-gray-700">·</span>
+                  <span className="font-sans">{novel.lastUpdated}</span>
+                </>
+              )}
+            </div>
           )}
-          {novel.lastUpdated && (
-            <>
-              <span className="text-gray-300 dark:text-gray-700">·</span>
-              <span className="font-sans">{novel.lastUpdated}</span>
-            </>
-          )}
-        </div>
 
           {/* Description */}
           <p className="text-sm text-gray-600 dark:text-gray-300 font-arabic leading-relaxed line-clamp-3 flex-1">
@@ -136,13 +192,23 @@ export function NovelCard({ novel, index = 0 }: NovelCardProps) {
 
           {/* Action Buttons */}
           <div className="flex gap-2 mt-1">
-            <Link
-              href={`/novel/${novel.id}`}
-              className="flex-1 flex items-center justify-center gap-1.5 py-2.5 bg-gray-900 dark:bg-white hover:bg-gold-500 dark:hover:bg-gold-500 text-white dark:text-gray-900 hover:text-white text-sm font-arabic font-medium rounded-xl transition-all duration-200 active:scale-95"
-            >
-              <BookOpen className="w-4 h-4" />
-              اقرأ الآن
-            </Link>
+            {isComingSoon ? (
+              <Link
+                href={`/novel/${novel.id}`}
+                className="flex-1 flex items-center justify-center gap-1.5 py-2.5 bg-gradient-to-r from-amber-700 to-gold-600 text-white text-sm font-arabic font-medium rounded-xl transition-all duration-200 active:scale-95 hover:from-amber-600 hover:to-gold-500"
+              >
+                <Sparkles className="w-4 h-4" />
+                قريباً
+              </Link>
+            ) : (
+              <Link
+                href={`/novel/${novel.id}`}
+                className="flex-1 flex items-center justify-center gap-1.5 py-2.5 bg-gray-900 dark:bg-white hover:bg-gold-500 dark:hover:bg-gold-500 text-white dark:text-gray-900 hover:text-white text-sm font-arabic font-medium rounded-xl transition-all duration-200 active:scale-95"
+              >
+                <BookOpen className="w-4 h-4" />
+                اقرأ الآن
+              </Link>
+            )}
             <FavoriteButton novelId={novel.id} />
             <button
               onClick={() => setShowCCP(true)}

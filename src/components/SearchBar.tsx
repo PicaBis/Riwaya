@@ -59,7 +59,7 @@ export function SearchBar() {
                 </div>
               ) : results.length === 0 ? (
                 <div className="px-4 py-8 text-center text-sm text-gray-400 font-arabic">
-                  لا توجد نتائج لـ "{query}"
+                  لا توجد نتائج لـ &ldquo;{query}&rdquo;
                 </div>
               ) : (
                 results.map((novel) => (

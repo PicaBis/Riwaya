@@ -11,12 +11,13 @@ export interface Novel {
   author: string;
   genre: string;
   year: number;
-  pdfFile: string;
+  pdfFile?: string;
   language: "ar" | "fr" | "en";
   tags?: string[];
   freeUntilPage: number;
   chapters?: NovelChapter[];
   lastUpdated?: string;
+  status?: "published" | "coming-soon";
 }
 
 export const novels: Novel[] = [
@@ -41,6 +42,21 @@ export const novels: Novel[] = [
       { title: "الفصل الرابع: ما بعد العاصفة 🔒", startPage: 175 },
       { title: "الفصل الخامس: النهاية 🔒", startPage: 220 },
     ],
+  },
+  {
+    id: "zilal-allahib",
+    title: "ظلال اللهب",
+    subtitle: "رواية حماسية",
+    description:
+      "حين تشتعل نيران الحرب وتتلاقى المصائر في ساحةٍ واحدة، ينهض بطلٌ من الرمال ليقلب موازين القدر. رحلةٌ ملحمية تشحذ الهمم وتُشعل نبض الإثارة في كل صفحة — حيث الشجاعة تُختبر، والولاء يُحفَر بالنار، والبطولة تُكتب بدماء الأبطال.",
+    author: "Medjahed Abdelhadi — Pica",
+    genre: "رواية حماسية",
+    year: 2025,
+    language: "ar",
+    tags: ["حماس", "إثارة", "مغامرة", "ملحمية"],
+    freeUntilPage: 0,
+    status: "coming-soon",
+    lastUpdated: "2025-07-02",
   },
 ];
 

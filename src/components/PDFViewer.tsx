@@ -42,6 +42,7 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, 
   const canvasRefs = useRef<Map<number, HTMLCanvasElement>>(new Map());
   const pageHeights = useRef<Map<number, number>>(new Map());
   const [centerContent, setCenterContent] = useState(false);
+  const [containerWidth, setContainerWidth] = useState(0);
 
   // YouTube music
   useEffect(() => {
@@ -249,6 +250,17 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, 
     return () => { ro.disconnect(); };
   }, [totalPages]);
 
+  /* ── Measure scroll container width for pixel-based zoom ── */
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const update = () => setContainerWidth(el.clientWidth);
+    update();
+    const ro = new ResizeObserver(update);
+    ro.observe(el);
+    return () => { ro.disconnect(); };
+  }, []);
+
   return (
     <div
       ref={containerRef}
@@ -322,17 +334,17 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, 
       {/* Vertical Scroll Area */}
       <div
         ref={scrollRef}
-        className="flex-1 overflow-y-auto overflow-x-hidden"
+        className="flex-1 overflow-auto overscroll-contain"
         onScroll={updateCurrentFromScroll}
         onContextMenu={(e) => e.preventDefault()}
       >
         <div
           className={clsx(
-            "flex flex-col items-center w-full",
+            "flex flex-col items-center mx-auto",
             centerContent && "justify-center min-h-full",
             "py-4 sm:py-8"
           )}
-          style={{ gap: "1rem" }}
+          style={{ gap: "1rem", width: containerWidth > 0 ? `${Math.max(containerWidth, containerWidth * displayScale)}px` : "100%" }}
         >
           {status === "error" && (
             <div className="flex flex-col items-center justify-center gap-4 text-gray-400">
@@ -345,13 +357,13 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, 
             <div
               key={pageNum}
               data-page={pageNum}
-              className="relative w-full flex justify-center"
-              style={{ maxWidth: `${displayScale * 100}%` }}
+              className="relative flex justify-center"
+              style={{ width: containerWidth > 0 ? `${containerWidth * displayScale}px` : `${displayScale * 100}%`, flexShrink: 0 }}
             >
               <canvas
                 ref={(el) => { if (el) canvasRefs.current.set(pageNum, el); }}
                 className="rounded-sm shadow-lg"
-                style={{ maxWidth: "100%", height: "auto", backgroundColor: "#fff" }}
+                style={{ width: "100%", height: "auto", backgroundColor: "#fff" }}
               />
               {/* Paywall for locked pages */}
               {isLocked && pageNum > freeUntilPage && pageNum === currentPage + 1 && (
