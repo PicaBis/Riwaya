@@ -181,7 +181,12 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, 
       try {
         const page = await pdf.getPage(currentPage);
         if (cancelled || renderId !== pageRenderRef.current) return;
-        const viewport = page.getViewport({ scale: renderScale });
+
+        const nativeViewport = page.getViewport({ scale: 1.0 });
+        const targetPixelWidth = containerWidth > 0 ? containerWidth * displayScale : 0;
+        const neededScale = targetPixelWidth > 0 ? targetPixelWidth / nativeViewport.width : Math.max(displayScale, 1.0);
+        const optimalScale = Math.max(neededScale, 1.0);
+        const viewport = page.getViewport({ scale: optimalScale });
 
         canvas.width = viewport.width;
         canvas.height = viewport.height;
@@ -208,15 +213,23 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, 
 
     render();
     return () => { cancelled = true; };
-  }, [pdf, currentPage, status, totalPages, renderScale, onPageChange]);
+  }, [pdf, currentPage, status, totalPages, containerWidth, displayScale, onPageChange]);
 
   /* ── Navigation ─────────────────────────────────────── */
   const goToPrev = useCallback(() => {
-    setCurrentPage((p) => Math.max(1, p - 1));
+    setCurrentPage((p) => {
+      const next = Math.max(1, p - 1);
+      if (next !== p && navigator.vibrate) navigator.vibrate(10);
+      return next;
+    });
   }, []);
 
   const goToNext = useCallback(() => {
-    setCurrentPage((p) => Math.min(totalPages, p + 1));
+    setCurrentPage((p) => {
+      const next = Math.min(totalPages, p + 1);
+      if (next !== p && navigator.vibrate) navigator.vibrate(10);
+      return next;
+    });
   }, [totalPages]);
 
   useEffect(() => {
@@ -423,8 +436,16 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, 
               </span>
             </div>
           )}
-          <div className="h-0.5 bg-parchment-200 dark:bg-white/5">
-            <div className="h-full bg-gradient-to-r from-gold-500 to-gold-400 transition-all duration-300" style={{ width: `${Math.round((currentPage / totalPages) * 100)}%` }} />
+          <div className="h-0.5 bg-parchment-200 dark:bg-white/5 cursor-pointer group" onClick={(e) => {
+              const rect = (e.target as HTMLElement).getBoundingClientRect();
+              const ratio = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+              const target = Math.max(1, Math.min(totalPages, Math.round(ratio * totalPages)));
+              setCurrentPage(target);
+              if (navigator.vibrate) navigator.vibrate(8);
+            }}>
+            <div className="h-full bg-gradient-to-r from-gold-500 to-gold-400 transition-all duration-300 relative" style={{ width: `${Math.round((currentPage / totalPages) * 100)}%` }}>
+              <span className="absolute right-1/2 top-1/2 -translate-y-1/2 translate-x-1/2 w-2 h-2 bg-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity shadow" />
+            </div>
           </div>
         </div>
       )}
