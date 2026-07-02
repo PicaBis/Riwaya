@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import { Clock } from "lucide-react";
 import { useApp } from "@/context/AppContext";
 
@@ -8,6 +8,13 @@ export function ReadingTimer() {
   const { addReadingTime, totalReadingTime } = useApp();
   const [elapsed, setElapsed] = useState(0);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const elapsedRef = useRef(elapsed);
+
+  const handleAdd = useCallback(() => {
+    if (elapsedRef.current > 0) addReadingTime(elapsedRef.current);
+  }, [addReadingTime]);
+
+  useEffect(() => { elapsedRef.current = elapsed; }, [elapsed]);
 
   useEffect(() => {
     intervalRef.current = setInterval(() => {
@@ -15,9 +22,9 @@ export function ReadingTimer() {
     }, 1000);
     return () => {
       if (intervalRef.current) clearInterval(intervalRef.current);
-      if (elapsed > 0) addReadingTime(elapsed);
+      handleAdd();
     };
-  }, []);
+  }, [handleAdd]);
 
   const total = totalReadingTime + elapsed;
   const mins = Math.floor(total / 60);

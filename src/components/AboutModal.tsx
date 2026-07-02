@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import { X, BookOpen, PenTool, Code2, Smartphone, Quote, Feather, Shield, AlertCircle, CheckCircle2 } from "lucide-react";
 import { useApp } from "@/context/AppContext";
 
@@ -42,11 +43,13 @@ export function AboutModal({ onClose }: { onClose: () => void }) {
         <div className="text-center mb-6">
           {/* Profile image */}
           <div className="w-20 h-20 rounded-2xl overflow-hidden ring-2 ring-gold-500/20 mx-auto mb-4 shadow-lg">
-            <img
-              src="/author.jpg"
-              alt="بيكا"
-              className="w-full h-full object-cover"
-            />
+          <Image
+            src="/author.jpg"
+            alt="بيكا"
+            width={80}
+            height={80}
+            className="w-full h-full object-cover"
+          />
           </div>
           <span className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-gold-500/10 border border-gold-500/20 mb-3">
             <BookOpen className="w-3.5 h-3.5 text-gold-500" />

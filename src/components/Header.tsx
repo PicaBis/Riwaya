@@ -201,7 +201,7 @@ export function Header() {
               <div className="rounded-2xl bg-white dark:bg-onyx-800 border border-parchment-200 dark:border-white/10 p-4 shadow-sm">
                 <div className="flex items-center gap-3 mb-3">
                   <div className="w-11 h-11 rounded-xl overflow-hidden border border-gold-500/20 flex-shrink-0">
-                    <img src="/author.jpg" alt="بيكا" className="w-full h-full object-cover" />
+                    <Image src="/author.jpg" alt="بيكا" width={44} height={44} className="w-full h-full object-cover" />
                   </div>
                   <div>
                     <p className="font-bold text-sm text-gray-900 dark:text-gray-100 font-arabic">بيكا — Pica</p>

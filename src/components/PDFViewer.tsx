@@ -31,7 +31,7 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, 
   const [pdf, setPdf] = useState<import("pdfjs-dist").PDFDocumentProxy | null>(null);
   const [totalPages, setTotalPages] = useState(0);
   const [currentPage, setCurrentPage] = useState(initialPage);
-  const defaultScale = 4.0;
+  const defaultScale = 3.0;
   const [displayScale, setDisplayScale] = useState(1.0);
   const [status, setStatus] = useState<RenderStatus>("idle");
   const [isFullscreen, setIsFullscreen] = useState(false);
@@ -41,6 +41,8 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, 
   const [tocOpen, setTocOpen] = useState(false);
   const [pageSize, setPageSize] = useState({ width: 0, height: 0 });
   const [centerContent, setCenterContent] = useState(false);
+  const [containerWidth, setContainerWidth] = useState(0);
+  const pageRenderRef = useRef(0);
 
   /* ── YouTube music ──────────────────────────────────── */
   useEffect(() => {
@@ -112,36 +114,54 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, 
     return () => { cancelled = true; };
   }, [pdfUrl]);
 
+  /* ── Measure scroll container ───────────────────────── */
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const update = () => setContainerWidth(el.clientWidth);
+    update();
+    const ro = new ResizeObserver(update);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
   /* ── Render current page ────────────────────────────── */
   useEffect(() => {
     if (!pdf || !canvasRef.current || status !== "ready" || totalPages === 0) return;
+    const renderId = ++pageRenderRef.current;
     let cancelled = false;
 
     const render = async () => {
       const canvas = canvasRef.current!;
-      const page = await pdf.getPage(currentPage);
-      const viewport = page.getViewport({ scale: defaultScale });
+      try {
+        const page = await pdf.getPage(currentPage);
+        if (cancelled || renderId !== pageRenderRef.current) return;
+        const viewport = page.getViewport({ scale: defaultScale });
 
-      canvas.width = viewport.width;
-      canvas.height = viewport.height;
-      canvas.style.width = `${viewport.width}px`;
-      canvas.style.height = `${viewport.height}px`;
-      canvas.style.backgroundColor = "#ffffff";
+        canvas.width = viewport.width;
+        canvas.height = viewport.height;
+        canvas.style.width = "100%";
+        canvas.style.height = "auto";
+        canvas.style.backgroundColor = "#ffffff";
 
-      if (cancelled) return;
+        if (cancelled || renderId !== pageRenderRef.current) return;
 
-      const ctx = canvas.getContext("2d");
-      if (!ctx) return;
-      await page.render({ canvasContext: ctx, viewport }).promise;
+        const ctx = canvas.getContext("2d", { alpha: false });
+        if (!ctx) return;
+        await page.render({ canvasContext: ctx, viewport }).promise;
 
-      if (!cancelled) {
-        setPageSize({ width: viewport.width, height: viewport.height });
+        if (!cancelled && renderId === pageRenderRef.current) {
+          setPageSize({ width: viewport.width, height: viewport.height });
+          onPageChange?.(currentPage, totalPages);
+        }
+      } catch (e) {
+        if (!cancelled && renderId === pageRenderRef.current) {
+          console.error(e);
+        }
       }
     };
 
     render();
-    onPageChange?.(currentPage, totalPages);
-
     return () => { cancelled = true; };
   }, [pdf, currentPage, status, totalPages, defaultScale, onPageChange]);
 
@@ -169,8 +189,8 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, 
   }, [goToPrev, goToNext]);
 
   /* ── Zoom ───────────────────────────────────────────── */
-  const zoomIn = () => setDisplayScale((s) => Math.min(s + 0.2, 3.0));
-  const zoomOut = () => setDisplayScale((s) => Math.max(s - 0.2, 0.5));
+  const zoomIn = () => setDisplayScale((s) => Math.min(s + 0.2, 2.5));
+  const zoomOut = () => setDisplayScale((s) => Math.max(s - 0.2, 0.3));
   const resetZoom = () => setDisplayScale(1.0);
 
   /* ── Fullscreen ─────────────────────────────────────── */
@@ -192,38 +212,46 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, 
     const el = containerRef.current;
     if (!el) return;
     let lastDist = 0;
+    let raf = 0;
     const getDist = (t1: Touch, t2: Touch) => Math.hypot(t1.clientX - t2.clientX, t1.clientY - t2.clientY);
     const onTouchS = (e: TouchEvent) => { if (e.touches.length === 2) lastDist = getDist(e.touches[0], e.touches[1]); };
     const onTouchM = (e: TouchEvent) => {
       if (e.touches.length === 2) {
         const d = getDist(e.touches[0], e.touches[1]);
         const delta = d - lastDist;
-        if (Math.abs(delta) > 3) {
-          setDisplayScale((s) => Math.min(Math.max(s + delta * 0.008, 0.5), 3.0));
+        if (Math.abs(delta) > 1) {
+          cancelAnimationFrame(raf);
+          raf = requestAnimationFrame(() => {
+            setDisplayScale((s) => Math.min(Math.max(s + delta * 0.006, 0.3), 2.5));
+          });
           lastDist = d;
         }
       }
     };
     el.addEventListener("touchstart", onTouchS, { passive: true });
     el.addEventListener("touchmove", onTouchM, { passive: true });
-    return () => { el.removeEventListener("touchstart", onTouchS); el.removeEventListener("touchmove", onTouchM); };
+    return () => { el.removeEventListener("touchstart", onTouchS); el.removeEventListener("touchmove", onTouchM); cancelAnimationFrame(raf); };
   }, []);
 
   /* ── Mouse wheel zoom ───────────────────────────────── */
   useEffect(() => {
     const el = containerRef.current;
     if (!el) return;
+    let raf = 0;
     const onWheel = (e: WheelEvent) => {
       if (e.ctrlKey || e.metaKey) {
         e.preventDefault();
-        setDisplayScale((s) => Math.min(Math.max(s + (e.deltaY < 0 ? 0.1 : -0.1), 0.5), 3.0));
+        cancelAnimationFrame(raf);
+        raf = requestAnimationFrame(() => {
+          setDisplayScale((s) => Math.min(Math.max(s + (e.deltaY < 0 ? 0.08 : -0.08), 0.3), 2.5));
+        });
       }
     };
     el.addEventListener("wheel", onWheel, { passive: false });
     return () => el.removeEventListener("wheel", onWheel);
   }, []);
 
-  /* ── Vertical center when content is shorter than viewport ── */
+  /* ── Vertical center when content shorter than viewport ── */
   useEffect(() => {
     const el = scrollRef.current;
     if (!el || totalPages === 0) return;
@@ -231,11 +259,10 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, 
     check();
     const ro = new ResizeObserver(check);
     ro.observe(el);
-    return () => { ro.disconnect(); };
-  }, [totalPages, pageSize, displayScale]);
+    return () => ro.disconnect();
+  }, [totalPages, pageSize, containerWidth, displayScale]);
 
-  const wrapperWidth = pageSize.width > 0 ? pageSize.width * displayScale : 0;
-  const wrapperHeight = pageSize.height > 0 ? pageSize.height * displayScale : 0;
+  const pageWrapperWidth = containerWidth > 0 ? Math.max(containerWidth, containerWidth * displayScale) : "100%";
 
   return (
     <div
@@ -322,7 +349,7 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, 
             centerContent && "justify-center min-h-full",
             "py-4 sm:py-8"
           )}
-          style={{ gap: "1rem" }}
+          style={{ gap: "1rem", width: pageWrapperWidth }}
         >
           {status === "error" && (
             <div className="flex flex-col items-center justify-center gap-4 text-gray-400">
@@ -335,17 +362,17 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, 
             <div
               className="relative flex-shrink-0"
               style={{
-                width: wrapperWidth > 0 ? `${wrapperWidth}px` : "auto",
-                height: wrapperHeight > 0 ? `${wrapperHeight}px` : "auto",
+                width: containerWidth > 0 ? `${containerWidth * displayScale}px` : `${displayScale * 100}%`,
+                minHeight: pageSize.height > 0 ? `${pageSize.height * (displayScale / (defaultScale || 1))}px` : undefined,
               }}
             >
               <canvas
                 ref={canvasRef}
-                className="rounded-sm shadow-lg"
+                className="rounded-sm shadow-lg will-change-transform"
                 style={{
-                  width: pageSize.width > 0 ? `${pageSize.width}px` : "auto",
-                  height: pageSize.height > 0 ? `${pageSize.height}px` : "auto",
-                  transform: displayScale !== 1 && pageSize.width > 0 ? `scale(${displayScale})` : undefined,
+                  width: "100%",
+                  height: "auto",
+                  transform: displayScale !== 1 ? `scale(${displayScale})` : undefined,
                   transformOrigin: "top left",
                   backgroundColor: "#ffffff",
                 }}
