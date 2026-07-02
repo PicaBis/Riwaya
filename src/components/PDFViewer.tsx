@@ -32,7 +32,7 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, 
   const [totalPages, setTotalPages] = useState(0);
   const [currentPage, setCurrentPage] = useState(initialPage);
   const defaultScale = 3.0;
-  const [displayScale, setDisplayScale] = useState(1.0);
+  const [displayScale, setDisplayScale] = useState(0.75);
   const [status, setStatus] = useState<RenderStatus>("idle");
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [playing, setPlaying] = useState(false);
@@ -189,9 +189,9 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, 
   }, [goToPrev, goToNext]);
 
   /* ── Zoom ───────────────────────────────────────────── */
-  const zoomIn = () => setDisplayScale((s) => Math.min(s + 0.2, 2.5));
-  const zoomOut = () => setDisplayScale((s) => Math.max(s - 0.2, 0.3));
-  const resetZoom = () => setDisplayScale(1.0);
+  const zoomIn = () => setDisplayScale((s) => Math.min(s + 0.1, 2.5));
+  const zoomOut = () => setDisplayScale((s) => Math.max(s - 0.1, 0.3));
+  const resetZoom = () => setDisplayScale(0.75);
 
   /* ── Fullscreen ─────────────────────────────────────── */
   const toggleFullscreen = useCallback(() => {
@@ -358,22 +358,31 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, 
             </div>
           )}
 
+          {status === "loading" && (
+            <div className="flex flex-col items-center justify-center gap-4 text-gray-400 py-20">
+              <div className="w-10 h-10 rounded-full border-2 border-gold-500/20 border-t-gold-500 animate-spin" />
+              <p className="font-arabic text-sm text-gray-500 dark:text-gray-400">جاري تحميل الرواية…</p>
+            </div>
+          )}
+
           {status === "ready" && totalPages > 0 && (
             <div
-              className="relative flex-shrink-0"
+              className="relative flex-shrink-0 mx-auto overflow-hidden flex items-center justify-center transition-all duration-200"
               style={{
                 width: containerWidth > 0 ? `${containerWidth * displayScale}px` : `${displayScale * 100}%`,
-                minHeight: pageSize.height > 0 ? `${pageSize.height * (displayScale / (defaultScale || 1))}px` : undefined,
+                minHeight: containerWidth > 0 && pageSize.width > 0
+                  ? `${(containerWidth * pageSize.height / pageSize.width) * displayScale}px`
+                  : undefined,
               }}
             >
               <canvas
                 ref={canvasRef}
-                className="rounded-sm shadow-lg will-change-transform"
+                className="rounded-sm shadow-lg"
                 style={{
-                  width: "100%",
+                  width: containerWidth > 0 ? `${containerWidth}px` : "100%",
                   height: "auto",
-                  transform: displayScale !== 1 ? `scale(${displayScale})` : undefined,
-                  transformOrigin: "top left",
+                  transform: displayScale !== 1 && pageSize.width > 0 ? `scale(${displayScale})` : undefined,
+                  transformOrigin: "center center",
                   backgroundColor: "#ffffff",
                 }}
               />

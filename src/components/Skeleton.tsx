@@ -25,10 +25,12 @@ export function SkeletonCard() {
 
 export function SkeletonReader() {
   return (
-    <div className="flex-1 flex flex-col items-center justify-center min-h-[60vh] animate-pulse">
-      <div className="w-16 h-16 rounded-2xl bg-gold-500/10 mb-4" />
-      <div className="h-5 w-48 bg-parchment-200 dark:bg-white/5 rounded mb-6" />
-      <div className="w-full max-w-2xl aspect-[3/4] sm:aspect-[1/1.4] bg-parchment-200 dark:bg-white/5 rounded" />
+    <div className="flex-1 flex flex-col items-center justify-center min-h-[60vh] gap-4">
+      <div className="w-12 h-12 rounded-full border-[3px] border-gold-500/20 border-t-gold-500 animate-spin" />
+      <span className="text-sm text-gray-400 dark:text-gray-500 font-arabic font-medium">
+        جاري تحميل الرواية…
+      </span>
+      <div className="w-full max-w-md aspect-[1/1.4] bg-parchment-200 dark:bg-white/5 rounded-lg animate-pulse mt-2" />
     </div>
   );
 }

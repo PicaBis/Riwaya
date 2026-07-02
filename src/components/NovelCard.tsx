@@ -41,7 +41,15 @@ export function NovelCard({ novel, index = 0 }: NovelCardProps) {
         style={{ animationDelay: `${index * 80}ms` }}
       >
         {/* Cover Image (PDF first page) or Coming-soon teaser */}
-        <Link href={`/novel/${novel.id}`} className="block relative">
+        <Link 
+          href={`/novel/${novel.id}`} 
+          className="block relative"
+          onMouseEnter={() => {
+            if (novel.status !== "coming-soon" && novel.pdfFile) {
+              fetch(`/api/novel-asset/${novel.pdfFile}`, { method: "HEAD" }).catch(() => {});
+            }
+          }}
+        >
           {isComingSoon ? (
             <div className="relative w-full aspect-[3/4] overflow-hidden">
               {/* Fiery gradient backdrop */}
