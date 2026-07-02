@@ -31,7 +31,7 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, 
   const [pdf, setPdf] = useState<import("pdfjs-dist").PDFDocumentProxy | null>(null);
   const [totalPages, setTotalPages] = useState(0);
   const [currentPage, setCurrentPage] = useState(initialPage);
-  const defaultScale = 3.0;
+  const defaultScale = 4.0;
   const [displayScale, setDisplayScale] = useState(0.75);
   const [status, setStatus] = useState<RenderStatus>("idle");
   const [isFullscreen, setIsFullscreen] = useState(false);
@@ -43,6 +43,7 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, 
   const [centerContent, setCenterContent] = useState(false);
   const [containerWidth, setContainerWidth] = useState(0);
   const pageRenderRef = useRef(0);
+  const [currentChapter, setCurrentChapter] = useState<string>("");
 
   /* ── YouTube music ──────────────────────────────────── */
   useEffect(() => {
@@ -173,6 +174,21 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, 
   const goToNext = useCallback(() => {
     setCurrentPage((p) => Math.min(totalPages, p + 1));
   }, [totalPages]);
+
+  useEffect(() => {
+    if (!chapters || chapters.length === 0) {
+      setCurrentChapter("");
+      return;
+    }
+    let current = "";
+    for (let i = chapters.length - 1; i >= 0; i--) {
+      if (currentPage >= chapters[i].startPage) {
+        current = chapters[i].title;
+        break;
+      }
+    }
+    setCurrentChapter(current);
+  }, [currentPage, chapters]);
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -330,10 +346,19 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, 
         </div>
       )}
 
-      {/* Progress Bar */}
+      {/* Progress Bar + Chapter Label */}
       {totalPages > 0 && (
-        <div className="h-0.5 bg-parchment-200 dark:bg-white/5 flex-shrink-0">
-          <div className="h-full bg-gradient-to-r from-gold-500 to-gold-400 transition-all duration-300" style={{ width: `${Math.round((currentPage / totalPages) * 100)}%` }} />
+        <div className="h-auto flex-shrink-0">
+          {currentChapter && (
+            <div className="px-3 sm:px-6 pt-1.5 pb-0.5">
+              <span className="text-[10px] sm:text-xs text-gold-600 dark:text-gold-400 font-arabic font-medium truncate">
+                {currentChapter}
+              </span>
+            </div>
+          )}
+          <div className="h-0.5 bg-parchment-200 dark:bg-white/5">
+            <div className="h-full bg-gradient-to-r from-gold-500 to-gold-400 transition-all duration-300" style={{ width: `${Math.round((currentPage / totalPages) * 100)}%` }} />
+          </div>
         </div>
       )}
 
