@@ -214,6 +214,7 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, 
         canvas.height = viewport.height;
         canvas.style.width = "100%";
         canvas.style.height = "auto";
+        canvas.style.aspectRatio = `${viewport.width} / ${viewport.height}`;
         canvas.style.backgroundColor = readingBg;
 
         if (cancelled || renderId !== pageRenderRef.current) return;
@@ -235,7 +236,9 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, 
 
     render();
     return () => { cancelled = true; };
-  }, [pdf, currentPage, status, totalPages, containerWidth, displayScale, onPageChange]);
+    // readingBg is derived from readingMode which is already in deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pdf, currentPage, status, totalPages, containerWidth, displayScale, readingMode, onPageChange]);
 
   /* ── Navigation ─────────────────────────────────────── */
   const goToPrev = useCallback(() => {
