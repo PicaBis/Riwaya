@@ -46,8 +46,6 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, 
   const [containerWidth, setContainerWidth] = useState(0);
   const pageRenderRef = useRef(0);
   const [currentChapter, setCurrentChapter] = useState<string>("");
-  const [isZooming, setIsZooming] = useState(false);
-  const zoomTimerRef = useRef<number | null>(null);
   const [readingMode, setReadingMode] = useState<"light" | "sepia" | "dark">("light");
 
   useEffect(() => {
@@ -79,7 +77,8 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, 
     ytPlayerReadyRef.current = false;
 
     const iframe = document.createElement("iframe");
-    iframe.src = `https://www.youtube.com/embed/mm0QSsRwzUo?enablejsapi=1&autoplay=0&controls=0&loop=1&playlist=mm0QSsRwzUo&origin=${encodeURIComponent(window.location.origin)}`;
+    const videoId = "LCfEqudu4pc";
+    iframe.src = `https://www.youtube.com/embed/${videoId}?enablejsapi=1&autoplay=0&controls=0&loop=1&playlist=${videoId}&origin=${encodeURIComponent(window.location.origin)}`;
     iframe.allow = "autoplay";
     iframe.style.cssText = "position:fixed;left:-9999px;top:0;width:1px;height:1px;opacity:0;pointer-events:none;";
     iframe.setAttribute("allow", "autoplay; encrypted-media");
@@ -288,24 +287,15 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, 
   }, [goToPrev, goToNext]);
 
   /* ── Zoom ───────────────────────────────────────────── */
-  const zoomIn = () => {
-    setIsZooming(true);
-    if (zoomTimerRef.current) window.clearTimeout(zoomTimerRef.current);
-    zoomTimerRef.current = window.setTimeout(() => setIsZooming(false), 300);
-    window.requestAnimationFrame(() => setDisplayScale((s) => Math.min(s + 0.1, 2.5)));
-  };
-  const zoomOut = () => {
-    setIsZooming(true);
-    if (zoomTimerRef.current) window.clearTimeout(zoomTimerRef.current);
-    zoomTimerRef.current = window.setTimeout(() => setIsZooming(false), 300);
-    window.requestAnimationFrame(() => setDisplayScale((s) => Math.max(s - 0.1, 0.3)));
-  };
-  const resetZoom = () => {
-    setIsZooming(true);
-    if (zoomTimerRef.current) window.clearTimeout(zoomTimerRef.current);
-    zoomTimerRef.current = window.setTimeout(() => setIsZooming(false), 300);
-    window.requestAnimationFrame(() => setDisplayScale(0.75));
-  };
+  const zoomIn = useCallback(() => {
+    setDisplayScale((s) => Math.min(s + 0.1, 2.5));
+  }, []);
+  const zoomOut = useCallback(() => {
+    setDisplayScale((s) => Math.max(s - 0.1, 0.3));
+  }, []);
+  const resetZoom = useCallback(() => {
+    setDisplayScale(0.75);
+  }, []);
 
   /* ── Fullscreen ─────────────────────────────────────── */
   const toggleFullscreen = useCallback(() => {
@@ -501,7 +491,7 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, 
       {/* Vertical Scroll Area */}
       <div
         ref={scrollRef}
-        className="flex-1 overflow-auto overscroll-contain relative"
+        className="flex-1 overflow-auto relative"
         onContextMenu={(e) => e.preventDefault()}
       >
         <div

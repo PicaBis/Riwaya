@@ -156,7 +156,7 @@ export function NovelReadingClient({ novel, startPage }: NovelReadingClientProps
       <div className="min-h-screen flex flex-col" dir="rtl">
         <Breadcrumb items={[{ label: novel.title }]} />
         {/* ── PDF Viewer ─────────────────────────────── */}
-        <div className="flex-1 flex flex-col" dir="ltr">
+        <div className="min-h-[50vh] sm:min-h-[65vh] flex flex-col" dir="ltr">
           <PDFViewer
             pdfUrl={pdfUrl}
             title={novel.title}
