@@ -230,7 +230,28 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, 
     render();
     return () => { cancelled = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pdf, currentPage, status, totalPages, containerWidth, displayScale, onPageChange]);
+   }, [pdf, currentPage, status, totalPages, containerWidth, displayScale, onPageChange]);
+
+  /* ── Blank canvas on blur immediately ───────────────── */
+  useEffect(() => {
+    const blank = () => {
+      const canvas = canvasRef.current;
+      if (!canvas) return;
+      const ctx = canvas.getContext("2d", { alpha: false });
+      if (!ctx) return;
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = "#ffffff";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+    };
+    const onBlur = () => blank();
+    const onVis = () => { if (document.hidden) blank(); };
+    window.addEventListener("blur", onBlur);
+    document.addEventListener("visibilitychange", onVis);
+    return () => {
+      window.removeEventListener("blur", onBlur);
+      document.removeEventListener("visibilitychange", onVis);
+    };
+  }, [pdf, status, currentPage, containerWidth, displayScale]);
 
   /* ── Navigation ─────────────────────────────────────── */
   const goToPrev = useCallback(() => {

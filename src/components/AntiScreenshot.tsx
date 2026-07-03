@@ -16,7 +16,8 @@ export function AntiScreenshot() {
     document.head.appendChild(style);
 
     const blockedShortcuts = new Set([
-      "PrintScreen", "F5", "F12", "F11", "F10",
+      "PrintScreen", "Snapshot",
+      "F5", "F12", "F11", "F10",
     ]);
     const blockedCtrl = new Set([
       "p", "s", "u", "a", "c", "w", "n", "t", "j", "l",
@@ -32,6 +33,19 @@ export function AntiScreenshot() {
       if (blockedShortcuts.has(e.key) || blockedShortcuts.has(e.code)) {
         e.preventDefault();
         e.stopPropagation();
+        return;
+      }
+      if (e.key === "PrintScreen" || e.code === "PrintScreen" || e.code === "Snapshot") {
+        e.preventDefault();
+        e.stopPropagation();
+        document.body.style.background = "#ffffff";
+        document.body.style.filter = "blur(40px)";
+        document.body.style.pointerEvents = "none";
+        setTimeout(() => {
+          document.body.style.background = "";
+          document.body.style.filter = devtoolsOpen ? "blur(30px) saturate(0) brightness(2)" : "";
+          document.body.style.pointerEvents = devtoolsOpen ? "none" : "";
+        }, 600);
         return;
       }
       if (e.ctrlKey || e.metaKey) {
@@ -72,7 +86,16 @@ export function AntiScreenshot() {
       }
     };
     const onBlur = () => {
-      try { navigator.clipboard?.writeText(""); } catch {}
+      document.body.style.opacity = "0";
+      document.body.style.transition = "opacity 60ms";
+      setTimeout(() => {
+        if (document.hidden) document.body.style.background = "#fff";
+      }, 200);
+    };
+    const onFocus = () => {
+      document.body.style.opacity = "1";
+      document.body.style.background = "";
+      document.body.style.transition = "";
     };
 
     let devtoolsOpen = false;
@@ -84,11 +107,14 @@ export function AntiScreenshot() {
         window.outerHeight < window.innerHeight;
       if (open !== devtoolsOpen) {
         devtoolsOpen = open;
-        document.body.style.filter = devtoolsOpen ? "blur(20px) saturate(0)" : "";
+        document.body.style.filter = devtoolsOpen ? "blur(30px) saturate(0) brightness(2)" : "";
         document.body.style.pointerEvents = devtoolsOpen ? "none" : "";
+        document.body.style.background = devtoolsOpen ? "#ffffff" : "";
       }
     };
 
+    window.addEventListener("blur", onBlur);
+    window.addEventListener("focus", onFocus);
     document.addEventListener("keydown", onKeyDown, true);
     document.addEventListener("contextmenu", onCtxMenu, true);
     document.addEventListener("selectstart", onSelectStart, true);
@@ -107,6 +133,8 @@ export function AntiScreenshot() {
     const devtoolsInterval = window.setInterval(detectDevTools, 1000);
 
     return () => {
+      window.removeEventListener("blur", onBlur);
+      window.removeEventListener("focus", onFocus);
       document.removeEventListener("keydown", onKeyDown, true);
       document.removeEventListener("contextmenu", onCtxMenu, true);
       document.removeEventListener("selectstart", onSelectStart, true);
