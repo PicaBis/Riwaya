@@ -19,11 +19,12 @@ interface PDFViewerProps {
   preview?: string;
   novelId?: string;
   chapters?: Chapter[];
+  readingTheme?: "light" | "dark" | "sepia";
 }
 
 type RenderStatus = "idle" | "loading" | "ready" | "error";
 
-export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, onPageChange, preview, novelId, chapters }: PDFViewerProps) {
+export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, onPageChange, preview, novelId, chapters, readingTheme = "light" }: PDFViewerProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);

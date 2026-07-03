@@ -27,13 +27,13 @@ interface NovelReadingClientProps {
 }
 
 export function NovelReadingClient({ novel, startPage }: NovelReadingClientProps) {
-  const { bookmarks, saveBookmark, trackNovelView } = useApp();
+  const { bookmarks, saveBookmark, trackNovelView, readerPrefs } = useApp();
   const [showCCP, setShowCCP] = useState(false);
+  const [pageCurl, setPageCurl] = useState(false);
 
   const track = useCallback(() => {
     void trackNovelView(novel.id);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [novel.id]);
+  }, [novel.id, trackNovelView]);
 
   useEffect(() => {
     track();
@@ -45,6 +45,8 @@ export function NovelReadingClient({ novel, startPage }: NovelReadingClientProps
   const handlePageChange = useCallback(
     (page: number, total?: number) => {
       saveBookmark(novel.id, page);
+      setPageCurl(true);
+      setTimeout(() => setPageCurl(false), 600);
     },
     [novel.id, saveBookmark]
   );
@@ -156,7 +158,7 @@ export function NovelReadingClient({ novel, startPage }: NovelReadingClientProps
       <div className="min-h-screen flex flex-col" dir="rtl">
         <Breadcrumb items={[{ label: novel.title }]} />
         {/* ── PDF Viewer ─────────────────────────────── */}
-        <div className="min-h-[50vh] sm:min-h-[65vh] flex flex-col" dir="ltr">
+        <div className={`min-h-[50vh] sm:min-h-[65vh] flex flex-col reading-theme-${readerPrefs.readingTheme} ${pageCurl ? "animate-page-curl" : ""}`} dir="ltr">
           <PDFViewer
             pdfUrl={pdfUrl}
             title={novel.title}
@@ -166,6 +168,7 @@ export function NovelReadingClient({ novel, startPage }: NovelReadingClientProps
             preview={novel.description}
             novelId={novel.id}
             chapters={novel.chapters}
+            readingTheme={readerPrefs.readingTheme}
           />
         </div>
 

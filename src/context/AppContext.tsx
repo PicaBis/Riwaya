@@ -36,6 +36,7 @@ interface ReaderPreferences {
   lineHeight: number;     // 1.6-2.8
   fontFamily: "amiri" | "sans";
   sepiaMode: boolean;
+  readingTheme: "light" | "dark" | "sepia";
 }
 
 interface AppContextValue {
@@ -96,6 +97,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     lineHeight: 1.8,
     fontFamily: "amiri",
     sepiaMode: false,
+    readingTheme: "light",
   });
   const [novelViews, setNovelViews] = useState<Record<string, number>>({});
   const [favorites, setFavorites] = useState<string[]>([]);
