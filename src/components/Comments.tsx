@@ -7,9 +7,12 @@ import { getSupabase } from "@/lib/supabase";
 import type { Comment } from "@/lib/comments-types";
 import clsx from "clsx";
 
+const COMMENTS_PER_PAGE = 20;
+
 export function Comments({ novelId }: { novelId: string }) {
   const { guest, isAdmin, setAdmin, isDark } = useApp();
   const [comments, setComments] = useState<Comment[]>([]);
+  const [displayCount, setDisplayCount] = useState(COMMENTS_PER_PAGE);
   const [content, setContent] = useState("");
   const [guestName, setGuestName] = useState("ضيف");
   const [loading, setLoading] = useState(false);
@@ -53,6 +56,7 @@ export function Comments({ novelId }: { novelId: string }) {
 
   useEffect(() => {
     fetchComments();
+    setDisplayCount(COMMENTS_PER_PAGE);
   }, [fetchComments]);
 
   // Supabase real-time subscription
@@ -303,7 +307,7 @@ export function Comments({ novelId }: { novelId: string }) {
             لا توجد تعليقات بعد — كن أول من يشارك
           </p>
         ) : (
-          comments.map((c) => (
+          comments.slice(0, displayCount).map((c) => (
             <div
               key={c.id}
               className={clsx(
@@ -362,6 +366,16 @@ export function Comments({ novelId }: { novelId: string }) {
               </div>
             </div>
           ))
+        )}
+        {displayCount < comments.length && (
+          <div className="text-center pt-4">
+            <button
+              onClick={() => setDisplayCount((p) => Math.min(p + COMMENTS_PER_PAGE, comments.length))}
+              className="px-6 py-2.5 rounded-xl border border-parchment-300 dark:border-white/10 bg-white dark:bg-onyx-800 text-sm font-arabic text-gray-600 dark:text-gray-400 hover:border-gold-500/40 hover:text-gold-500 transition-all"
+            >
+              عرض المزيد ({comments.length - displayCount})
+            </button>
+          </div>
         )}
       </div>
     </div>

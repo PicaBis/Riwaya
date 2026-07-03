@@ -1,4 +1,5 @@
 const CACHE = "riwayati-v1";
+const PDF_CACHE = "riwayati-pdfs-v1";
 
 self.addEventListener("install", (e) => {
   (e as any).waitUntil(
@@ -17,16 +18,37 @@ self.addEventListener("install", (e) => {
 });
 
 self.addEventListener("fetch", (e: any) => {
+  const url = new URL(e.request.url);
+
+  if (url.pathname.startsWith("/api/novel-asset/")) {
+    e.respondWith(
+      caches.open(PDF_CACHE).then((cache) =>
+        cache.match(e.request).then((cached) => {
+          const fetched = fetch(e.request).then((response) => {
+            if (response && response.status === 200) {
+              cache.put(e.request, response.clone());
+            }
+            return response;
+          });
+          return cached || fetched;
+        })
+      )
+    );
+    return;
+  }
+
   e.respondWith(
-    caches.match(e.request).then((cached) => {
-      const fetched = fetch(e.request).then((response) => {
-        if (response && response.status === 200) {
-          const clone = response.clone();
-          caches.open(CACHE).then((cache) => cache.put(e.request, clone));
-        }
-        return response;
-      });
-      return cached || fetched;
-    })
+    caches.open(CACHE).then((cache) =>
+      cache.match(e.request).then((cached) => {
+        const fetched = fetch(e.request).then((response) => {
+          if (response && response.status === 200) {
+            const clone = response.clone();
+            cache.put(e.request, clone);
+          }
+          return response;
+        });
+        return cached || fetched;
+      })
+    )
   );
 });

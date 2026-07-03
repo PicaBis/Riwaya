@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, useCallback, useMemo } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import { ZoomIn, ZoomOut, RotateCcw, Maximize2, Minimize2, BookOpen, Speaker, VolumeX, List, ChevronLeft, ChevronRight, BookMarked } from "lucide-react";
 import clsx from "clsx";
 import { Paywall } from "./Paywall";
@@ -46,7 +46,6 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, 
   const [containerWidth, setContainerWidth] = useState(0);
   const pageRenderRef = useRef(0);
   const [currentChapter, setCurrentChapter] = useState<string>("");
-  const renderScale = useMemo(() => Math.max(displayScale, 1.0), [displayScale]);
 
   /* ── YouTube music ──────────────────────────────────── */
   useEffect(() => {
@@ -376,7 +375,7 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, 
         <div className="flex sm:hidden items-center gap-0.5">
           <ToolBtn onClick={goToPrev} disabled={currentPage <= 1} title="السابق"><ChevronRight className="w-3.5 h-3.5" /></ToolBtn>
           <ToolBtn onClick={zoomOut} title="تصغير"><ZoomOut className="w-3.5 h-3.5" /></ToolBtn>
-          <span className="text-[10px] font-mono text-gray-400 font-bold min-w-[32px] text-center">{Math.round(displayScale * 100)}%</span>
+          <span onClick={resetZoom} className="text-[10px] font-mono text-gray-500 dark:text-gray-400 font-bold min-w-[30px] text-center cursor-pointer">{Math.round(displayScale * 100)}%</span>
           <ToolBtn onClick={zoomIn} title="تكبير"><ZoomIn className="w-3.5 h-3.5" /></ToolBtn>
           <ToolBtn onClick={goToNext} disabled={currentPage >= totalPages || totalPages === 0} title="التالي"><ChevronLeft className="w-3.5 h-3.5" /></ToolBtn>
         </div>
