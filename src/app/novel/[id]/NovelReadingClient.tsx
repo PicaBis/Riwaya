@@ -170,7 +170,7 @@ export function NovelReadingClient({ novel, startPage }: NovelReadingClientProps
         </div>
 
         {/* ── Comments Section ───────────────────────── */}
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 py-8" dir="rtl">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 py-4 sm:py-6" dir="rtl">
           <Comments novelId={novel.id} />
         </div>
       </div>

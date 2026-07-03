@@ -43,7 +43,6 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, 
   const ytPlayerReadyRef = useRef(false);
   const [tocOpen, setTocOpen] = useState(false);
   const [pageSize, setPageSize] = useState({ width: 0, height: 0 });
-  const [centerContent, setCenterContent] = useState(false);
   const [containerWidth, setContainerWidth] = useState(0);
   const pageRenderRef = useRef(0);
   const [currentChapter, setCurrentChapter] = useState<string>("");
@@ -366,18 +365,19 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, 
     return () => el.removeEventListener("wheel", onWheel);
   }, []);
 
-  /* ── Vertical center when content shorter than viewport ── */
+  /* ── Center horizontal scroll when zoomed in ──────────── */
   useEffect(() => {
     const el = scrollRef.current;
     if (!el || totalPages === 0) return;
-    const check = () => setCenterContent(el.scrollHeight <= el.clientHeight);
-    check();
-    const ro = new ResizeObserver(check);
-    ro.observe(el);
-    return () => ro.disconnect();
-  }, [totalPages, pageSize, containerWidth, displayScale]);
-
-  const pageWrapperWidth = containerWidth > 0 ? `${containerWidth * displayScale}px` : `${displayScale * 100}%`;
+    const wrapper = el.firstElementChild as HTMLElement | null;
+    if (!wrapper) return;
+    const wrapperWidth = wrapper.scrollWidth;
+    if (wrapperWidth > el.clientWidth) {
+      el.scrollLeft = (wrapperWidth - el.clientWidth) / 2;
+    } else {
+      el.scrollLeft = 0;
+    }
+  }, [displayScale, containerWidth, totalPages]);
 
   const handleRetry = useCallback(() => {
     setPdf(null);
@@ -505,12 +505,8 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, 
         onContextMenu={(e) => e.preventDefault()}
       >
         <div
-          className={clsx(
-            "flex flex-col items-center",
-            centerContent && "justify-center min-h-full",
-            "py-4 sm:py-8"
-          )}
-          style={{ gap: "1rem", width: pageWrapperWidth, contain: "strict", position: "relative" }}
+          className="flex flex-col items-center w-full py-1 sm:py-2"
+          style={{ gap: "0.5rem", position: "relative" }}
         >
           {status === "error" && (
             <div className="flex flex-col items-center justify-center gap-4 text-gray-400">
