@@ -79,7 +79,7 @@ export function AboutModal({ onClose }: { onClose: () => void }) {
 
         {/* Skills — 2x2 grid */}
         <div className="grid grid-cols-2 gap-3 mb-6">
-          <div className="p-4 rounded-xl bg-white dark:bg-onyx-700/40 border border-parchment-200 dark:border-white/10 flex items-center gap-3 hover-lift">
+          <div className="p-4 rounded-xl bg-white dark:bg-onyx-700/40 border border-parchment-200 dark:border-white/10 flex items-center gap-3 hover-lift card-glow">
             <div className="w-8 h-8 rounded-lg bg-gold-500/10 flex items-center justify-center flex-shrink-0">
               <Code2 className="w-4 h-4 text-gold-500" />
             </div>
@@ -88,7 +88,7 @@ export function AboutModal({ onClose }: { onClose: () => void }) {
               <p className="text-[11px] text-gray-400 font-arabic">Web Development</p>
             </div>
           </div>
-          <div className="p-4 rounded-xl bg-white dark:bg-onyx-700/40 border border-parchment-200 dark:border-white/10 flex items-center gap-3 hover-lift">
+          <div className="p-4 rounded-xl bg-white dark:bg-onyx-700/40 border border-parchment-200 dark:border-white/10 flex items-center gap-3 hover-lift card-glow">
             <div className="w-8 h-8 rounded-lg bg-gold-500/10 flex items-center justify-center flex-shrink-0">
               <Smartphone className="w-4 h-4 text-gold-500" />
             </div>
@@ -97,7 +97,7 @@ export function AboutModal({ onClose }: { onClose: () => void }) {
               <p className="text-[11px] text-gray-400 font-arabic">Mobile Apps</p>
             </div>
           </div>
-          <div className="p-4 rounded-xl bg-white dark:bg-onyx-700/40 border border-parchment-200 dark:border-white/10 flex items-center gap-3 hover-lift">
+          <div className="p-4 rounded-xl bg-white dark:bg-onyx-700/40 border border-parchment-200 dark:border-white/10 flex items-center gap-3 hover-lift card-glow">
             <div className="w-8 h-8 rounded-lg bg-gold-500/10 flex items-center justify-center flex-shrink-0">
               <Feather className="w-4 h-4 text-gold-500" />
             </div>
@@ -106,7 +106,7 @@ export function AboutModal({ onClose }: { onClose: () => void }) {
               <p className="text-[11px] text-gray-400 font-arabic">Fantasy · Mystery · Horror</p>
             </div>
           </div>
-          <div className="p-4 rounded-xl bg-white dark:bg-onyx-700/40 border border-parchment-200 dark:border-white/10 flex items-center gap-3 hover-lift">
+          <div className="p-4 rounded-xl bg-white dark:bg-onyx-700/40 border border-parchment-200 dark:border-white/10 flex items-center gap-3 hover-lift card-glow">
             <div className="w-8 h-8 rounded-lg bg-gold-500/10 flex items-center justify-center flex-shrink-0">
               <PenTool className="w-4 h-4 text-gold-500" />
             </div>

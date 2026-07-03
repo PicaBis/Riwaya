@@ -52,7 +52,7 @@ export function ContinueReading() {
             <Link
               key={novel.id}
               href={`/novel/${novel.id}`}
-              className="group flex items-center gap-4 p-4 rounded-2xl bg-white dark:bg-onyx-800 border border-parchment-200 dark:border-white/8 shadow-sm hover:shadow-md hover:border-gold-500/30 transition-all duration-200"
+              className="group flex items-center gap-4 p-4 rounded-2xl bg-white dark:bg-onyx-800 border border-parchment-200 dark:border-white/8 shadow-sm hover:shadow-md hover:border-gold-500/30 transition-all duration-200 card-glow"
             >
               <div className="w-12 h-16 bg-gold-500/10 rounded-lg flex items-center justify-center flex-shrink-0">
                 <BookOpen className="w-5 h-5 text-gold-500" />
@@ -67,7 +67,7 @@ export function ContinueReading() {
                 <div className="flex items-center gap-2 mt-2">
                   <div className="flex-1 h-1 bg-parchment-200 dark:bg-white/10 rounded-full overflow-hidden">
                     <div
-                      className="h-full bg-gold-500 rounded-full transition-all duration-500"
+                      className="h-full bg-gold-500 rounded-full progress-bar-fill"
                       style={{ width: `${pct}%` }}
                     />
                   </div>

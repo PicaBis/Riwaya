@@ -163,26 +163,26 @@ export function Header() {
                 onClick={() => setMobileMenuOpen(false)}
                 className="px-3 py-2.5 rounded-xl text-sm font-arabic text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-parchment-100 dark:hover:bg-white/8 transition-colors"
               >
-                🏠 الرئيسية
+                الرئيسية
               </Link>
               <Link
                 href="/library"
                 onClick={() => setMobileMenuOpen(false)}
                 className="px-3 py-2.5 rounded-xl text-sm font-arabic text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-parchment-100 dark:hover:bg-white/8 transition-colors"
               >
-                📚 مكتبتي
+                مكتبتي
               </Link>
               <button
                 onClick={() => { setShowAbout(true); setMobileMenuOpen(false); }}
                 className="px-3 py-2.5 rounded-xl text-sm font-arabic text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-parchment-100 dark:hover:bg-white/8 transition-colors text-right"
               >
-                ℹ️ عن المنصة
+                عن المنصة
               </button>
               <button
                 onClick={() => { setShowContact(true); setMobileMenuOpen(false); }}
                 className="px-3 py-2.5 rounded-xl text-sm font-arabic text-gray-700 dark:text-gray-300 hover:text-gold-500 dark:hover:text-gold-400 hover:bg-parchment-100 dark:hover:bg-white/8 transition-colors text-right"
               >
-                💬 تواصل مع بيكا
+                تواصل مع بيكا
               </button>
               <button
                 onClick={() => { setShowSubs(true); setMobileMenuOpen(false); }}

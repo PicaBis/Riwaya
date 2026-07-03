@@ -13,7 +13,7 @@ import { useApp } from "@/context/AppContext";
 const prefetched = new Set<string>();
 
 function estimateReadTime(novel: Novel): string {
-  const totalPages = novel.chapters && novel.chapters.length > 0 ? novel.freeUntilPage + 80 : novel.freeUntilPage + 80;
+  const totalPages = novel.freeUntilPage + 80;
   const mins = Math.round(totalPages / 2);
   if (mins < 60) return `~${mins} د`;
   const hrs = Math.floor(mins / 60);
@@ -37,7 +37,7 @@ export function NovelCard({ novel, index = 0 }: NovelCardProps) {
   return (
     <>
       <article
-        className="group flex flex-col bg-white dark:bg-onyx-800 rounded-2xl overflow-hidden shadow-book hover:shadow-book-hover border border-parchment-200 dark:border-white/8 transition-all duration-300 hover:-translate-y-1"
+        className="group flex flex-col bg-white dark:bg-onyx-800 rounded-2xl overflow-hidden shadow-book hover:shadow-book-hover border border-parchment-200 dark:border-white/8 transition-all duration-300 hover:-translate-y-1 card-glow"
         style={{ animationDelay: `${index * 80}ms` }}
       >
         {/* Cover Image (PDF first page) or Coming-soon teaser */}
@@ -181,7 +181,7 @@ export function NovelCard({ novel, index = 0 }: NovelCardProps) {
             <div className="flex items-center gap-2 -mt-1">
               <div className="flex-1 h-1 bg-parchment-200 dark:bg-white/10 rounded-full overflow-hidden">
                 <div
-                  className="h-full bg-gold-500 rounded-full transition-all duration-500"
+                  className="h-full bg-gold-500 rounded-full progress-bar-fill"
                   style={{ width: `${Math.min(Math.round((bookmarkPage / (novel.freeUntilPage + 80)) * 100), 100)}%` }}
                 />
               </div>
@@ -197,7 +197,6 @@ export function NovelCard({ novel, index = 0 }: NovelCardProps) {
               تقييمك:
             </span>
             <StarRating
-              novelId={novel.id}
               initialRating={currentRating}
               onRate={(s) => setRating(novel.id, s)}
               size="sm"

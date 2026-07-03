@@ -5,7 +5,6 @@ import { Star } from "lucide-react";
 import clsx from "clsx";
 
 interface StarRatingProps {
-  novelId: string;
   initialRating?: number;
   onRate?: (stars: number) => void;
   readOnly?: boolean;
@@ -13,7 +12,6 @@ interface StarRatingProps {
 }
 
 export function StarRating({
-  novelId,
   initialRating = 0,
   onRate,
   readOnly = false,

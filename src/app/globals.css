@@ -1,4 +1,4 @@
-@import url("https://fonts.googleapis.com/css2?family=Amiri:ital,wght@0,400;0,700;1,400&family=Playfair+Display:wght@600;700&display=block");
+@import url("https://fonts.googleapis.com/css2?family=Amiri:ital,wght@0,400;0,700;1,400&family=Noto+Serif+Arabic:wght@400;700&family=Playfair+Display:wght@600;700&display=swap");
 
 @tailwind base;
 @tailwind components;
@@ -51,13 +51,27 @@ main {
 }
 
 /* ─── Scrollbar (webkit) ───────────────────────────────── */
-::-webkit-scrollbar { width: 5px; height: 5px; }
-::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: var(--border); border-radius: 999px; }
-::-webkit-scrollbar-thumb:hover { background: var(--accent); }
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::--webkit-scrollbar-track { background: transparent; }
+::--webkit-scrollbar-thumb { background: var(--border); border-radius: 999px; }
+::--webkit-scrollbar-thumb:hover { background: var(--accent); }
+
+/* Firefox scrollbar */
+* { scrollbar-width: thin; scrollbar-color: var(--border) transparent; }
 
 /* ─── Selection ─────────────────────────────────────────── */
 ::selection { background: rgba(184, 134, 11, 0.2); color: var(--text); }
+.dark ::selection { background: rgba(212, 175, 55, 0.25); color: #e6e0d5; }
+
+/* ─── Focus-visible for keyboard navigation ────────────── */
+*:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Remove default focus outline only when not keyboard */
+*:focus:not(:focus-visible) { outline: none; }
 
 /* ─── Premium Background Patterns ────────────────────────── */
 
@@ -235,5 +249,35 @@ input[type="number"] {
 
 /* ─── Bug report floating button ──────────────────────────── */
 .bug-reporter {
-  animation: gentlePulse 3s ease-in-out infinite;
+  animation: gentlePulse 4s ease-in-out infinite;
+}
+
+/* ─── Card hover ring glow ──────────────────────────────── */
+.card-glow:hover {
+  box-shadow: 0 0 0 1px rgba(184, 134, 11, 0.15), 0 12px 32px -8px rgba(0, 0, 0, 0.1);
+}
+.dark .card-glow:hover {
+  box-shadow: 0 0 0 1px rgba(212, 175, 55, 0.2), 0 12px 32px -8px rgba(0, 0, 0, 0.4);
+}
+
+/* ─── Progress bar slide transition ─────────────────────── */
+.progress-bar-fill {
+  transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ─── Smooth body opacity fade for route transitions ───── */
+@keyframes pageEnter {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+main > * { animation: pageEnter 0.35s ease-out; }
+
+/* ─── Reduced motion preference ────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }

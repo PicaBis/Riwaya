@@ -150,7 +150,6 @@ export default function RootLayout({
                     <li><a href="/" className="text-sm text-gray-500 dark:text-gray-400 hover:text-gold-500 font-arabic transition-colors">الرئيسية</a></li>
                     <li><a href="/library" className="text-sm text-gray-500 dark:text-gray-400 hover:text-gold-500 font-arabic transition-colors">المكتبة</a></li>
                     <li><a href="/about" className="text-sm text-gray-500 dark:text-gray-400 hover:text-gold-500 font-arabic transition-colors">عن المنصة</a></li>
-                    <li><a href={`mailto:Medjahed10abdelhadi@gmail.com`} className="text-sm text-gray-500 dark:text-gray-400 hover:text-gold-500 font-arabic transition-colors">اتصل بنا</a></li>
                   </ul>
                 </div>
 
@@ -162,42 +161,21 @@ export default function RootLayout({
                       href="mailto:Medjahed10abdelhadi@gmail.com"
                       className="px-3 py-1.5 rounded-lg bg-parchment-100 dark:bg-white/5 border border-parchment-200 dark:border-white/10 text-xs font-arabic text-gray-600 dark:text-gray-400 hover:text-gold-500 hover:border-gold-500/30 transition-colors"
                     >
-                      ✉️ البريد الإلكتروني
+                      البريد الإلكتروني
+                    </a>
+                    <a
+                      href="https://www.instagram.com/profpica"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="px-3 py-1.5 rounded-lg bg-parchment-100 dark:bg-white/5 border border-parchment-200 dark:border-white/10 text-xs font-arabic text-gray-600 dark:text-gray-400 hover:text-gold-500 hover:border-gold-500/30 transition-colors"
+                    >
+                      انستغرام
                     </a>
                   </div>
-                  <p className="text-xs text-gray-400 font-arabic mt-3">
+                  <p className="text-xs text-gray-400 font-arabic mt-3" dir="ltr">
                     Medjahed10abdelhadi@gmail.com
                   </p>
                 </div>
-              </div>
-
-              {/* Newsletter */}
-              <div className="mb-8 p-5 rounded-2xl bg-gold-500/5 border border-gold-500/20 text-center" dir="rtl">
-                <h4 className="font-arabic text-sm font-bold text-gray-800 dark:text-gray-200 mb-1">
-                  📬 اشترك في النشرة البريدية
-                </h4>
-                <p className="text-xs text-gray-500 dark:text-gray-400 font-arabic mb-3">
-                  تابع جديد الروايات والفصول حصرياً على بريدك الإلكتروني
-                </p>
-                <form
-                  action={`mailto:Medjahed10abdelhadi@gmail.com`}
-                  method="post"
-                  className="flex items-center gap-2 max-w-md mx-auto"
-                >
-                  <input
-                    type="email"
-                    name="email"
-                    placeholder="أدخل بريدك الإلكتروني"
-                    required
-                    className="flex-1 px-4 py-2.5 rounded-xl border border-parchment-300 dark:border-white/10 bg-white dark:bg-white/5 text-gray-800 dark:text-gray-200 placeholder-gray-400 text-sm font-sans focus:outline-none focus:ring-2 focus:ring-gold-500/40"
-                  />
-                  <button
-                    type="submit"
-                    className="px-5 py-2.5 bg-gold-500 hover:bg-gold-600 active:scale-95 text-white rounded-xl font-arabic text-sm font-medium transition-all shadow-sm"
-                  >
-                    اشتراك
-                  </button>
-                </form>
               </div>
 
               {/* Bottom bar */}

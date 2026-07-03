@@ -10,7 +10,7 @@ import clsx from "clsx";
 const COMMENTS_PER_PAGE = 20;
 
 export function Comments({ novelId }: { novelId: string }) {
-  const { guest, isAdmin, setAdmin, isDark } = useApp();
+  const { guest, isAdmin, isDark } = useApp();
   const [comments, setComments] = useState<Comment[]>([]);
   const [displayCount, setDisplayCount] = useState(COMMENTS_PER_PAGE);
   const [content, setContent] = useState("");
@@ -346,7 +346,7 @@ export function Comments({ novelId }: { novelId: string }) {
               </div>
               <p
                 className={`${textClass} text-gray-700 dark:text-gray-300 leading-relaxed mb-3`}
-                style={{ fontSize, lineHeight, fontFamily: fontFamily === "ar" ? "var(--font-arabic, Amiri, serif)" : "system-ui, sans-serif" }}
+                style={{ fontSize, lineHeight, fontFamily: fontFamily === "ar" ? "'Amiri', 'Noto Serif Arabic', serif" : "system-ui, sans-serif" }}
               >
                 {c.content}
               </p>

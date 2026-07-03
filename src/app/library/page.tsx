@@ -91,7 +91,7 @@ export default function LibraryPage() {
                         </p>
                         <div className="flex items-center gap-2 mt-2">
                           <div className="flex-1 h-1 bg-parchment-200 dark:bg-white/10 rounded-full overflow-hidden">
-                            <div className="h-full bg-gold-500 rounded-full" style={{ width: `${pct}%` }} />
+                            <div className="h-full bg-gold-500 rounded-full progress-bar-fill" style={{ width: `${pct}%` }} />
                           </div>
                           <span className="text-[11px] text-gray-400 font-sans">{pct}%</span>
                         </div>

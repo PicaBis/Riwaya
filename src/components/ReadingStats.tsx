@@ -51,22 +51,22 @@ export function ReadingStats() {
         </div>
       ) : (
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          <div className="p-4 rounded-2xl bg-white dark:bg-onyx-800 border border-parchment-200 dark:border-white/8 text-center hover-lift">
+          <div className="p-4 rounded-2xl bg-white dark:bg-onyx-800 border border-parchment-200 dark:border-white/8 text-center hover-lift card-glow">
             <BookOpen className="w-5 h-5 text-gold-500 mx-auto mb-2" />
             <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{totalPages}</p>
             <p className="text-xs text-gray-400 font-arabic mt-1">صفحة مقروءة</p>
           </div>
-          <div className="p-4 rounded-2xl bg-white dark:bg-onyx-800 border border-parchment-200 dark:border-white/8 text-center hover-lift">
+          <div className="p-4 rounded-2xl bg-white dark:bg-onyx-800 border border-parchment-200 dark:border-white/8 text-center hover-lift card-glow">
             <Clock className="w-5 h-5 text-gold-500 mx-auto mb-2" />
             <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{hours > 0 ? `${hours}س ${mins}د` : `${mins}د`}</p>
             <p className="text-xs text-gray-400 font-arabic mt-1">وقت القراءة</p>
           </div>
-          <div className="p-4 rounded-2xl bg-white dark:bg-onyx-800 border border-parchment-200 dark:border-white/8 text-center hover-lift">
-            <Flame className="w-5 h-5 text-orange-500 mx-auto mb-2" />
+          <div className="p-4 rounded-2xl bg-white dark:bg-onyx-800 border border-parchment-200 dark:border-white/8 text-center hover-lift card-glow">
+            <Flame className="w-5 h-5 text-amber-500 mx-auto mb-2" />
             <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{streak}</p>
-            <p className="text-xs text-gray-400 font-arabic mt-1">{streak === 1 ? "يوم متتالي" : "أيام متتالية"}</p>
+            <p className="text-xs text-gray-400 font-arabic mt-1">{streak === 1 ? "يوم متتالي" : "أيام متتالة"}</p>
           </div>
-          <div className="p-4 rounded-2xl bg-white dark:bg-onyx-800 border border-parchment-200 dark:border-white/8 text-center hover-lift">
+          <div className="p-4 rounded-2xl bg-white dark:bg-onyx-800 border border-parchment-200 dark:border-white/8 text-center hover-lift card-glow">
             <TrendingUp className="w-5 h-5 text-gold-500 mx-auto mb-2" />
             <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{uniqueNovels}</p>
             <p className="text-xs text-gray-400 font-arabic mt-1">{uniqueNovels === 1 ? "رواية" : "روايات"}</p>

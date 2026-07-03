@@ -40,7 +40,7 @@ export function CCPModal({ novelTitle, onClose }: CCPModalProps) {
           <div className="w-14 h-14 rounded-2xl bg-gold-500/10 flex items-center justify-center mx-auto mb-3">
             <Wallet className="w-7 h-7 text-gold-500" />
           </div>
-          <h2 className="text-xl font-display font-bold text-gray-900 dark:text-gray-100">
+          <h2 className="text-xl font-arabic font-bold text-gray-900 dark:text-gray-100">
             دعم المؤلف
           </h2>
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-1 font-arabic">

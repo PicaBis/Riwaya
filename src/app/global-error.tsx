@@ -20,10 +20,10 @@ export default function GlobalError({
           <p className="text-gray-500 dark:text-gray-400 font-arabic text-sm mb-6">
             حدث خطأ في تحميل الموقع. يرجى التحديث للمحاولة مرة أخرى.
           </p>
-          <button
-            onClick={reset}
-            className="px-6 py-3 bg-gold-500 hover:bg-gold-600 text-white rounded-xl font-arabic text-sm font-medium transition-colors"
-          >
+<button
+          onClick={reset}
+          className="px-6 py-3 bg-gold-500 hover:bg-gold-600 active:scale-95 text-white rounded-xl font-arabic text-sm font-medium transition-all"
+        >
             تحديث الصفحة
           </button>
         </div>

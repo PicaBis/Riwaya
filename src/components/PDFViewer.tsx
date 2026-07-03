@@ -454,7 +454,7 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, 
               if (navigator.vibrate) navigator.vibrate(8);
             }}>
             <div className="h-full bg-gradient-to-r from-gold-500 to-gold-400 transition-all duration-300 relative" style={{ width: `${Math.round((currentPage / totalPages) * 100)}%` }}>
-              <span className="absolute right-1/2 top-1/2 -translate-y-1/2 translate-x-1/2 w-2 h-2 bg-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity shadow" />
+              <span className="absolute right-1/2 top-1/2 -translate-y-1/2 translate-x-1/2 w-3 h-3 bg-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity shadow-md ring-2 ring-gold-500/40" />
             </div>
           </div>
         </div>

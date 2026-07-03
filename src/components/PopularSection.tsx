@@ -36,7 +36,7 @@ export function PopularSection() {
           <Link
             key={novel.id}
             href={`/novel/${novel.id}`}
-            className="group flex items-center gap-4 p-4 rounded-2xl bg-white dark:bg-onyx-800 border border-parchment-200 dark:border-white/8 shadow-sm hover:shadow-md hover:border-gold-500/30 transition-all duration-200 animate-fade-up"
+            className="group flex items-center gap-4 p-4 rounded-2xl bg-white dark:bg-onyx-800 border border-parchment-200 dark:border-white/8 shadow-sm hover:shadow-md hover:border-gold-500/30 transition-all duration-200 animate-fade-up card-glow"
             style={{ animationDelay: `${i * 80}ms` }}
           >
             <div className="w-10 h-10 rounded-xl bg-gold-500/10 flex items-center justify-center flex-shrink-0">

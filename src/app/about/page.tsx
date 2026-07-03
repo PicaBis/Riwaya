@@ -40,7 +40,7 @@ export default function AboutPage() {
             <div className="absolute inset-0 bg-gradient-to-b md:bg-gradient-to-r from-transparent to-white/60 dark:to-onyx-800/80" />
           </div>
           <div className="flex flex-col justify-center p-8 md:p-10">
-            <h2 className="font-display text-2xl font-bold text-gray-900 dark:text-gray-100">
+            <h2 className="font-arabic text-2xl font-bold text-gray-900 dark:text-gray-100">
               Medjahed Abdelhadi — Pica
             </h2>
             <p className="text-gold-500 font-medium tracking-widest text-sm mt-1">
@@ -107,7 +107,7 @@ export default function AboutPage() {
 
 function SkillCard({ icon, title, desc }: { icon: React.ReactNode; title: string; desc: string }) {
   return (
-    <div className="bg-white dark:bg-onyx-800 rounded-2xl border border-parchment-200 dark:border-white/8 p-6">
+    <div className="bg-white dark:bg-onyx-800 rounded-2xl border border-parchment-200 dark:border-white/8 p-6 hover-lift card-glow">
       <div className="w-12 h-12 rounded-xl bg-gold-500/10 flex items-center justify-center mb-4">
         {icon}
       </div>
