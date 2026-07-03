@@ -6,9 +6,10 @@
   "display": "standalone",
   "background_color": "#fdfcf8",
   "theme_color": "#b8860b",
-  "orientation": "any",
+  "orientation": "portrait",
   "lang": "ar",
   "dir": "rtl",
+  "scope": "/",
   "icons": [
     {
       "src": "/favicon.svg",
@@ -16,5 +17,11 @@
       "type": "image/svg+xml",
       "purpose": "any maskable"
     }
-  ]
+  ],
+  "categories": ["books", "education", "entertainment"],
+  "shortcuts": [],
+  "prefer_related_applications": true,
+  "edge_side_panel": {
+    "preferred_width": 480
+  }
 }

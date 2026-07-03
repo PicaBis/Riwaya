@@ -15,24 +15,37 @@ self.addEventListener("install", (e) => {
       ])
     )
   );
+  (self as any).skipWaiting();
+});
+
+self.addEventListener("activate", (e) => {
+  e.waitUntil(
+    caches.keys().then((keys) =>
+      Promise.all(
+        keys
+          .filter((key) => key !== CACHE && key !== PDF_CACHE)
+          .map((key) => caches.delete(key))
+      )
+    )
+  );
+  (self as any).clients.claim();
 });
 
 self.addEventListener("fetch", (e: any) => {
   const url = new URL(e.request.url);
-
-  if (url.pathname.startsWith("/api/novel-asset/")) {
+  if (e.request.method !== "GET") {
+    e.respondWith(fetch(e.request));
+    return;
+  }
+  if (url.pathname.startsWith("/api/")) {
     e.respondWith(
-      caches.open(PDF_CACHE).then((cache) =>
-        cache.match(e.request).then((cached) => {
-          const fetched = fetch(e.request).then((response) => {
-            if (response && response.status === 200) {
-              cache.put(e.request, response.clone());
-            }
-            return response;
-          });
-          return cached || fetched;
-        })
-      )
+      fetch(e.request, { credentials: "same-origin" }).then((response) => {
+        if (response && response.status === 200) {
+          const clone = response.clone();
+          caches.open(PDF_CACHE).then((cache) => cache.put(e.request, clone));
+        }
+        return response;
+      }).catch(() => new Response("Offline", { status: 503 }))
     );
     return;
   }
@@ -40,7 +53,7 @@ self.addEventListener("fetch", (e: any) => {
   e.respondWith(
     caches.open(CACHE).then((cache) =>
       cache.match(e.request).then((cached) => {
-        const fetched = fetch(e.request).then((response) => {
+        const fetched = fetch(e.request, { credentials: "same-origin" }).then((response) => {
           if (response && response.status === 200) {
             const clone = response.clone();
             cache.put(e.request, clone);

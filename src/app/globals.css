@@ -60,8 +60,26 @@ main {
 * { scrollbar-width: thin; scrollbar-color: var(--border) transparent; }
 
 /* ─── Selection ─────────────────────────────────────────── */
-::selection { background: rgba(184, 134, 11, 0.2); color: var(--text); }
-.dark ::selection { background: rgba(212, 175, 55, 0.25); color: #e6e0d5; }
+::selection { background: transparent !important; color: var(--text); }
+.dark ::selection { background: transparent !important; color: #e6e0d5; }
+
+/* ─── Anti-copy / anti-drag protections ──────────────────── */
+*, *::before, *::after {
+  -webkit-user-select: none !important;
+  user-select: none !important;
+  -webkit-user-drag: none !important;
+  user-drag: none !important;
+  pointer-events: auto;
+}
+input, textarea {
+  -webkit-user-select: text !important;
+  user-select: text !important;
+}
+img, canvas, video, svg {
+  -webkit-user-drag: none !important;
+  user-drag: none !important;
+  -webkit-touch-callout: none !important;
+}
 
 /* ─── Focus-visible for keyboard navigation ────────────── */
 *:focus-visible {

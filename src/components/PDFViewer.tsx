@@ -46,8 +46,24 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, 
   const [containerWidth, setContainerWidth] = useState(0);
   const pageRenderRef = useRef(0);
   const [currentChapter, setCurrentChapter] = useState<string>("");
+  const watermarkRef = useRef<HTMLDivElement | null>(null);
 
-  /* ── YouTube music ──────────────────────────────────── */
+  /* ── Watermark overlay effect ───────────────────────── */
+  useEffect(() => {
+    const el = watermarkRef.current;
+    if (!el) return;
+    let raf = 0;
+    const move = () => {
+      const x = Math.random() * 60 + 10;
+      const y = Math.random() * 60 + 10;
+      const r = Math.random() * 30 - 15;
+      el.style.transform = `translate(${x}vw, ${y}vh) rotate(${r}deg)`;
+      el.style.opacity = String(Math.random() * 0.06 + 0.03);
+      raf = window.setTimeout(() => requestAnimationFrame(move), 3000 + Math.random() * 2000);
+    };
+    requestAnimationFrame(move);
+    return () => window.clearTimeout(raf);
+  }, []);
   useEffect(() => {
     if (novelId !== "shajarat-sina" || typeof window === "undefined") return;
     setMusicReady(false);
@@ -509,6 +525,14 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, 
                   backgroundColor: "#ffffff",
                 }}
               />
+              <div
+                ref={watermarkRef}
+                className="pointer-events-none select-none fixed z-[9999] font-arabic font-bold text-gray-800 dark:text-gray-200 whitespace-nowrap will-change-transform"
+                style={{ opacity: 0.04, transition: "transform 2s ease-in-out, opacity 2s ease-in-out" }}
+                aria-hidden="true"
+              >
+                روايتي — riwayati.vercel.app
+              </div>
               {isLocked && (
                 <div className="absolute inset-0 flex items-center justify-center bg-parchment-50/90 dark:bg-onyx-950/95 backdrop-blur-sm z-20">
                   <Paywall onUnlock={() => setIsUnlocked(true)} price={500} title={title} preview={preview} />
