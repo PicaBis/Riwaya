@@ -299,3 +299,62 @@ main > * { animation: pageEnter 0.35s ease-out; }
     scroll-behavior: auto !important;
   }
 }
+
+/* ─── Shimmer Skeleton Loading Effect ─────────────────────── */
+.shimmer-skeleton {
+  background: linear-gradient(90deg, transparent, rgba(184, 134, 11, 0.15), transparent);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+/* ─── Animated Gold Shadows ─────────────────────────────── */
+.gold-shadow-glow {
+  box-shadow: 
+    0 0 0 1px rgba(184, 134, 11, 0.2),
+    0 0 20px 4px rgba(184, 134, 11, 0.15),
+    0 0 40px 8px rgba(212, 175, 55, 0.1);
+  transition: box-shadow 0.4s ease;
+}
+
+.gold-shadow-glow:hover {
+  box-shadow: 
+    0 0 0 2px rgba(184, 134, 11, 0.3),
+    0 0 30px 6px rgba(184, 134, 11, 0.25),
+    0 0 60px 12px rgba(212, 175, 55, 0.2);
+}
+
+/* ─── Touch Feedback Enhancement ──────────────────────────── */
+@media (hover: none) and (pointer: coarse) {
+  .touch-ripple {
+    position: relative;
+    overflow: hidden;
+  }
+  .touch-ripple::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    border-radius: 50%;
+    background: rgba(184, 134, 11, 0.3);
+    transition: width 0.4s, height 0.4s, top 0.4s, left 0.4s;
+  }
+  .touch-ripple:active::after {
+    width: 200px;
+    height: 200px;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+  }
+}
+
+/* ─── Parallax Background Elements ─────────────────────────── */
+.parallax-bg {
+  transform-style: preserve-3d;
+  transition: transform 0.1s ease-out;
+}
+
+.parallax-element {
+  will-change: transform;
+}
