@@ -15,10 +15,30 @@ export function PDFCover({ pdfUrl, title, className = "" }: PDFCoverProps) {
   const { lang } = useApp();
   const fontClass = lang === "ar" ? "font-arabic" : "font-sans";
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [status, setStatus] = useState<"loading" | "ready" | "error">("loading");
+  const [status, setStatus] = useState<"loading" | "ready" | "error" | "blank">("loading");
 
   useEffect(() => {
     let cancelled = false;
+
+    const isCanvasBlank = (canvas: HTMLCanvasElement): boolean => {
+      try {
+        const ctx = canvas.getContext("2d");
+        if (!ctx) return true;
+        const imageData = ctx.getImageData(0, 0, canvas.width || 1, canvas.height || 1);
+        const data = imageData.data;
+        let whitePixels = 0;
+        const total = data.length / 4;
+        const sampleStep = Math.max(1, Math.floor(total / 200));
+        let sampled = 0;
+        for (let i = 0; i < data.length; i += 4 * sampleStep) {
+          sampled++;
+          if (data[i] > 240 && data[i + 1] > 240 && data[i + 2] > 240) whitePixels++;
+        }
+        return sampled > 0 && whitePixels / sampled > 0.92;
+      } catch {
+        return false;
+      }
+    };
 
     const render = async () => {
       try {
@@ -35,7 +55,6 @@ export function PDFCover({ pdfUrl, title, className = "" }: PDFCoverProps) {
         const canvas = canvasRef.current;
         if (!canvas) return;
 
-        // Fit within the card at 2× for retina
         const desiredWidth = canvas.parentElement?.clientWidth || 240;
         const scale = (desiredWidth / page.getViewport({ scale: 1 }).width) * 2;
         const viewport = page.getViewport({ scale });
@@ -49,7 +68,13 @@ export function PDFCover({ pdfUrl, title, className = "" }: PDFCoverProps) {
         if (!ctx) return;
 
         await page.render({ canvasContext: ctx, viewport }).promise;
-        if (!cancelled) setStatus("ready");
+        if (cancelled) return;
+
+        if (isCanvasBlank(canvas)) {
+          if (!cancelled) setStatus("blank");
+        } else {
+          if (!cancelled) setStatus("ready");
+        }
       } catch {
         if (!cancelled) setStatus("error");
       }
@@ -81,11 +106,17 @@ export function PDFCover({ pdfUrl, title, className = "" }: PDFCoverProps) {
         </div>
       )}
 
-      {/* Error fallback */}
-      {status === "error" && (
-        <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 p-4">
-          <BookOpen className="w-10 h-10 text-gold-500/50" />
-          <span className={`text-xs text-center text-gray-400 dark:text-gray-500 leading-relaxed ${fontClass}`}>
+      {/* Blank / error fallback — styled cover with title */}
+      {(status === "error" || status === "blank") && (
+        <div className="absolute inset-0 bg-gradient-to-br from-amber-950 via-onyx-800 to-gold-700 flex flex-col items-center justify-center gap-2 p-4">
+          <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-black/20" />
+          <div className="absolute inset-0 opacity-30" style={{
+            width: "200%", left: "-100%",
+            background: "linear-gradient(115deg, transparent 30%, rgba(255,240,200,0.4) 50%, transparent 70%)",
+            backgroundSize: "200% 100%", animation: "shimmer 4s linear infinite",
+          }} />
+          <BookOpen className="w-8 h-8 text-amber-200/80 relative z-10 drop-shadow-lg" />
+          <span className={`text-xs text-center text-amber-50/90 leading-relaxed relative z-10 font-arabic font-medium line-clamp-3 ${fontClass}`}>
             {title}
           </span>
         </div>

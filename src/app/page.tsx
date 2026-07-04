@@ -32,8 +32,8 @@ export default function HomePage() {
           <div className="hero-particle hero-particle-5" />
           {/* Soft glow halos */}
           <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[500px] h-[500px] bg-gold-500/[0.04] rounded-full blur-3xl" />
-          <div className="absolute bottom-0 left-1/4 w-72 h-72 bg-gold-500/[0.03] rounded-full blur-3xl" />
-          <div className="absolute bottom-0 right-1/4 w-72 h-72 bg-gold-500/[0.03] rounded-full blur-3xl" />
+          <div className="absolute bottom-24 left-[15%] w-48 h-48 bg-gold-500/[0.02] rounded-full blur-3xl" />
+          <div className="absolute bottom-16 right-[15%] w-48 h-48 bg-gold-500/[0.02] rounded-full blur-3xl" />
         </div>
 
         <div className="relative z-10 flex flex-col items-center px-4">

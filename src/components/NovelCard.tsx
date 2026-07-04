@@ -99,12 +99,25 @@ export function NovelCard({ novel, index = 0 }: NovelCardProps) {
               <div className="absolute inset-y-0 right-0 w-1 bg-gradient-to-l from-black/30 to-transparent pointer-events-none" />
             </div>
           ) : (
-            <>
+            <div className="relative w-full aspect-[3/4] overflow-hidden">
               <PDFCover
                 pdfUrl={`/api/novel-asset/${novel.pdfFile}`}
                 title={novel.title}
                 className="w-full aspect-[3/4] object-cover"
               />
+              {/* Animated shimmer sweep on cover */}
+              <div className="absolute inset-0 pointer-events-none" style={{
+                width: "200%", left: "-100%",
+                background: "linear-gradient(115deg, transparent 30%, rgba(212,175,55,0.12) 50%, transparent 70%)",
+                backgroundSize: "200% 100%", animation: "shimmer 4s linear infinite",
+              }} />
+              {/* Animated ember sparkles on cover */}
+              <div className="absolute inset-0 pointer-events-none">
+                <span className="absolute top-[15%] left-[20%] w-1 h-1 rounded-full bg-gold-400/50 animate-gentle-pulse" />
+                <span className="absolute top-[30%] right-[25%] w-1.5 h-1.5 rounded-full bg-amber-300/40 animate-gentle-pulse" style={{ animationDelay: "0.8s" }} />
+                <span className="absolute bottom-[30%] left-[35%] w-1 h-1 rounded-full bg-gold-400/40 animate-gentle-pulse" style={{ animationDelay: "1.4s" }} />
+                <span className="absolute bottom-[20%] right-[20%] w-1 h-1 rounded-full bg-amber-200/40 animate-gentle-pulse" style={{ animationDelay: "0.5s" }} />
+              </div>
               {/* Hover overlay */}
               <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end p-4">
                 <span className="flex items-center gap-1.5 text-white text-sm font-arabic">
@@ -112,7 +125,7 @@ export function NovelCard({ novel, index = 0 }: NovelCardProps) {
                   {t("card.startReading", lang)}
                 </span>
               </div>
-            </>
+            </div>
           )}
         </Link>
 
