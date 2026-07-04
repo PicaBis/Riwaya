@@ -1,8 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useApp } from "@/context/AppContext";
+import { t } from "@/lib/i18n";
 
 export function SplashScreen() {
+  const { lang } = useApp();
+  const fontClass = lang === "ar" ? "font-arabic" : "font-sans";
   const [visible, setVisible] = useState(true);
   const [fadeOut, setFadeOut] = useState(false);
 
@@ -24,7 +28,7 @@ export function SplashScreen() {
           className="w-20 h-20 rounded-2xl bg-gold-500/10 border border-gold-500/20 flex items-center justify-center mx-auto mb-4"
           style={{ animation: "scaleIn 0.5s ease-out both, gentlePulse 2.5s ease-in-out infinite 0.5s" }}
         >
-          <span className="font-arabic text-2xl font-bold text-gold-500">روايتي</span>
+          <span className={`text-2xl font-bold text-gold-500 ${fontClass}`}>{t("splash.name", lang)}</span>
         </div>
         <div className="flex items-center justify-center gap-1 h-4">
           <span className="w-1.5 h-1.5 rounded-full bg-gold-500/40 animate-gentle-pulse" style={{ animationDelay: "0s" }} />

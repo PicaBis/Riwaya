@@ -5,8 +5,13 @@ import Link from "next/link";
 import { X, BookOpen, Lock, Coins, ChevronLeft, ArrowLeft } from "lucide-react";
 import clsx from "clsx";
 import { novels } from "@/data/novels";
+import { useApp } from "@/context/AppContext";
+import { t } from "@/lib/i18n";
 
 export function SubscriptionModal({ onClose }: { onClose: () => void }) {
+  const { lang } = useApp();
+  const dir = lang === "ar" ? "rtl" : "ltr";
+  const fontClass = lang === "ar" ? "font-arabic" : "font-sans";
   const [selectedNovelId, setSelectedNovelId] = useState<string | null>(null);
   const selectedNovel = novels.find((n) => n.id === selectedNovelId);
 
@@ -28,30 +33,30 @@ export function SubscriptionModal({ onClose }: { onClose: () => void }) {
           <div className="w-14 h-14 rounded-2xl bg-gold-500/10 flex items-center justify-center mx-auto mb-3">
             <Coins className="w-7 h-7 text-gold-500" />
           </div>
-          <h2 className="text-xl font-arabic font-bold text-gray-900 dark:text-gray-100">
-            الاشتراكات
+          <h2 className={`text-xl font-bold text-gray-900 dark:text-gray-100 ${fontClass}`}>
+            {t("subs.title", lang)}
           </h2>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1 font-arabic">
-            {selectedNovel ? "اختر فصلاً للقراءة" : "اختر رواية للقراءة"}
+          <p className={`text-sm text-gray-500 dark:text-gray-400 mt-1 ${fontClass}`}>
+            {selectedNovel ? t("subs.chooseChapter", lang) : t("subs.chooseNovel", lang)}
           </p>
         </div>
 
         {selectedNovel ? (
           /* ── Chapters list ───────────────────────────── */
-          <div dir="rtl">
+          <div dir={dir}>
             <button
               onClick={() => setSelectedNovelId(null)}
-              className="flex items-center gap-1.5 text-sm text-gray-500 dark:text-gray-400 hover:text-gold-500 font-arabic mb-4 transition-colors"
+              className={`flex items-center gap-1.5 text-sm text-gray-500 dark:text-gray-400 hover:text-gold-500 mb-4 transition-colors ${fontClass}`}
             >
-              <ArrowLeft className="w-4 h-4" />
-              العودة للروايات
+              <ArrowLeft className={`w-4 h-4 ${dir === "ltr" ? "rotate-180" : ""}`} />
+              {t("subs.back", lang)}
             </button>
 
             <div className="mb-4 p-3 rounded-xl bg-parchment-100 dark:bg-white/5 border border-parchment-200 dark:border-white/8">
-              <h3 className="font-arabic font-bold text-gray-900 dark:text-gray-100 text-sm">
+              <h3 className={`font-bold text-gray-900 dark:text-gray-100 text-sm ${fontClass}`}>
                 {selectedNovel.title}
               </h3>
-              <p className="text-xs text-gray-500 dark:text-gray-400 font-arabic mt-0.5">
+              <p className={`text-xs text-gray-500 dark:text-gray-400 mt-0.5 ${fontClass}`}>
                 {selectedNovel.author}
               </p>
             </div>
@@ -88,20 +93,20 @@ export function SubscriptionModal({ onClose }: { onClose: () => void }) {
                           )}
                         </div>
                         <div className="min-w-0">
-                          <p className="text-sm font-bold font-arabic text-gray-900 dark:text-gray-100 truncate">
+                          <p className={`text-sm font-bold text-gray-900 dark:text-gray-100 truncate ${fontClass}`}>
                             {ch.title}
                           </p>
                           <p className="text-xs text-gray-400 font-sans">
-                            صفحة {ch.startPage}
+                            {t("subs.page", lang)} {ch.startPage}
                           </p>
                         </div>
                       </div>
                       {isLocked ? (
-                        <span className="text-[11px] text-amber-600 dark:text-amber-400 font-arabic bg-amber-100 dark:bg-amber-800/30 px-2 py-0.5 rounded-full flex-shrink-0">
-                          اشتراك
+                        <span className={`text-[11px] text-amber-600 dark:text-amber-400 bg-amber-100 dark:bg-amber-800/30 px-2 py-0.5 rounded-full flex-shrink-0 ${fontClass}`}>
+                          {t("subs.locked", lang)}
                         </span>
                       ) : (
-                        <ChevronLeft className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                        <ChevronLeft className={`w-4 h-4 text-gray-400 flex-shrink-0 ${dir === "ltr" ? "rotate-180" : ""}`} />
                       )}
                     </Link>
                   );
@@ -115,28 +120,28 @@ export function SubscriptionModal({ onClose }: { onClose: () => void }) {
                 >
                   <div className="flex items-center gap-3">
                     <BookOpen className="w-5 h-5 text-gold-500" />
-                    <span className="font-arabic text-sm font-bold text-gray-900 dark:text-gray-100">
-                      اقرأ الرواية كاملة
+                    <span className={`text-sm font-bold text-gray-900 dark:text-gray-100 ${fontClass}`}>
+                      {t("subs.fullRead", lang)}
                     </span>
                   </div>
-                  <ChevronLeft className="w-4 h-4 text-gray-400" />
+                  <ChevronLeft className={`w-4 h-4 text-gray-400 ${dir === "ltr" ? "rotate-180" : ""}`} />
                 </Link>
               )}
             </div>
 
             {/* Legend */}
-            <div className="flex items-center gap-4 mt-5 pt-4 border-t border-parchment-200 dark:border-white/8 text-xs text-gray-400 font-arabic justify-center">
+            <div className={`flex items-center gap-4 mt-5 pt-4 border-t border-parchment-200 dark:border-white/8 text-xs text-gray-400 justify-center ${fontClass}`}>
               <span className="flex items-center gap-1">
-                <BookOpen className="w-3 h-3 text-gold-500" /> مجاني
+                <BookOpen className="w-3 h-3 text-gold-500" /> {t("subs.legendFree", lang)}
               </span>
               <span className="flex items-center gap-1">
-                <Lock className="w-3 h-3 text-amber-500" /> يتطلب اشتراك
+                <Lock className="w-3 h-3 text-amber-500" /> {t("subs.legendLocked", lang)}
               </span>
             </div>
           </div>
         ) : (
           /* ── Novels list ─────────────────────────────── */
-          <div className="space-y-3" dir="rtl">
+          <div className="space-y-3" dir={dir}>
             {novels.map((novel) => (
               <button
                 key={novel.id}
@@ -146,27 +151,27 @@ export function SubscriptionModal({ onClose }: { onClose: () => void }) {
                 <div className="w-12 h-12 rounded-xl bg-gold-500/10 flex items-center justify-center flex-shrink-0">
                   <BookOpen className="w-6 h-6 text-gold-500" />
                 </div>
-                <div className="flex-1 min-w-0 text-right">
-                  <p className="font-arabic font-bold text-gray-900 dark:text-gray-100 text-sm truncate">
+                <div className={`flex-1 min-w-0 ${dir === "rtl" ? "text-right" : "text-left"}`}>
+                  <p className={`font-bold text-gray-900 dark:text-gray-100 text-sm truncate ${fontClass}`}>
                     {novel.title}
                   </p>
-                  <p className="text-xs text-gray-400 dark:text-gray-500 font-arabic mt-0.5">
+                  <p className={`text-xs text-gray-400 dark:text-gray-500 mt-0.5 ${fontClass}`}>
                     {novel.genre} · {novel.year}
                   </p>
-                  <p className="text-[11px] text-gold-500 mt-1 font-arabic">
+                  <p className={`text-[11px] text-gold-500 mt-1 ${fontClass}`}>
                     {(novel.chapters || []).length > 0
-                      ? `${novel.chapters!.length} فصول`
-                      : "قراءة كاملة"}
+                      ? t("subs.chaptersCount", lang, { n: (novel.chapters || []).length })
+                      : t("subs.fullRead", lang)}
                   </p>
                 </div>
-                <ChevronLeft className="w-5 h-5 text-gray-400 flex-shrink-0" />
+                <ChevronLeft className={`w-5 h-5 text-gray-400 flex-shrink-0 ${dir === "ltr" ? "rotate-180" : ""}`} />
               </button>
             ))}
 
             {novels.length === 0 && (
               <div className="text-center py-10 text-gray-400">
                 <BookOpen className="w-12 h-12 mx-auto mb-3 opacity-30" />
-                <p className="font-arabic text-sm">لا توجد روايات متاحة حالياً</p>
+                <p className={`text-sm ${fontClass}`}>{t("subs.noNovels", lang)}</p>
               </div>
             )}
           </div>

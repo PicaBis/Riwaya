@@ -2,6 +2,8 @@
 
 import { useEffect, useRef, useState } from "react";
 import { BookOpen } from "lucide-react";
+import { useApp } from "@/context/AppContext";
+import { t } from "@/lib/i18n";
 
 interface PDFCoverProps {
   pdfUrl: string;
@@ -10,6 +12,8 @@ interface PDFCoverProps {
 }
 
 export function PDFCover({ pdfUrl, title, className = "" }: PDFCoverProps) {
+  const { lang } = useApp();
+  const fontClass = lang === "ar" ? "font-arabic" : "font-sans";
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [status, setStatus] = useState<"loading" | "ready" | "error">("loading");
 
@@ -71,8 +75,8 @@ export function PDFCover({ pdfUrl, title, className = "" }: PDFCoverProps) {
       {status === "loading" && (
         <div className="absolute inset-0 flex flex-col items-center justify-center gap-3">
           <div className="w-10 h-10 rounded-full border-2 border-gold-500/30 border-t-gold-500 animate-spin" />
-          <span className="text-xs text-gray-400 dark:text-gray-600 font-sans">
-            جارٍ التحميل…
+          <span className={`text-xs text-gray-400 dark:text-gray-600 font-sans ${fontClass}`}>
+            {t("pdfcover.loading", lang)}
           </span>
         </div>
       )}
@@ -81,7 +85,7 @@ export function PDFCover({ pdfUrl, title, className = "" }: PDFCoverProps) {
       {status === "error" && (
         <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 p-4">
           <BookOpen className="w-10 h-10 text-gold-500/50" />
-          <span className="text-xs text-center text-gray-400 dark:text-gray-500 font-arabic leading-relaxed">
+          <span className={`text-xs text-center text-gray-400 dark:text-gray-500 leading-relaxed ${fontClass}`}>
             {title}
           </span>
         </div>

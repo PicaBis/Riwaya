@@ -65,11 +65,13 @@ export function NovelReadingClient({ novel, startPage }: NovelReadingClientProps
   );
 
   const isComingSoon = novel.status === "coming-soon";
+  const dir = lang === "ar" ? "rtl" : "ltr";
+  const fontClass = lang === "ar" ? "font-arabic" : "font-sans";
 
   if (isComingSoon) {
     return (
       <>
-        <div className="min-h-screen flex flex-col" dir="rtl">
+        <div className="min-h-screen flex flex-col" dir={dir}>
           <Breadcrumb items={[{ label: novel.title }]} />
 
           {/* ── Coming-soon hero ─────────────────────── */}
@@ -104,36 +106,36 @@ export function NovelReadingClient({ novel, startPage }: NovelReadingClientProps
                   </div>
                 </div>
 
-                <span className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-white/15 backdrop-blur-sm text-amber-50 text-xs font-arabic font-bold mb-6 border border-white/20">
+                <span className={`inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-white/15 backdrop-blur-sm text-amber-50 text-xs font-bold mb-6 border border-white/20 ${fontClass}`}>
                   <PenLine className="w-3.5 h-3.5" />
-                  هذه الرواية قيد الكتابة
+                  {t("comingSoon.inWriting", lang)}
                 </span>
 
-                <h1 className="font-arabic text-4xl sm:text-5xl font-bold text-white drop-shadow-lg mb-2 leading-tight">
+                <h1 className={`text-4xl sm:text-5xl font-bold text-white drop-shadow-lg mb-2 leading-tight ${fontClass}`}>
                   {novel.title}
                 </h1>
                 {novel.subtitle && (
-                  <p className="font-arabic text-base text-amber-200/80 mb-5">{novel.subtitle}</p>
+                  <p className={`text-base text-amber-200/80 mb-5 ${fontClass}`}>{novel.subtitle}</p>
                 )}
 
-                <p className="font-arabic text-sm sm:text-base text-amber-50/90 leading-relaxed max-w-xl mx-auto mb-6">
+                <p className={`text-sm sm:text-base text-amber-50/90 leading-relaxed max-w-xl mx-auto mb-6 ${fontClass}`}>
                   {novel.description}
                 </p>
 
                 {novel.tags && novel.tags.length > 0 && (
                   <div className="flex flex-wrap items-center justify-center gap-2 mb-7">
                     {novel.tags.map((tag) => (
-                      <span key={tag} className="px-3 py-1 rounded-full bg-white/10 text-amber-100/90 text-xs font-arabic border border-white/10">
+                      <span key={tag} className={`px-3 py-1 rounded-full bg-white/10 text-amber-100/90 text-xs border border-white/10 ${fontClass}`}>
                         {tag}
                       </span>
                     ))}
                   </div>
                 )}
 
-                <div className="flex items-center justify-center gap-2 text-amber-200/70">
+                <div className={`flex items-center justify-center gap-2 text-amber-200/70`}>
                   <span className="h-px w-8 bg-gradient-to-r from-transparent to-amber-200/40" />
                   <Sparkles className="w-3.5 h-3.5" />
-                  <span className="font-arabic text-sm font-medium">قريباً بإذن الله</span>
+                  <span className={`text-sm font-medium ${fontClass}`}>{t("comingSoon.soon", lang)}</span>
                   <Sparkles className="w-3.5 h-3.5" />
                   <span className="h-px w-8 bg-gradient-to-l from-transparent to-amber-200/40" />
                 </div>
@@ -142,19 +144,19 @@ export function NovelReadingClient({ novel, startPage }: NovelReadingClientProps
 
             {/* Author + back */}
             <div className="mt-6 flex flex-col items-center gap-3">
-              <p className="text-xs text-gray-400 font-arabic">{novel.author}</p>
+              <p className={`text-xs text-gray-400 ${fontClass}`}>{novel.author}</p>
               <Link
                 href="/"
-                className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-xl bg-white dark:bg-onyx-800 border border-parchment-200 dark:border-white/10 text-sm font-arabic text-gray-700 dark:text-gray-300 hover:border-gold-500/40 hover:text-gold-500 transition-all duration-200"
+                className={`inline-flex items-center gap-1.5 px-5 py-2.5 rounded-xl bg-white dark:bg-onyx-800 border border-parchment-200 dark:border-white/10 text-sm text-gray-700 dark:text-gray-300 hover:border-gold-500/40 hover:text-gold-500 transition-all duration-200 ${fontClass}`}
               >
-                <ArrowRight className="w-4 h-4" />
-                العودة إلى المكتبة
+                <ArrowRight className={`w-4 h-4 ${dir === "ltr" ? "rotate-180" : ""}`} />
+                {t("comingSoon.backToLibrary", lang)}
               </Link>
             </div>
           </div>
 
           {/* ── Comments Section ───────────────────────── */}
-          <div className="max-w-4xl mx-auto px-4 sm:px-6 py-8 w-full" dir="rtl">
+          <div className="max-w-4xl mx-auto px-4 sm:px-6 py-8 w-full" dir={dir}>
             <Comments novelId={novel.id} />
           </div>
         </div>
@@ -166,8 +168,6 @@ export function NovelReadingClient({ novel, startPage }: NovelReadingClientProps
     );
   }
 
-  const dir = lang === "ar" ? "rtl" : "ltr";
-  const fontClass = lang === "ar" ? "font-arabic" : "font-sans";
   const currentRating = ratings[novel.id] ?? 0;
 
   return (

@@ -15,6 +15,31 @@ export function AntiScreenshot() {
     `;
     document.head.appendChild(style);
 
+    /* ── White overlay used to blank the screen instantly on capture ── */
+    const overlay = document.createElement("div");
+    overlay.id = "__as_overlay";
+    overlay.style.cssText = "position:fixed;inset:0;z-index:2147483647;background:#ffffff !important;display:none;pointer-events:none;";
+    document.body.appendChild(overlay);
+
+    const showWhite = () => {
+      overlay.style.display = "block";
+      document.querySelectorAll("canvas").forEach((c) => {
+        const cv = c as HTMLCanvasElement;
+        const ctx = cv.getContext("2d", { alpha: false });
+        if (!ctx) return;
+        cv.width = cv.width;
+        ctx.fillStyle = "#ffffff";
+        ctx.fillRect(0, 0, cv.width, cv.height);
+      });
+      document.body.style.background = "#ffffff";
+      document.body.style.filter = "brightness(3) saturate(0)";
+    };
+    const hideWhite = () => {
+      overlay.style.display = "none";
+      document.body.style.background = "";
+      document.body.style.filter = devtoolsOpen ? "blur(30px) saturate(0) brightness(2)" : "";
+    };
+
     const blockedShortcuts = new Set([
       "PrintScreen", "Snapshot",
       "F5", "F12", "F11", "F10",
@@ -38,14 +63,8 @@ export function AntiScreenshot() {
       if (e.key === "PrintScreen" || e.code === "PrintScreen" || e.code === "Snapshot") {
         e.preventDefault();
         e.stopPropagation();
-        document.body.style.background = "#ffffff";
-        document.body.style.filter = "blur(40px)";
-        document.body.style.pointerEvents = "none";
-        setTimeout(() => {
-          document.body.style.background = "";
-          document.body.style.filter = devtoolsOpen ? "blur(30px) saturate(0) brightness(2)" : "";
-          document.body.style.pointerEvents = devtoolsOpen ? "none" : "";
-        }, 600);
+        showWhite();
+        setTimeout(() => { hideWhite(); }, 800);
         return;
       }
       if (e.ctrlKey || e.metaKey) {
@@ -86,13 +105,12 @@ export function AntiScreenshot() {
       }
     };
     const onBlur = () => {
+      showWhite();
       document.body.style.opacity = "0";
-      document.body.style.transition = "opacity 60ms";
-      setTimeout(() => {
-        if (document.hidden) document.body.style.background = "#fff";
-      }, 200);
+      document.body.style.transition = "opacity 0ms";
     };
     const onFocus = () => {
+      hideWhite();
       document.body.style.opacity = "1";
       document.body.style.background = "";
       document.body.style.transition = "";
@@ -113,6 +131,11 @@ export function AntiScreenshot() {
       }
     };
 
+    const onVisibility = () => {
+      if (document.hidden) showWhite();
+      else hideWhite();
+    };
+
     window.addEventListener("blur", onBlur);
     window.addEventListener("focus", onFocus);
     document.addEventListener("keydown", onKeyDown, true);
@@ -127,6 +150,7 @@ export function AntiScreenshot() {
     document.addEventListener("touchstart", onTouchStart, { passive: false });
     document.addEventListener("touchend", onTouchEnd, true);
     window.addEventListener("blur", onBlur);
+    document.addEventListener("visibilitychange", onVisibility);
     window.addEventListener("resize", detectDevTools);
     window.addEventListener("scroll", detectDevTools, true);
 
@@ -147,10 +171,12 @@ export function AntiScreenshot() {
       document.removeEventListener("touchstart", onTouchStart);
       document.removeEventListener("touchend", onTouchEnd);
       window.removeEventListener("blur", onBlur);
+      document.removeEventListener("visibilitychange", onVisibility);
       window.removeEventListener("resize", detectDevTools);
       window.removeEventListener("scroll", detectDevTools, true);
       window.clearInterval(devtoolsInterval);
       document.getElementById("__as_style")?.remove();
+      document.getElementById("__as_overlay")?.remove();
       document.body.style.filter = "";
       document.body.style.pointerEvents = "";
     };

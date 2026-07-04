@@ -2,8 +2,11 @@
 
 import { useState, useRef } from "react";
 import { Volume2, VolumeX } from "lucide-react";
+import { useApp } from "@/context/AppContext";
+import { t } from "@/lib/i18n";
 
 export function TTSButton() {
+  const { lang } = useApp();
   const [speaking, setSpeaking] = useState(false);
   const synthRef = useRef<SpeechSynthesisUtterance | null>(null);
   const voicesLoadedRef = useRef(false);
@@ -26,7 +29,7 @@ export function TTSButton() {
     const pageText = (document.querySelector(".pdf-viewer-canvas") as HTMLCanvasElement)?.getAttribute("data-text") || "";
 
     if (!pageText && !text) {
-      alert("لا يوجد نص للقراءة الصوتية في هذا العرض");
+      alert(t("tts.noText", lang));
       return;
     }
 

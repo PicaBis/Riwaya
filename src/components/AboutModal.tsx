@@ -4,9 +4,12 @@ import { useState } from "react";
 import Image from "next/image";
 import { X, BookOpen, PenTool, Code2, Smartphone, Quote, Feather, Shield, AlertCircle, CheckCircle2 } from "lucide-react";
 import { useApp } from "@/context/AppContext";
+import { t } from "@/lib/i18n";
 
 export function AboutModal({ onClose }: { onClose: () => void }) {
-  const { isAdmin, setAdmin } = useApp();
+  const { isAdmin, setAdmin, lang } = useApp();
+  const dir = lang === "ar" ? "rtl" : "ltr";
+  const fontClass = lang === "ar" ? "font-arabic" : "font-sans";
   const [showDevInput, setShowDevInput] = useState(false);
   const [devCode, setDevCode] = useState("");
   const [devError, setDevError] = useState("");
@@ -16,11 +19,11 @@ export function AboutModal({ onClose }: { onClose: () => void }) {
     e.preventDefault();
     if (devCode.trim() === "Blazixz") {
       setAdmin(true);
-      setDevSuccess("تم تفعيل وضع المطور بنجاح");
+      setDevSuccess(t("aboutModal.devSuccess", lang));
       setDevError("");
       setTimeout(() => setShowDevInput(false), 1200);
     } else {
-      setDevError("الرمز غير صحيح");
+      setDevError(t("aboutModal.devError", lang));
       setDevSuccess("");
     }
   };
@@ -45,7 +48,7 @@ export function AboutModal({ onClose }: { onClose: () => void }) {
           <div className="w-20 h-20 rounded-2xl overflow-hidden ring-2 ring-gold-500/20 mx-auto mb-4 shadow-lg">
           <Image
             src="/author.jpg"
-            alt="بيكا"
+            alt={t("author.penName", lang)}
             width={80}
             height={80}
             className="w-full h-full object-cover"
@@ -53,26 +56,25 @@ export function AboutModal({ onClose }: { onClose: () => void }) {
           </div>
           <span className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-gold-500/10 border border-gold-500/20 mb-3">
             <BookOpen className="w-3.5 h-3.5 text-gold-500" />
-            <span className="text-xs font-arabic text-gold-600 dark:text-gold-400">منصة بيكا الرسمية</span>
+            <span className={`text-xs text-gold-600 dark:text-gold-400 ${fontClass}`}>{t("aboutModal.platform", lang)}</span>
           </span>
-          <h2 className="font-arabic text-2xl sm:text-3xl font-bold text-gray-900 dark:text-gray-100">
-            بيكا — Pica
+          <h2 className={`text-2xl sm:text-3xl font-bold text-gray-900 dark:text-gray-100 ${fontClass}`}>
+            {t("author.penName", lang)} — Pica
           </h2>
-          <p className="font-arabic text-sm text-gold-500 font-medium mt-1">@ProfPica</p>
-          <p className="font-arabic text-sm text-gray-500 dark:text-gray-400 mt-2">
-            المنصة الرسمية والحصرية للروايات والأعمال الأدبية
+          <p className={`text-sm text-gold-500 font-medium mt-1 ${fontClass}`}>@ProfPica</p>
+          <p className={`text-sm text-gray-500 dark:text-gray-400 mt-2 ${fontClass}`}>
+            {t("aboutModal.official", lang)}
           </p>
         </div>
 
         {/* Identity / Bio */}
         <div className="mb-6 p-5 rounded-2xl bg-gradient-to-br from-parchment-50 to-white dark:from-onyx-700/30 dark:to-onyx-800 border border-parchment-200 dark:border-white/10">
-          <div className="flex items-start gap-3" dir="rtl">
+          <div className="flex items-start gap-3" dir={dir}>
             <div className="w-10 h-10 rounded-xl bg-gold-500/10 border border-gold-500/20 flex items-center justify-center flex-shrink-0 mt-0.5">
               <Feather className="w-5 h-5 text-gold-500" />
             </div>
-            <p className="font-arabic text-sm text-gray-700 dark:text-gray-300 leading-loose">
-              مبرمج تطبيقات ويب وهواتف ذكية، كاتب روايات (فانتازيا، غموض، رعب، وثقافة)،
-              ورسام يقوم برسم وتصميم مقاطع ومشاهد رواياته الخاصة.
+            <p className={`text-sm text-gray-700 dark:text-gray-300 leading-loose ${fontClass}`}>
+              {t("about.bio", lang)}
             </p>
           </div>
         </div>
@@ -84,8 +86,8 @@ export function AboutModal({ onClose }: { onClose: () => void }) {
               <Code2 className="w-4 h-4 text-gold-500" />
             </div>
             <div>
-              <p className="text-xs font-bold font-arabic text-gray-800 dark:text-gray-200">تطوير الويب</p>
-              <p className="text-[11px] text-gray-400 font-arabic">Web Development</p>
+              <p className={`text-xs font-bold text-gray-800 dark:text-gray-200 ${fontClass}`}>{t("aboutModal.web", lang)}</p>
+              <p className="text-[11px] text-gray-400 font-sans">Web Development</p>
             </div>
           </div>
           <div className="p-4 rounded-xl bg-white dark:bg-onyx-700/40 border border-parchment-200 dark:border-white/10 flex items-center gap-3 hover-lift card-glow">
@@ -93,8 +95,8 @@ export function AboutModal({ onClose }: { onClose: () => void }) {
               <Smartphone className="w-4 h-4 text-gold-500" />
             </div>
             <div>
-              <p className="text-xs font-bold font-arabic text-gray-800 dark:text-gray-200">تطبيقات الهاتف</p>
-              <p className="text-[11px] text-gray-400 font-arabic">Mobile Apps</p>
+              <p className={`text-xs font-bold text-gray-800 dark:text-gray-200 ${fontClass}`}>{t("aboutModal.mobile", lang)}</p>
+              <p className="text-[11px] text-gray-400 font-sans">Mobile Apps</p>
             </div>
           </div>
           <div className="p-4 rounded-xl bg-white dark:bg-onyx-700/40 border border-parchment-200 dark:border-white/10 flex items-center gap-3 hover-lift card-glow">
@@ -102,8 +104,8 @@ export function AboutModal({ onClose }: { onClose: () => void }) {
               <Feather className="w-4 h-4 text-gold-500" />
             </div>
             <div>
-              <p className="text-xs font-bold font-arabic text-gray-800 dark:text-gray-200">كتابة الروايات</p>
-              <p className="text-[11px] text-gray-400 font-arabic">Fantasy · Mystery · Horror</p>
+              <p className={`text-xs font-bold text-gray-800 dark:text-gray-200 ${fontClass}`}>{t("aboutModal.novels", lang)}</p>
+              <p className="text-[11px] text-gray-400 font-sans">Fantasy · Mystery · Horror</p>
             </div>
           </div>
           <div className="p-4 rounded-xl bg-white dark:bg-onyx-700/40 border border-parchment-200 dark:border-white/10 flex items-center gap-3 hover-lift card-glow">
@@ -111,19 +113,17 @@ export function AboutModal({ onClose }: { onClose: () => void }) {
               <PenTool className="w-4 h-4 text-gold-500" />
             </div>
             <div>
-              <p className="text-xs font-bold font-arabic text-gray-800 dark:text-gray-200">الرسم والتصميم</p>
-              <p className="text-[11px] text-gray-400 font-arabic">Illustration · Digital Art</p>
+              <p className={`text-xs font-bold text-gray-800 dark:text-gray-200 ${fontClass}`}>{t("aboutModal.art", lang)}</p>
+              <p className="text-[11px] text-gray-400 font-sans">Illustration · Digital Art</p>
             </div>
           </div>
         </div>
 
         {/* Mission */}
         <div className="relative bg-parchment-100 dark:bg-white/5 rounded-2xl border border-parchment-200 dark:border-white/8 p-5">
-          <Quote className="absolute top-4 right-4 w-6 h-6 text-gold-500/20" />
-          <p className="font-arabic text-sm text-gray-700 dark:text-gray-300 leading-relaxed text-center">
-            هذا الموقع هو المستودع الرسمي والحصري لجميع أعمال وكتب وروايات بيكا،
-            حيث يتم تضمين كافة المؤلفات وهي حالياً قيد التوثيق والنشر المستمر
-            لضمان حقوق الملكية الفكرية.
+          <Quote className={`absolute top-4 w-6 h-6 text-gold-500/20 ${lang === "ar" ? "right-4" : "left-4"}`} />
+          <p className={`text-sm text-gray-700 dark:text-gray-300 leading-relaxed text-center ${fontClass}`}>
+            {t("aboutModal.mission", lang)}
           </p>
         </div>
 
@@ -132,11 +132,11 @@ export function AboutModal({ onClose }: { onClose: () => void }) {
           {!showDevInput ? (
             <button
               onClick={() => setShowDevInput(true)}
-              title="رمز المطور"
-              className="flex items-center gap-2 text-xs text-gray-400 dark:text-gray-500 hover:text-gold-500 dark:hover:text-gold-400 transition-colors mx-auto"
+              title={t("aboutModal.devCode", lang)}
+              className={`flex items-center gap-2 text-xs text-gray-400 dark:text-gray-500 hover:text-gold-500 dark:hover:text-gold-400 transition-colors mx-auto ${fontClass}`}
             >
               <Shield className="w-4 h-4" />
-              {isAdmin ? "وضع المطور مفعل" : "رمز المطور"}
+              {isAdmin ? t("aboutModal.devActive", lang) : t("aboutModal.devCode", lang)}
             </button>
           ) : (
             <form onSubmit={handleDevCode} className="flex flex-col items-center gap-2">
@@ -146,17 +146,17 @@ export function AboutModal({ onClose }: { onClose: () => void }) {
                   type="password"
                   value={devCode}
                   onChange={(e) => { setDevCode(e.target.value); setDevError(""); setDevSuccess(""); }}
-                  placeholder="أدخل رمز المطور"
-                  className="px-3 py-1.5 rounded-lg border border-parchment-300 dark:border-white/10 bg-white dark:bg-white/5 text-gray-800 dark:text-gray-200 text-xs font-arabic focus:outline-none focus:ring-2 focus:ring-gold-500/40 w-44"
+                  placeholder={t("aboutModal.devPlaceholder", lang)}
+                  className={`px-3 py-1.5 rounded-lg border border-parchment-300 dark:border-white/10 bg-white dark:bg-white/5 text-gray-800 dark:text-gray-200 text-xs focus:outline-none focus:ring-2 focus:ring-gold-500/40 w-44 ${fontClass}`}
                   dir="ltr"
                   autoFocus
                 />
                 <button
                   type="submit"
                   disabled={!devCode.trim()}
-                  className="px-3 py-1.5 bg-gray-900 dark:bg-white hover:bg-gold-500 dark:hover:bg-gold-500 text-white dark:text-gray-900 hover:text-white text-xs font-arabic rounded-lg transition-all duration-150 disabled:opacity-40"
+                  className={`px-3 py-1.5 bg-gray-900 dark:bg-white hover:bg-gold-500 dark:hover:bg-gold-500 text-white dark:text-gray-900 hover:text-white text-xs rounded-lg transition-all duration-150 disabled:opacity-40 ${fontClass}`}
                 >
-                  دخول
+                  {t("aboutModal.devLogin", lang)}
                 </button>
               </div>
               {devError && (

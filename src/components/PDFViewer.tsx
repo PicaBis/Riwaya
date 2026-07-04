@@ -4,6 +4,8 @@ import { useEffect, useRef, useState, useCallback } from "react";
 import { ZoomIn, ZoomOut, RotateCcw, Maximize2, Minimize2, BookOpen, Speaker, VolumeX, List, ChevronLeft, ChevronRight, BookMarked } from "lucide-react";
 import clsx from "clsx";
 import { Paywall } from "./Paywall";
+import { useApp } from "@/context/AppContext";
+import { t } from "@/lib/i18n";
 
 export interface Chapter {
   title: string;
@@ -25,6 +27,7 @@ interface PDFViewerProps {
 type RenderStatus = "idle" | "loading" | "ready" | "error";
 
 export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, onPageChange, preview, novelId, chapters, readingTheme = "light" }: PDFViewerProps) {
+  const { lang } = useApp();
   const containerRef = useRef<HTMLDivElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -66,14 +69,15 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, 
     return () => window.clearTimeout(raf);
   }, []);
   useEffect(() => {
-    if (novelId !== "shajarat-sina" || typeof window === "undefined") return;
+    if (!novelId || typeof window === "undefined") return;
     setMusicReady(false);
     setMusicError(false);
     ytPlayerReadyRef.current = false;
 
     const iframe = document.createElement("iframe");
     const videoId = "LCfEqudu4pc";
-    iframe.src = `https://www.youtube.com/embed/${videoId}?enablejsapi=1&autoplay=0&controls=0&loop=1&playlist=${videoId}&origin=${encodeURIComponent(window.location.origin)}`;
+    const startTime = 3383;
+    iframe.src = `https://www.youtube.com/embed/${videoId}?enablejsapi=1&autoplay=0&controls=0&loop=1&playlist=${videoId}&start=${startTime}&origin=${encodeURIComponent(window.location.origin)}`;
     iframe.allow = "autoplay";
     iframe.style.cssText = "position:fixed;left:-9999px;top:0;width:1px;height:1px;opacity:0;pointer-events:none;";
     iframe.setAttribute("allow", "autoplay; encrypted-media");
@@ -136,7 +140,7 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, 
         iframe.contentWindow.postMessage(JSON.stringify({ event: "command", func: "pauseVideo" }), "*");
         setPlaying(false);
       } else {
-        iframe.contentWindow.postMessage(JSON.stringify({ event: "command", func: "seekTo", args: [0, true] }), "*");
+        iframe.contentWindow.postMessage(JSON.stringify({ event: "command", func: "seekTo", args: [3383, true] }), "*");
         iframe.contentWindow.postMessage(JSON.stringify({ event: "command", func: "playVideo" }), "*");
         setPlaying(true);
       }
@@ -403,45 +407,43 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, 
       {/* Toolbar */}
       <div className="relative z-20 flex items-center justify-between gap-1 px-2 sm:px-3 py-1.5 sm:py-2 bg-white dark:bg-onyx-900 border-b border-parchment-200 dark:border-white/8 flex-shrink-0 overflow-hidden">
         <div className="hidden sm:flex items-center gap-0.5">
-          <ToolBtn onClick={goToPrev} disabled={currentPage <= 1} title="الصفحة السابقة"><ChevronRight className="w-4 h-4" /></ToolBtn>
-          <ToolBtn onClick={zoomOut} title="تصغير"><ZoomOut className="w-4 h-4" /></ToolBtn>
+          <ToolBtn onClick={goToPrev} disabled={currentPage <= 1} title={t("pdf.prevPage", lang)}><ChevronRight className="w-4 h-4" /></ToolBtn>
+          <ToolBtn onClick={zoomOut} title={t("pdf.zoomOut", lang)}><ZoomOut className="w-4 h-4" /></ToolBtn>
           <span onClick={resetZoom} className="px-1.5 py-1 text-[11px] font-mono text-gray-600 dark:text-gray-400 cursor-pointer min-w-[42px] text-center font-bold">{Math.round(displayScale * 100)}%</span>
-          <ToolBtn onClick={zoomIn} title="تكبير"><ZoomIn className="w-4 h-4" /></ToolBtn>
-          <ToolBtn onClick={resetZoom} title="الحجم الافتراضي"><RotateCcw className="w-3.5 h-3.5" /></ToolBtn>
-          <ToolBtn onClick={goToNext} disabled={currentPage >= totalPages || totalPages === 0} title="الصفحة التالية"><ChevronLeft className="w-4 h-4" /></ToolBtn>
+          <ToolBtn onClick={zoomIn} title={t("pdf.zoomIn", lang)}><ZoomIn className="w-4 h-4" /></ToolBtn>
+          <ToolBtn onClick={resetZoom} title={t("pdf.resetZoom", lang)}><RotateCcw className="w-3.5 h-3.5" /></ToolBtn>
+          <ToolBtn onClick={goToNext} disabled={currentPage >= totalPages || totalPages === 0} title={t("pdf.nextPage", lang)}><ChevronLeft className="w-4 h-4" /></ToolBtn>
         </div>
         <div className="flex sm:hidden items-center gap-0.5">
-          <ToolBtn onClick={goToPrev} disabled={currentPage <= 1} title="السابق"><ChevronRight className="w-3.5 h-3.5" /></ToolBtn>
-          <ToolBtn onClick={zoomOut} title="تصغير"><ZoomOut className="w-3.5 h-3.5" /></ToolBtn>
+          <ToolBtn onClick={goToPrev} disabled={currentPage <= 1} title={t("pdf.prevPage", lang)}><ChevronRight className="w-3.5 h-3.5" /></ToolBtn>
+          <ToolBtn onClick={zoomOut} title={t("pdf.zoomOut", lang)}><ZoomOut className="w-3.5 h-3.5" /></ToolBtn>
           <span onClick={resetZoom} className="text-[10px] font-mono text-gray-500 dark:text-gray-400 font-bold min-w-[30px] text-center cursor-pointer">{Math.round(displayScale * 100)}%</span>
-          <ToolBtn onClick={zoomIn} title="تكبير"><ZoomIn className="w-3.5 h-3.5" /></ToolBtn>
-          <ToolBtn onClick={goToNext} disabled={currentPage >= totalPages || totalPages === 0} title="التالي"><ChevronLeft className="w-3.5 h-3.5" /></ToolBtn>
+          <ToolBtn onClick={zoomIn} title={t("pdf.zoomIn", lang)}><ZoomIn className="w-3.5 h-3.5" /></ToolBtn>
+          <ToolBtn onClick={goToNext} disabled={currentPage >= totalPages || totalPages === 0} title={t("pdf.nextPage", lang)}><ChevronLeft className="w-3.5 h-3.5" /></ToolBtn>
         </div>
         <span className="text-xs font-sans text-gray-400 font-bold">{currentPage} / {totalPages}</span>
         <div className="flex items-center gap-0.5">
           {chapters && chapters.length > 0 && (
-            <ToolBtn onClick={() => setTocOpen((v) => !v)} title="جدول الفصول"><List className="w-4 h-4" /></ToolBtn>
+            <ToolBtn onClick={() => setTocOpen((v) => !v)} title={t("pdf.toc", lang)}><List className="w-4 h-4" /></ToolBtn>
           )}
-          {novelId === "shajarat-sina" && (
-            <ToolBtn
-              onClick={toggleMusic}
-              disabled={!musicReady || musicError}
-              title={
-                musicError
-                  ? "تعذّر تحميل الموسيقى"
-                  : playing
-                    ? "إيقاف الموسيقى"
-                    : "تشغيل الموسيقى"
-              }
-              className={clsx(
-                musicError && "opacity-40 cursor-not-allowed",
-                playing && "text-gold-500"
-              )}
-            >
-              {musicError ? <VolumeX className="w-4 h-4" /> : playing ? <VolumeX className="w-4 h-4 text-gold-500" /> : <Speaker className="w-4 h-4" />}
-            </ToolBtn>
-          )}
-          <ToolBtn onClick={toggleFullscreen} title={isFullscreen ? "الخروج من ملء الشاشة" : "ملء الشاشة"} className="bg-gold-500/10 dark:bg-white/10 rounded-lg hover:bg-gold-500/20 dark:hover:bg-white/20">
+          <ToolBtn
+            onClick={toggleMusic}
+            disabled={!musicReady || musicError}
+            title={
+              musicError
+                ? t("pdf.musicError", lang)
+                : playing
+                  ? t("pdf.musicStop", lang)
+                  : t("pdf.musicPlay", lang)
+            }
+            className={clsx(
+              musicError && "opacity-40 cursor-not-allowed",
+              playing && "text-gold-500"
+            )}
+          >
+            {musicError ? <VolumeX className="w-4 h-4" /> : playing ? <VolumeX className="w-4 h-4 text-gold-500" /> : <Speaker className="w-4 h-4" />}
+          </ToolBtn>
+          <ToolBtn onClick={toggleFullscreen} title={isFullscreen ? t("pdf.exitFullscreen", lang) : t("pdf.fullscreen", lang)} className="bg-gold-500/10 dark:bg-white/10 rounded-lg hover:bg-gold-500/20 dark:hover:bg-white/20">
             {isFullscreen ? <Minimize2 className="w-4 h-4 text-gold-500" /> : <Maximize2 className="w-4 h-4 text-gold-500" />}
           </ToolBtn>
 
@@ -450,8 +452,8 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, 
 
       {/* TOC Dropdown */}
       {tocOpen && chapters && chapters.length > 0 && (
-        <div className="absolute top-11 right-0 z-50 w-64 bg-white dark:bg-onyx-800 rounded-b-2xl shadow-xl border border-parchment-200 dark:border-white/8 max-h-[60vh] overflow-y-auto animate-fade-in" dir="rtl">
-          <div className="p-3 border-b border-parchment-200 dark:border-white/8"><h3 className="font-arabic text-sm font-bold text-gray-900 dark:text-gray-100">جدول الفصول</h3></div>
+        <div className="absolute top-11 right-0 z-50 w-64 bg-white dark:bg-onyx-800 rounded-b-2xl shadow-xl border border-parchment-200 dark:border-white/8 max-h-[60vh] overflow-y-auto animate-fade-in" dir={lang === "ar" ? "rtl" : "ltr"}>
+          <div className="p-3 border-b border-parchment-200 dark:border-white/8"><h3 className={`text-sm font-bold text-gray-900 dark:text-gray-100 ${lang === "ar" ? "font-arabic" : "font-sans"}`}>{t("pdf.toc", lang)}</h3></div>
           {chapters.map((ch, i) => {
             const isChapterLocked = ch.startPage > freeUntilPage;
             const isCurrent = currentPage >= ch.startPage && (i === chapters.length - 1 || currentPage < chapters[i + 1].startPage);
@@ -463,10 +465,10 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, 
                 className={`w-full flex items-center gap-3 px-4 py-3 text-right border-b border-parchment-100 dark:border-white/5 last:border-0 hover:bg-parchment-100 dark:hover:bg-white/5 ${isCurrent ? "bg-gold-500/5 border-r-2 border-r-gold-500" : ""}`}>
                 <span className={`w-7 h-7 rounded-lg flex items-center justify-center text-xs font-bold flex-shrink-0 ${isCurrent ? "bg-gold-500 text-white" : "bg-parchment-100 dark:bg-white/10 text-gray-500"}`}>{i + 1}</span>
                 <div className="flex-1 min-w-0">
-                  <p className={`text-xs font-arabic truncate ${isCurrent ? "text-gold-600 dark:text-gold-400 font-bold" : "text-gray-700 dark:text-gray-300"}`}>{ch.title}</p>
-                  <p className="text-[10px] text-gray-400 font-sans">صفحة {ch.startPage}</p>
+                  <p className={`text-xs truncate ${lang === "ar" ? "font-arabic" : "font-sans"} ${isCurrent ? "text-gold-600 dark:text-gold-400 font-bold" : "text-gray-700 dark:text-gray-300"}`}>{ch.title}</p>
+                  <p className="text-[10px] text-gray-400 font-sans">{t("library.page", lang)} {ch.startPage}</p>
                 </div>
-                {isChapterLocked && !isUnlocked && <span className="text-[10px] text-amber-500 bg-amber-50 dark:bg-amber-900/20 px-1.5 py-0.5 rounded-full font-arabic flex-shrink-0">🔒</span>}
+                {isChapterLocked && !isUnlocked && <span className="text-[10px] text-amber-500 bg-amber-50 dark:bg-amber-900/20 px-1.5 py-0.5 rounded-full flex-shrink-0">🔒</span>}
               </button>
             );
           })}
@@ -511,12 +513,12 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, 
           {status === "error" && (
             <div className="flex flex-col items-center justify-center gap-4 text-gray-400">
               <BookOpen className="w-16 h-16 text-gold-500/30" />
-              <p className="font-arabic text-center">تعذّر تحميل الملف. الرجاء التحقق من الاتصال.</p>
+              <p className={`text-center ${lang === "ar" ? "font-arabic" : "font-sans"}`}>{t("pdf.loadError", lang)}</p>
               <button
                 onClick={handleRetry}
-                className="px-4 py-2 rounded-xl bg-gold-500 text-white text-sm font-arabic hover:bg-gold-600 transition-colors active:scale-95"
+                className={`px-4 py-2 rounded-xl bg-gold-500 text-white text-sm hover:bg-gold-600 transition-colors active:scale-95 ${lang === "ar" ? "font-arabic" : "font-sans"}`}
               >
-                إعادة المحاولة
+                {t("pdf.retry", lang)}
               </button>
             </div>
           )}
@@ -524,7 +526,7 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, 
           {status === "loading" && (
             <div className="flex flex-col items-center justify-center gap-4 text-gray-400 py-20">
               <div className="w-10 h-10 rounded-full border-2 border-gold-500/20 border-t-gold-500 animate-spin" />
-              <p className="font-arabic text-sm text-gray-500 dark:text-gray-400">جاري تحميل الرواية…</p>
+              <p className={`text-sm text-gray-500 dark:text-gray-400 ${lang === "ar" ? "font-arabic" : "font-sans"}`}>{t("pdf.loading", lang)}</p>
             </div>
           )}
 

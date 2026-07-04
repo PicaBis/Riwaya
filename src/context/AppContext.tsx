@@ -326,6 +326,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     if (!mounted) return;
     document.documentElement.lang = lang;
     document.documentElement.dir = lang === "ar" ? "rtl" : "ltr";
+    document.title =
+      lang === "ar"
+        ? "روايتي — مكتبة الروايات الشخصية"
+        : "Rewayati — Personal Novel Library";
   }, [lang, mounted]);
 
   return (

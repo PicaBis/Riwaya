@@ -1,6 +1,6 @@
 "use client";
 
-import { Sparkles, BookOpen, Feather } from "lucide-react";
+import { Sparkles, BookOpen, Feather, ChevronDown } from "lucide-react";
 import { novels } from "@/data/novels";
 import { NovelCard } from "@/components/NovelCard";
 import { ContinueReading } from "@/components/ContinueReading";
@@ -19,7 +19,18 @@ export default function HomePage() {
 
       {/* ── Hero Banner ────────────────────────────── */}
       <section className="relative overflow-hidden mb-8 sm:mb-10 -mt-8 sm:-mt-10 pt-10 sm:pt-20 pb-8">
-        <div className="absolute inset-0 pointer-events-none">
+        <div className="absolute inset-0 pointer-events-none hero-anim-bg">
+          {/* Floating golden orbs */}
+          <div className="hero-orb hero-orb-1" />
+          <div className="hero-orb hero-orb-2" />
+          <div className="hero-orb hero-orb-3" />
+          {/* Drifting particles */}
+          <div className="hero-particle hero-particle-1" />
+          <div className="hero-particle hero-particle-2" />
+          <div className="hero-particle hero-particle-3" />
+          <div className="hero-particle hero-particle-4" />
+          <div className="hero-particle hero-particle-5" />
+          {/* Soft glow halos */}
           <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[500px] h-[500px] bg-gold-500/[0.04] rounded-full blur-3xl" />
           <div className="absolute bottom-0 left-1/4 w-72 h-72 bg-gold-500/[0.03] rounded-full blur-3xl" />
           <div className="absolute bottom-0 right-1/4 w-72 h-72 bg-gold-500/[0.03] rounded-full blur-3xl" />
@@ -41,8 +52,8 @@ export default function HomePage() {
               <div className="w-1.5 h-1.5 rounded-full bg-gold-500/40" />
               <div className="w-10 sm:w-16 h-px bg-gradient-to-r from-transparent to-gold-500/60" />
             </div>
-            <h1 className="font-arabic text-4xl sm:text-6xl md:text-7xl lg:text-8xl font-bold leading-tight tracking-tight text-center">
-              <span style={{ backgroundImage: "linear-gradient(135deg, #b8860b 0%, #d4af37 30%, #f5d26b 50%, #d4af37 70%, #b8860b 100%)", backgroundSize: "200% auto", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text", filter: "drop-shadow(0 2px 4px rgba(184,134,11,0.15))" }}>روايتي</span>
+            <h1 className={`${fontClass} text-4xl sm:text-6xl md:text-7xl lg:text-8xl font-bold leading-tight tracking-tight text-center`}>
+              <span className="text-shimmer" style={{ backgroundImage: "linear-gradient(135deg, #b8860b 0%, #d4af37 30%, #f5d26b 50%, #d4af37 70%, #b8860b 100%)", backgroundSize: "200% auto", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text", filter: "drop-shadow(0 2px 4px rgba(184,134,11,0.15))" }}>{t("site.name", lang)}</span>
             </h1>
             <div className="flex items-center justify-center gap-2 mt-3 sm:mt-4 w-full">
               <div className="w-4 h-px bg-gold-500/30" /><div className="w-1.5 h-1.5 rounded-full bg-gold-500/50" /><div className="w-8 sm:w-12 h-px bg-gold-500/40" /><BookOpen className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-gold-500/50" /><div className="w-8 sm:w-12 h-px bg-gold-500/40" /><div className="w-1.5 h-1.5 rounded-full bg-gold-500/50" /><div className="w-4 h-px bg-gold-500/30" />
@@ -55,7 +66,19 @@ export default function HomePage() {
           </div>
         </div>
         <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-32 h-px bg-gradient-to-r from-transparent via-gold-500/20 to-transparent" />
+
+        {/* ── Scroll-down hint ─────────────────────────── */}
+        <a
+          href="#novels"
+          className={`absolute bottom-2 left-1/2 -translate-x-1/2 flex flex-col items-center gap-1 text-gold-500/70 hover:text-gold-500 transition-colors animate-bounce-slow ${fontClass}`}
+          aria-label={t("scroll.hint", lang)}
+        >
+          <span className="text-[11px] tracking-wide">{t("scroll.hint", lang)}</span>
+          <ChevronDown className="w-4 h-4" />
+        </a>
       </section>
+
+      <span id="novels" className="block -mt-4 pt-4" />
 
       <ContinueReading />
       <ReadingStats />

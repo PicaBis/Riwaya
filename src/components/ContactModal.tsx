@@ -1,18 +1,24 @@
 "use client";
 
 import { Mail, Instagram, MessageCircle, X } from "lucide-react";
+import { useApp } from "@/context/AppContext";
+import { t } from "@/lib/i18n";
 
 interface ContactModalProps {
   onClose: () => void;
 }
 
 export function ContactModal({ onClose }: ContactModalProps) {
+  const { lang } = useApp();
+  const dir = lang === "ar" ? "rtl" : "ltr";
+  const fontClass = lang === "ar" ? "font-arabic" : "font-sans";
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fade-in" onClick={onClose}>
       <div
         className="relative bg-white dark:bg-onyx-800 rounded-3xl shadow-2xl border border-parchment-200 dark:border-white/10 w-full max-w-md p-6 sm:p-8 animate-scale-in"
         onClick={(e) => e.stopPropagation()}
-        dir="rtl"
+        dir={dir}
       >
         <button
           onClick={onClose}
@@ -26,8 +32,8 @@ export function ContactModal({ onClose }: ContactModalProps) {
             <MessageCircle className="w-6 h-6 text-gold-500" />
           </div>
           <div>
-            <h2 className="font-arabic text-xl font-bold text-gray-900 dark:text-gray-100">تواصل مع بيكا</h2>
-            <p className="text-xs text-gray-500 dark:text-gray-400 font-arabic">أرسل ملاحظاتك واقتراحاتك</p>
+            <h2 className={`text-xl font-bold text-gray-900 dark:text-gray-100 ${fontClass}`}>{t("contact.title", lang)}</h2>
+            <p className={`text-xs text-gray-500 dark:text-gray-400 ${fontClass}`}>{t("contact.desc", lang)}</p>
           </div>
         </div>
 
@@ -42,7 +48,7 @@ export function ContactModal({ onClose }: ContactModalProps) {
               <Instagram className="w-5 h-5 text-white" />
             </div>
             <div>
-              <p className="text-sm font-arabic font-medium text-gray-900 dark:text-gray-100">انستغرام</p>
+              <p className={`text-sm font-medium text-gray-900 dark:text-gray-100 ${fontClass}`}>{t("contact.instagram", lang)}</p>
               <p className="text-xs text-gray-500 font-sans">@ProfPica</p>
             </div>
           </a>
@@ -55,14 +61,14 @@ export function ContactModal({ onClose }: ContactModalProps) {
               <Mail className="w-5 h-5 text-gold-600 dark:text-gold-400" />
             </div>
             <div>
-              <p className="text-sm font-arabic font-medium text-gray-900 dark:text-gray-100">بريد إلكتروني</p>
+              <p className={`text-sm font-medium text-gray-900 dark:text-gray-100 ${fontClass}`}>{t("contact.email", lang)}</p>
               <p className="text-xs text-gray-500 font-sans">profpica@proton.me</p>
             </div>
           </a>
         </div>
 
-        <p className="text-[10px] text-gray-400 dark:text-gray-500 text-center mt-4 font-arabic">
-          للعروض التجارية والنشر الشراكة — يرجى ذكر اسم المنصة
+        <p className={`text-[10px] text-gray-400 dark:text-gray-500 text-center mt-4 ${fontClass}`}>
+          {t("contact.commercial", lang)}
         </p>
       </div>
     </div>
