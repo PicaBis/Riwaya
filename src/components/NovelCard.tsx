@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import Link from "next/link";
 import { BookOpen, Wallet, Calendar, Tag, Clock, Eye, Flame, Sparkles, PenLine } from "lucide-react";
 import { Novel } from "@/data/novels";
@@ -12,6 +12,16 @@ import { useApp } from "@/context/AppContext";
 import { t, type Lang } from "@/lib/i18n";
 
 const prefetched = new Set<string>();
+
+function prefetchPdf(pdfFile: string) {
+  if (!pdfFile || prefetched.has(pdfFile)) return;
+  prefetched.add(pdfFile);
+  const link = document.createElement("link");
+  link.rel = "prefetch";
+  link.href = `/api/novel-asset/${pdfFile}`;
+  link.as = "fetch";
+  document.head.appendChild(link);
+}
 
 export function estimateReadTime(novel: Novel, lang: Lang): string {
   const totalPages = novel.freeUntilPage + 80;
@@ -32,14 +42,36 @@ interface NovelCardProps {
 export function NovelCard({ novel, index = 0 }: NovelCardProps) {
   const { ratings, setRating, guest, bookmarks, novelViews, lang } = useApp();
   const [showCCP, setShowCCP] = useState(false);
+  const cardRef = useRef<HTMLDivElement>(null);
   const currentRating = ratings[novel.id] ?? 0;
   const bookmarkPage = bookmarks[novel.id];
   const viewCount = novelViews[novel.id] || 0;
   const isComingSoon = novel.status === "coming-soon";
 
+  useEffect(() => {
+    if (isComingSoon || !novel.pdfFile) return;
+    const el = cardRef.current;
+    if (!el) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            prefetchPdf(novel.pdfFile!);
+            observer.unobserve(el);
+          }
+        });
+      },
+      { rootMargin: "200px" }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [novel.pdfFile, isComingSoon]);
+
   return (
     <>
       <article
+        ref={cardRef}
         className="group flex flex-col bg-white dark:bg-onyx-800 rounded-2xl overflow-hidden shadow-book hover:shadow-book-hover border border-parchment-200 dark:border-white/8 transition-all duration-300 hover:-translate-y-1 card-glow"
         style={{ animationDelay: `${index * 80}ms` }}
       >
@@ -48,14 +80,7 @@ export function NovelCard({ novel, index = 0 }: NovelCardProps) {
           href={`/novel/${novel.id}`}
           className="block relative"
           onMouseEnter={() => {
-            if (novel.status !== "coming-soon" && novel.pdfFile && !prefetched.has(novel.pdfFile)) {
-              prefetched.add(novel.pdfFile);
-              const link = document.createElement("link");
-              link.rel = "prefetch";
-              link.href = `/api/novel-asset/${novel.pdfFile}`;
-              link.as = "fetch";
-              document.head.appendChild(link);
-            }
+            if (novel.pdfFile) prefetchPdf(novel.pdfFile);
           }}
         >
           {isComingSoon ? (
