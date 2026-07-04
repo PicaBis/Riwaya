@@ -18,7 +18,7 @@ export default function HomePage() {
     <div className="max-w-6xl mx-auto px-4 sm:px-6">
 
       {/* ── Hero Banner ────────────────────────────── */}
-      <section className="relative overflow-hidden mb-8 sm:mb-10 -mt-8 sm:-mt-10 pt-10 sm:pt-20 pb-8">
+      <section className="relative overflow-hidden mb-8 sm:mb-10 -mt-8 sm:-mt-10 pt-10 sm:pt-20 pb-14 sm:pb-20">
         <div className="absolute inset-0 pointer-events-none hero-anim-bg">
           {/* Floating golden orbs */}
           <div className="hero-orb hero-orb-1" />
@@ -70,7 +70,7 @@ export default function HomePage() {
         {/* ── Scroll-down hint ─────────────────────────── */}
         <a
           href="#novels"
-          className={`absolute bottom-2 left-1/2 -translate-x-1/2 flex flex-col items-center gap-1 text-gold-500/70 hover:text-gold-500 transition-colors animate-bounce-slow ${fontClass}`}
+          className={`absolute bottom-4 sm:bottom-5 left-1/2 -translate-x-1/2 flex flex-col items-center gap-1 text-gold-500/70 hover:text-gold-500 transition-colors animate-bounce-slow ${fontClass}`}
           aria-label={t("scroll.hint", lang)}
         >
           <span className="text-[11px] tracking-wide">{t("scroll.hint", lang)}</span>
