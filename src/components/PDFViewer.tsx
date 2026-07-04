@@ -164,7 +164,7 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, 
     (async () => {
       try {
         const pdfjsLib = await import("pdfjs-dist");
-        pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
+        pdfjsLib.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.js";
         const loadedPdf = await pdfjsLib.getDocument(pdfUrl).promise;
         if (cancelled) return;
         setPdf(loadedPdf);

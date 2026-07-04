@@ -5,16 +5,19 @@ import { Heart, MessageSquare, Send, Trash2, Ban, Shield, Type, AlignLeft, FileT
 import { useApp } from "@/context/AppContext";
 import { getSupabase } from "@/lib/supabase";
 import type { Comment } from "@/lib/comments-types";
+import { t } from "@/lib/i18n";
 import clsx from "clsx";
 
 const COMMENTS_PER_PAGE = 20;
 
 export function Comments({ novelId }: { novelId: string }) {
-  const { guest, isAdmin, isDark } = useApp();
+  const { guest, isAdmin, isDark, lang } = useApp();
+  const dir = lang === "ar" ? "rtl" : "ltr";
+  const fontClass = lang === "ar" ? "font-arabic" : "font-sans";
   const [comments, setComments] = useState<Comment[]>([]);
   const [displayCount, setDisplayCount] = useState(COMMENTS_PER_PAGE);
   const [content, setContent] = useState("");
-  const [guestName, setGuestName] = useState("ضيف");
+  const [guestName, setGuestName] = useState(t("comments.guest", lang));
   const [loading, setLoading] = useState(false);
   const [submitError, setSubmitError] = useState("");
   const [fetchError, setFetchError] = useState("");
@@ -24,6 +27,14 @@ export function Comments({ novelId }: { novelId: string }) {
   const [showToolbar, setShowToolbar] = useState(true);
   const hideTimerRef = useRef<number | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const nameTouchedRef = useRef(false);
+
+  // Keep the default "Guest" name in sync with the active language until the
+  // reader types their own name (avoids an Arabic default lingering in an
+  // otherwise fully-English UI, or vice versa).
+  useEffect(() => {
+    if (!nameTouchedRef.current) setGuestName(t("comments.guest", lang));
+  }, [lang]);
 
   const resetToolbarTimer = useCallback(() => {
     setShowToolbar(true);
@@ -44,15 +55,15 @@ export function Comments({ novelId }: { novelId: string }) {
       const res = await fetch(`/api/comments?novelId=${encodeURIComponent(novelId)}`);
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
-        setFetchError(data.error || "تعذّر تحميل التعليقات");
+        setFetchError(data.error || t("comments.loadFailed", lang));
         return;
       }
       const data = await res.json();
       setComments(data);
     } catch {
-      setFetchError("تعذّر الاتصال بالخادم");
+      setFetchError(t("comments.connectFailed", lang));
     }
-  }, [novelId]);
+  }, [novelId, lang]);
 
   useEffect(() => {
     fetchComments();
@@ -126,7 +137,7 @@ export function Comments({ novelId }: { novelId: string }) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!content.trim()) return;
-    const author = guest?.name || guestName.trim() || "ضيف";
+    const author = guest?.name || guestName.trim() || t("comments.guest", lang);
     setLoading(true);
     setSubmitError("");
     try {
@@ -152,10 +163,10 @@ export function Comments({ novelId }: { novelId: string }) {
         }
       } else {
         const data = await res.json().catch(() => ({}));
-        setSubmitError(data.error || "تعذّر إرسال التعليق");
+        setSubmitError(data.error || t("comments.sendFailed", lang));
       }
     } catch {
-      setSubmitError("تعذّر الاتصال بالخادم");
+      setSubmitError(t("comments.connectFailed", lang));
     }
     setLoading(false);
   };
@@ -171,15 +182,15 @@ export function Comments({ novelId }: { novelId: string }) {
       });
       if (res.ok) {
         fetchComments();
-        alert(`تم حذف تعليق المستخدم: ${author}`);
+        alert(t("comments.deletedAlert", lang, { name: author }));
       } else {
-        alert("تعذّر الحذف — أعد إدخال رمز المطور من درع المطور");
+        alert(t("comments.deleteFailed", lang));
       }
     } catch {}
   };
 
   const toggleLike = async (commentId: string) => {
-    const author = guest?.name || guestName.trim() || "ضيف";
+    const author = guest?.name || guestName.trim() || t("comments.guest", lang);
     const comment = comments.find((c) => c.id === commentId);
     if (!comment) return;
     const liked = comment.likes.includes(author);
@@ -196,11 +207,11 @@ export function Comments({ novelId }: { novelId: string }) {
   const timeAgo = (ts: number) => {
     const diff = Date.now() - ts;
     const mins = Math.floor(diff / 60000);
-    if (mins < 1) return "الآن";
-    if (mins < 60) return `منذ ${mins} دقيقة`;
+    if (mins < 1) return t("comments.now", lang);
+    if (mins < 60) return t("comments.minutesAgo", lang, { n: mins });
     const hours = Math.floor(mins / 60);
-    if (hours < 24) return `منذ ${hours} ساعة`;
-    return `منذ ${Math.floor(hours / 24)} يوم`;
+    if (hours < 24) return t("comments.hoursAgo", lang, { n: hours });
+    return t("comments.daysAgo", lang, { n: Math.floor(hours / 24) });
   };
 
   const textClass = fontFamily === "ar" ? "font-arabic" : "font-sans";
@@ -209,14 +220,14 @@ export function Comments({ novelId }: { novelId: string }) {
     <div
       ref={containerRef}
       className="mt-8 border-t border-parchment-200 dark:border-white/8 pt-8"
-      dir="rtl"
+      dir={dir}
       onMouseMove={resetToolbarTimer}
       onTouchStart={resetToolbarTimer}
     >
       <div className={clsx("flex items-center justify-between flex-wrap gap-3 mb-6 transition-all duration-300", showToolbar ? "opacity-100 max-h-40" : "opacity-0 max-h-0 overflow-hidden")}>
-        <h3 className="font-arabic text-lg font-bold text-gray-900 dark:text-gray-100 flex items-center gap-2">
+        <h3 className={`text-lg font-bold text-gray-900 dark:text-gray-100 flex items-center gap-2 ${fontClass}`}>
           <MessageSquare className="w-5 h-5 text-gold-500" />
-          التعليقات
+          {t("comments.title", lang)}
         </h3>
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400">
@@ -233,15 +244,15 @@ export function Comments({ novelId }: { novelId: string }) {
           </div>
           <button
             onClick={() => setFontFamily((f) => (f === "ar" ? "sans" : "ar"))}
-            title={fontFamily === "ar" ? "الخط العربي" : "الخط الحديث"}
+            title={fontFamily === "ar" ? t("comments.arabicFont", lang) : t("comments.modernFont", lang)}
             className="flex items-center gap-1 px-2 py-1 rounded border border-parchment-300 dark:border-white/10 text-xs text-gray-500 dark:text-gray-400 hover:bg-parchment-100 dark:hover:bg-white/5"
           >
             <FileText className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">{fontFamily === "ar" ? "أميري" : "نظم"}</span>
+            <span className="hidden sm:inline">{fontFamily === "ar" ? t("font.family.amiri", lang) : t("comments.modern", lang)}</span>
           </button>
           {isAdmin && (
-            <span className="flex items-center gap-1 text-xs text-red-500 font-arabic">
-              <Shield className="w-3.5 h-3.5" /> وضع المشرف
+            <span className={`flex items-center gap-1 text-xs text-red-500 ${fontClass}`}>
+              <Shield className="w-3.5 h-3.5" /> {t("comments.adminMode", lang)}
             </span>
           )}
         </div>
@@ -255,7 +266,7 @@ export function Comments({ novelId }: { novelId: string }) {
           className="mb-4 px-3 py-1.5 rounded-full border border-parchment-300 dark:border-white/10 bg-white dark:bg-onyx-800 text-xs text-gray-500 dark:text-gray-400 hover:bg-parchment-100 dark:hover:bg-white/10 transition-all shadow-sm flex items-center gap-1.5"
         >
           <EyeOff className="w-3.5 h-3.5" />
-          أدوات التعليقات
+          {t("comments.tools", lang)}
         </button>
       )}
 
@@ -264,19 +275,19 @@ export function Comments({ novelId }: { novelId: string }) {
           <input
             type="text"
             value={guestName}
-            onChange={(e) => setGuestName(e.target.value)}
-            placeholder="الاسم"
+            onChange={(e) => { nameTouchedRef.current = true; setGuestName(e.target.value); }}
+            placeholder={t("contact.name", lang)}
             maxLength={50}
-            className="px-3 py-2 rounded-xl border border-parchment-300 dark:border-white/10 bg-white dark:bg-white/5 text-gray-900 dark:text-gray-100 text-sm font-arabic placeholder-gray-400 dark:placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-gold-500/40 transition-all w-32 sm:w-40"
+            className={`px-3 py-2 rounded-xl border border-parchment-300 dark:border-white/10 bg-white dark:bg-white/5 text-gray-900 dark:text-gray-100 text-sm placeholder-gray-400 dark:placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-gold-500/40 transition-all w-32 sm:w-40 ${fontClass}`}
           />
           <div className="flex-1">
             <textarea
               value={content}
               onChange={(e) => setContent(e.target.value)}
-              placeholder="شارك رأيك في هذه الرواية..."
+              placeholder={t("comments.contentPlaceholder", lang)}
               className={clsx(
-                "w-full px-4 py-3 rounded-xl border border-parchment-300 dark:border-white/10 bg-white dark:bg-white/5 text-gray-900 dark:text-gray-100 font-arabic placeholder-gray-400 dark:placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-gold-500/40 transition-all resize-none",
-                fontFamily === "sans" && "font-sans"
+                "w-full px-4 py-3 rounded-xl border border-parchment-300 dark:border-white/10 bg-white dark:bg-white/5 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-gold-500/40 transition-all resize-none",
+                fontFamily === "sans" ? "font-sans" : "font-arabic"
               )}
               style={{ fontSize, lineHeight }}
               rows={3}
@@ -285,26 +296,26 @@ export function Comments({ novelId }: { novelId: string }) {
           <button
             type="submit"
             disabled={loading || !content.trim()}
-            className="mt-1 px-4 py-2.5 bg-gold-500 hover:bg-gold-600 active:scale-95 text-white rounded-xl font-arabic text-sm font-medium transition-all disabled:opacity-40"
+            className="mt-1 px-4 py-2.5 bg-gold-500 hover:bg-gold-600 active:scale-95 text-white rounded-xl text-sm font-medium transition-all disabled:opacity-40"
           >
             <Send className="w-4 h-4" />
           </button>
         </div>
         {submitError && (
-          <p className="text-xs text-red-500 font-arabic px-1">{submitError}</p>
+          <p className={`text-xs text-red-500 px-1 ${fontClass}`}>{submitError}</p>
         )}
       </form>
 
       <div className="space-y-4">
         {fetchError && (
           <div className="flex items-center justify-between p-4 rounded-2xl border border-red-200 dark:border-red-900/30 bg-red-50 dark:bg-red-900/10">
-            <p className="text-sm text-red-600 dark:text-red-400 font-arabic">{fetchError}</p>
-            <button onClick={fetchComments} className="text-xs px-3 py-1.5 rounded-lg bg-red-500 text-white hover:bg-red-600 transition-colors">إعادة</button>
+            <p className={`text-sm text-red-600 dark:text-red-400 ${fontClass}`}>{fetchError}</p>
+            <button onClick={fetchComments} className="text-xs px-3 py-1.5 rounded-lg bg-red-500 text-white hover:bg-red-600 transition-colors">{t("comments.retry", lang)}</button>
           </div>
         )}
         {comments.length === 0 && !fetchError ? (
-          <p className="text-center text-sm text-gray-400 dark:text-gray-500 font-arabic py-8">
-            لا توجد تعليقات بعد — كن أول من يشارك
+          <p className={`text-center text-sm text-gray-400 dark:text-gray-500 py-8 ${fontClass}`}>
+            {t("comments.empty", lang)}
           </p>
         ) : (
           comments.slice(0, displayCount).map((c) => (
@@ -328,15 +339,15 @@ export function Comments({ novelId }: { novelId: string }) {
                 {isAdmin && (
                   <div className="flex items-center gap-1">
                     <button
-                      onClick={() => { if (confirm(`حذف التعليق وحظر المستخدم ${c.author}؟`)) deleteComment(c.id, c.author); }}
-                      title="حذف + حظر"
+                      onClick={() => { if (confirm(t("comments.confirmDelete", lang, { name: c.author }))) deleteComment(c.id, c.author); }}
+                      title={t("comments.deleteAndBan", lang)}
                       className="p-1.5 rounded-lg text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors"
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>
                     <button
                       onClick={() => deleteComment(c.id, c.author)}
-                      title="حظر المستخدم"
+                      title={t("comments.banUser", lang)}
                       className="p-1.5 rounded-lg text-gray-500 hover:bg-gray-100 dark:hover:bg-white/10 transition-colors"
                     >
                       <Ban className="w-4 h-4" />
@@ -355,12 +366,12 @@ export function Comments({ novelId }: { novelId: string }) {
                   onClick={() => toggleLike(c.id)}
                   className={clsx(
                     "flex items-center gap-1 text-xs transition-colors",
-                    (c.likes.includes(guest?.name || guestName.trim() || "ضيف"))
+                    (c.likes.includes(guest?.name || guestName.trim() || t("comments.guest", lang)))
                       ? "text-red-500"
                       : "text-gray-400 dark:text-gray-500 hover:text-red-500"
                   )}
                 >
-                  <Heart className={clsx("w-4 h-4", (c.likes.includes(guest?.name || guestName.trim() || "ضيف")) && "fill-red-500")} />
+                  <Heart className={clsx("w-4 h-4", (c.likes.includes(guest?.name || guestName.trim() || t("comments.guest", lang))) && "fill-red-500")} />
                   <span>{c.likes.length || ""}</span>
                 </button>
               </div>
@@ -371,9 +382,9 @@ export function Comments({ novelId }: { novelId: string }) {
           <div className="text-center pt-4">
             <button
               onClick={() => setDisplayCount((p) => Math.min(p + COMMENTS_PER_PAGE, comments.length))}
-              className="px-6 py-2.5 rounded-xl border border-parchment-300 dark:border-white/10 bg-white dark:bg-onyx-800 text-sm font-arabic text-gray-600 dark:text-gray-400 hover:border-gold-500/40 hover:text-gold-500 transition-all"
+              className={`px-6 py-2.5 rounded-xl border border-parchment-300 dark:border-white/10 bg-white dark:bg-onyx-800 text-sm text-gray-600 dark:text-gray-400 hover:border-gold-500/40 hover:text-gold-500 transition-all ${fontClass}`}
             >
-              عرض المزيد ({comments.length - displayCount})
+              {t("comments.showMore", lang)} ({comments.length - displayCount})
             </button>
           </div>
         )}

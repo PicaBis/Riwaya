@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useEffect } from "react";
 import Link from "next/link";
-import { ArrowRight, Wallet, Star, Flame, Sparkles, PenLine } from "lucide-react";
+import { ArrowRight, Wallet, Star, Flame, Sparkles, PenLine, BookOpen, Tag, Calendar, Clock, Lock, List } from "lucide-react";
 import dynamic from "next/dynamic";
 import { Novel } from "@/data/novels";
 import { StarRating } from "@/components/StarRating";
@@ -10,7 +10,10 @@ import { CCPModal } from "@/components/CCPModal";
 import { Comments } from "@/components/Comments";
 import { Breadcrumb } from "@/components/Breadcrumb";
 import { SkeletonReader } from "@/components/Skeleton";
+import { PDFCover } from "@/components/PDFCover";
+import { estimateReadTime } from "@/components/NovelCard";
 import { useApp } from "@/context/AppContext";
+import { t } from "@/lib/i18n";
 
 /* Lazy-load PDF viewer (client only, no SSR) */
 const PDFViewer = dynamic(
@@ -27,9 +30,14 @@ interface NovelReadingClientProps {
 }
 
 export function NovelReadingClient({ novel, startPage }: NovelReadingClientProps) {
-  const { bookmarks, saveBookmark, trackNovelView, readerPrefs } = useApp();
+  const { bookmarks, ratings, setRating, guest, saveBookmark, trackNovelView, readerPrefs, lang } = useApp();
   const [showCCP, setShowCCP] = useState(false);
   const [pageCurl, setPageCurl] = useState(false);
+  // Deep links (e.g. "Continue Reading" cards) pass an explicit startPage and
+  // should drop straight into the reader; a fresh visit from the library grid
+  // shows an overview first so readers know what they're about to start.
+  const [showOverview, setShowOverview] = useState(!startPage);
+  const [entryPage, setEntryPage] = useState(startPage || bookmarks[novel.id] || 1);
 
   const track = useCallback(() => {
     void trackNovelView(novel.id);
@@ -40,7 +48,12 @@ export function NovelReadingClient({ novel, startPage }: NovelReadingClientProps
   }, [track]);
 
   const pdfUrl = `/api/novel-asset/${novel.pdfFile}`;
-  const initialPage = startPage || bookmarks[novel.id] || 1;
+  const hasProgress = (bookmarks[novel.id] || 0) > 1;
+
+  const beginReading = (page?: number) => {
+    setEntryPage(page || bookmarks[novel.id] || 1);
+    setShowOverview(false);
+  };
 
   const handlePageChange = useCallback(
     (page: number, total?: number) => {
@@ -153,27 +166,162 @@ export function NovelReadingClient({ novel, startPage }: NovelReadingClientProps
     );
   }
 
+  const dir = lang === "ar" ? "rtl" : "ltr";
+  const fontClass = lang === "ar" ? "font-arabic" : "font-sans";
+  const currentRating = ratings[novel.id] ?? 0;
+
   return (
     <>
-      <div className="min-h-screen flex flex-col" dir="rtl">
+      <div className="min-h-screen flex flex-col" dir={dir}>
         <Breadcrumb items={[{ label: novel.title }]} />
-        {/* ── PDF Viewer ─────────────────────────────── */}
-        <div className={`min-h-[50vh] sm:min-h-[65vh] flex flex-col reading-theme-${readerPrefs.readingTheme} ${pageCurl ? "animate-page-curl" : ""}`} dir="ltr">
-          <PDFViewer
-            pdfUrl={pdfUrl}
-            title={novel.title}
-            freeUntilPage={novel.freeUntilPage}
-            initialPage={initialPage}
-            onPageChange={handlePageChange}
-            preview={novel.description}
-            novelId={novel.id}
-            chapters={novel.chapters}
-            readingTheme={readerPrefs.readingTheme}
-          />
-        </div>
+
+        {showOverview ? (
+          /* ── Overview screen ───────────────────────── */
+          <div className="max-w-5xl mx-auto w-full px-4 sm:px-6 py-8 sm:py-10">
+            <div className="flex flex-col md:flex-row gap-8">
+              {/* Cover */}
+              <div className="w-full max-w-[220px] mx-auto md:mx-0 flex-shrink-0">
+                <div className="rounded-2xl overflow-hidden shadow-book border border-parchment-200 dark:border-white/8">
+                  <PDFCover pdfUrl={pdfUrl} title={novel.title} className="w-full aspect-[3/4]" />
+                </div>
+              </div>
+
+              {/* Info */}
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 flex-wrap mb-3">
+                  <span className="inline-flex items-center gap-1 text-xs text-gold-500 bg-gold-500/10 px-2.5 py-0.5 rounded-full">
+                    <Tag className="w-3 h-3" />
+                    {novel.genre}
+                  </span>
+                  <span className="inline-flex items-center gap-1 text-xs text-gray-400 dark:text-gray-500">
+                    <Calendar className="w-3 h-3" />
+                    {novel.year}
+                  </span>
+                  <span className="inline-flex items-center gap-1 text-xs text-gray-400 dark:text-gray-500">
+                    <Clock className="w-3 h-3" />
+                    {t("card.readingDuration", lang)}: {estimateReadTime(novel, lang)}
+                  </span>
+                </div>
+
+                <h1 className={`text-2xl sm:text-3xl font-bold text-gray-900 dark:text-gray-100 mb-1 ${fontClass}`}>
+                  {novel.title}
+                </h1>
+                {novel.subtitle && (
+                  <p className={`text-gray-500 dark:text-gray-400 mb-2 ${fontClass}`}>{novel.subtitle}</p>
+                )}
+                <p className={`text-sm text-gray-500 dark:text-gray-400 mb-4 ${fontClass}`}>{novel.author}</p>
+
+                <p className={`text-gray-700 dark:text-gray-300 leading-relaxed mb-5 ${fontClass}`}>
+                  {novel.description}
+                </p>
+
+                {novel.tags && novel.tags.length > 0 && (
+                  <div className="flex flex-wrap gap-1.5 mb-5">
+                    {novel.tags.map((tag) => (
+                      <span key={tag} className={`text-xs px-2.5 py-1 rounded-full bg-parchment-100 dark:bg-white/5 border border-parchment-200 dark:border-white/10 text-gray-500 dark:text-gray-400 ${fontClass}`}>
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
+                )}
+
+                {/* Reading progress */}
+                {hasProgress && (
+                  <div className="mb-5">
+                    <p className={`text-xs text-gray-400 mb-1.5 ${fontClass}`}>{t("overview.readingProgress", lang)}</p>
+                    <div className="flex items-center gap-2">
+                      <div className="flex-1 h-1.5 bg-parchment-200 dark:bg-white/10 rounded-full overflow-hidden max-w-xs">
+                        <div
+                          className="h-full bg-gold-500 rounded-full"
+                          style={{ width: `${Math.min(Math.round((bookmarks[novel.id] / (novel.freeUntilPage + 80)) * 100), 100)}%` }}
+                        />
+                      </div>
+                      <span className="text-xs text-gold-500 font-sans font-medium">
+                        {t("library.page", lang)} {bookmarks[novel.id]}
+                      </span>
+                    </div>
+                  </div>
+                )}
+
+                {/* Rating */}
+                <div className="flex items-center gap-2 mb-6">
+                  <span className={`text-xs text-gray-400 dark:text-gray-500 ${fontClass}`}>
+                    {t("card.yourRating", lang)}:
+                  </span>
+                  <StarRating
+                    initialRating={currentRating}
+                    onRate={(s) => setRating(novel.id, s)}
+                    size="sm"
+                    readOnly={!guest}
+                  />
+                </div>
+
+                {/* CTA */}
+                <div className="flex flex-wrap gap-3">
+                  <button
+                    onClick={() => beginReading()}
+                    className={`flex items-center justify-center gap-2 px-6 py-3 bg-gray-900 dark:bg-white hover:bg-gold-500 dark:hover:bg-gold-500 text-white dark:text-gray-900 hover:text-white rounded-xl font-medium transition-all duration-200 active:scale-95 ${fontClass}`}
+                  >
+                    <BookOpen className="w-4 h-4" />
+                    {hasProgress ? t("library.continue", lang) : t("card.startReading", lang)}
+                  </button>
+                  <button
+                    onClick={() => setShowCCP(true)}
+                    className={`flex items-center justify-center gap-2 px-5 py-3 rounded-xl border border-parchment-300 dark:border-white/10 text-gold-500 hover:bg-gold-500/10 active:scale-95 transition-all duration-150 ${fontClass}`}
+                  >
+                    <Wallet className="w-4 h-4" />
+                    {t("card.supportCCP", lang)}
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Chapters */}
+            <div className="mt-10 pt-8 border-t border-parchment-200 dark:border-white/8">
+              <h2 className={`flex items-center gap-2 text-lg font-bold text-gray-900 dark:text-gray-100 mb-4 ${fontClass}`}>
+                <List className="w-4.5 h-4.5 text-gold-500" />
+                {t("overview.chapters", lang)}
+              </h2>
+              {novel.chapters && novel.chapters.length > 0 ? (
+                <div className="grid sm:grid-cols-2 gap-2">
+                  {novel.chapters.map((chapter, i) => {
+                    const isLocked = chapter.startPage > novel.freeUntilPage && novel.freeUntilPage > 0;
+                    return (
+                      <button
+                        key={i}
+                        onClick={() => beginReading(chapter.startPage)}
+                        className="flex items-center justify-between gap-2 px-4 py-3 rounded-xl bg-white dark:bg-onyx-800/60 border border-parchment-200 dark:border-white/8 hover:border-gold-500/30 hover:shadow-sm transition-all text-start"
+                      >
+                        <span className={`text-sm text-gray-700 dark:text-gray-300 ${fontClass}`}>{chapter.title}</span>
+                        {isLocked && <Lock className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" />}
+                      </button>
+                    );
+                  })}
+                </div>
+              ) : (
+                <p className={`text-sm text-gray-400 ${fontClass}`}>{t("overview.noChapters", lang)}</p>
+              )}
+            </div>
+          </div>
+        ) : (
+          /* ── PDF Viewer ─────────────────────────────── */
+          <div className={`min-h-[50vh] sm:min-h-[65vh] flex flex-col reading-theme-${readerPrefs.readingTheme} ${pageCurl ? "animate-page-curl" : ""}`} dir="ltr">
+            <PDFViewer
+              pdfUrl={pdfUrl}
+              title={novel.title}
+              freeUntilPage={novel.freeUntilPage}
+              initialPage={entryPage}
+              onPageChange={handlePageChange}
+              preview={novel.description}
+              novelId={novel.id}
+              chapters={novel.chapters}
+              readingTheme={readerPrefs.readingTheme}
+            />
+          </div>
+        )}
 
         {/* ── Comments Section ───────────────────────── */}
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 py-4 sm:py-6" dir="rtl">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 py-4 sm:py-6 w-full" dir={dir}>
           <Comments novelId={novel.id} />
         </div>
       </div>

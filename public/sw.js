@@ -2,7 +2,7 @@ const CACHE = "riwayati-v1";
 const PDF_CACHE = "riwayati-pdfs-v1";
 
 self.addEventListener("install", (e) => {
-  (e as any).waitUntil(
+  e.waitUntil(
     caches.open(CACHE).then((cache) =>
       cache.addAll([
         "/",
@@ -15,7 +15,7 @@ self.addEventListener("install", (e) => {
       ])
     )
   );
-  (self as any).skipWaiting();
+  self.skipWaiting();
 });
 
 self.addEventListener("activate", (e) => {
@@ -28,10 +28,10 @@ self.addEventListener("activate", (e) => {
       )
     )
   );
-  (self as any).clients.claim();
+  self.clients.claim();
 });
 
-self.addEventListener("fetch", (e: any) => {
+self.addEventListener("fetch", (e) => {
   const url = new URL(e.request.url);
   if (e.request.method !== "GET") {
     e.respondWith(fetch(e.request));

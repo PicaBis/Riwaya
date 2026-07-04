@@ -4,9 +4,12 @@ import { TrendingUp, BookOpen, Clock, Star } from "lucide-react";
 import Link from "next/link";
 import { novels } from "@/data/novels";
 import { useApp } from "@/context/AppContext";
+import { t } from "@/lib/i18n";
 
 export function PopularSection() {
-  const { readHistory, bookmarks, ratings } = useApp();
+  const { readHistory, bookmarks, ratings, lang } = useApp();
+  const dir = lang === "ar" ? "rtl" : "ltr";
+  const fontClass = lang === "ar" ? "font-arabic" : "font-sans";
 
   const novelStats = novels.map((novel) => {
     const readers = readHistory.filter((e) => e.novelId === novel.id).length;
@@ -20,13 +23,13 @@ export function PopularSection() {
   if (!hasData) return null;
 
   return (
-    <div className="mb-10" dir="rtl">
+    <div className="mb-10" dir={dir}>
       <div className="flex items-center gap-3 mb-5">
         <div className="flex items-center gap-2">
           <div className="w-1 h-6 bg-gold-500 rounded-full" />
           <TrendingUp className="w-5 h-5 text-gold-500" />
-          <h2 className="font-arabic text-xl sm:text-2xl font-bold text-gray-900 dark:text-gray-100">
-            الأكثر قراءة
+          <h2 className={`text-xl sm:text-2xl font-bold text-gray-900 dark:text-gray-100 ${fontClass}`}>
+            {t("section.popular", lang)}
           </h2>
         </div>
       </div>
@@ -43,18 +46,18 @@ export function PopularSection() {
               <span className="text-gold-500 font-bold font-arabic">{i + 1}</span>
             </div>
             <div className="flex-1 min-w-0">
-              <p className="font-arabic font-bold text-sm text-gray-900 dark:text-gray-100 truncate group-hover:text-gold-500 transition-colors">
+              <p className={`font-bold text-sm text-gray-900 dark:text-gray-100 truncate group-hover:text-gold-500 transition-colors ${fontClass}`}>
                 {novel.title}
               </p>
               <div className="flex items-center gap-2 mt-1">
-                <span className="text-xs text-gray-400 font-arabic flex items-center gap-1">
+                <span className={`text-xs text-gray-400 flex items-center gap-1 ${fontClass}`}>
                   <BookOpen className="w-3 h-3" />
                   {novel.genre}
                 </span>
                 {readers > 0 && (
-                  <span className="text-xs text-gold-500 font-arabic flex items-center gap-1">
+                  <span className={`text-xs text-gold-500 flex items-center gap-1 ${fontClass}`}>
                     <TrendingUp className="w-3 h-3" />
-                    {readers} {readers === 1 ? "قارئ" : "قارئ"}
+                    {readers} {readers === 1 ? t("stats.reader", lang) : t("stats.readers", lang)}
                   </span>
                 )}
               </div>

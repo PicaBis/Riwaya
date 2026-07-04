@@ -9,16 +9,19 @@ import { StarRating } from "./StarRating";
 import { CCPModal } from "./CCPModal";
 import { FavoriteButton } from "./FavoriteButton";
 import { useApp } from "@/context/AppContext";
+import { t, type Lang } from "@/lib/i18n";
 
 const prefetched = new Set<string>();
 
-function estimateReadTime(novel: Novel): string {
+export function estimateReadTime(novel: Novel, lang: Lang): string {
   const totalPages = novel.freeUntilPage + 80;
   const mins = Math.round(totalPages / 2);
-  if (mins < 60) return `~${mins} د`;
+  const minLabel = t("timer.minutes", lang);
+  const hrLabel = t("timer.hours", lang);
+  if (mins < 60) return `~${mins} ${minLabel}`;
   const hrs = Math.floor(mins / 60);
   const remain = mins % 60;
-  return remain > 0 ? `~${hrs}س ${remain}د` : `~${hrs} ساعات`;
+  return remain > 0 ? `~${hrs} ${hrLabel} ${remain} ${minLabel}` : `~${hrs} ${hrLabel}`;
 }
 
 interface NovelCardProps {
@@ -27,7 +30,7 @@ interface NovelCardProps {
 }
 
 export function NovelCard({ novel, index = 0 }: NovelCardProps) {
-  const { ratings, setRating, guest, bookmarks, novelViews } = useApp();
+  const { ratings, setRating, guest, bookmarks, novelViews, lang } = useApp();
   const [showCCP, setShowCCP] = useState(false);
   const currentRating = ratings[novel.id] ?? 0;
   const bookmarkPage = bookmarks[novel.id];
@@ -83,7 +86,7 @@ export function NovelCard({ novel, index = 0 }: NovelCardProps) {
                 <Flame className="w-9 h-9 text-amber-200 mb-3 animate-float drop-shadow-lg" />
                 <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-white/15 backdrop-blur-sm text-amber-50 text-[10px] font-arabic font-bold mb-4 border border-white/20">
                   <PenLine className="w-3 h-3" />
-                  قيد الكتابة
+                  {t("comingSoon.writing", lang)}
                 </span>
                 <h3 className="font-arabic text-2xl font-bold text-white drop-shadow-lg leading-tight px-2">
                   {novel.title}
@@ -106,7 +109,7 @@ export function NovelCard({ novel, index = 0 }: NovelCardProps) {
               <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end p-4">
                 <span className="flex items-center gap-1.5 text-white text-sm font-arabic">
                   <BookOpen className="w-4 h-4" />
-                  ابدأ القراءة
+                  {t("card.startReading", lang)}
                 </span>
               </div>
             </>
@@ -143,7 +146,7 @@ export function NovelCard({ novel, index = 0 }: NovelCardProps) {
           {isComingSoon ? (
             <div className="flex items-center gap-1.5 text-xs text-amber-600 dark:text-amber-400 -mt-1">
               <PenLine className="w-3 h-3" />
-              <span className="font-arabic">قيد التأليف</span>
+              <span className="font-arabic">{t("card.inAuthorship", lang)}</span>
               {novel.lastUpdated && (
                 <>
                   <span className="text-gray-300 dark:text-gray-700">·</span>
@@ -154,7 +157,7 @@ export function NovelCard({ novel, index = 0 }: NovelCardProps) {
           ) : (
             <div className="flex items-center gap-1.5 text-xs text-gray-400 dark:text-gray-500 -mt-1">
               <Clock className="w-3 h-3" />
-              <span className="font-arabic">مدة قراءة: {estimateReadTime(novel)}</span>
+              <span className="font-arabic">{t("card.readingDuration", lang)}: {estimateReadTime(novel, lang)}</span>
               {viewCount > 0 && (
                 <>
                   <span className="text-gray-300 dark:text-gray-700">·</span>
@@ -194,7 +197,7 @@ export function NovelCard({ novel, index = 0 }: NovelCardProps) {
           {/* Star Rating */}
           <div className="flex items-center gap-2">
             <span className="text-xs text-gray-400 dark:text-gray-500 font-arabic">
-              تقييمك:
+              {t("card.yourRating", lang)}:
             </span>
             <StarRating
               initialRating={currentRating}
@@ -212,7 +215,7 @@ export function NovelCard({ novel, index = 0 }: NovelCardProps) {
                 className="flex-1 flex items-center justify-center gap-1.5 py-2.5 bg-gradient-to-r from-amber-700 to-gold-600 text-white text-sm font-arabic font-medium rounded-xl transition-all duration-200 active:scale-95 hover:from-amber-600 hover:to-gold-500"
               >
                 <Sparkles className="w-4 h-4" />
-                قريباً
+                {t("card.comingSoonBtn", lang)}
               </Link>
             ) : (
               <Link
@@ -220,13 +223,13 @@ export function NovelCard({ novel, index = 0 }: NovelCardProps) {
                 className="flex-1 flex items-center justify-center gap-1.5 py-2.5 bg-gray-900 dark:bg-white hover:bg-gold-500 dark:hover:bg-gold-500 text-white dark:text-gray-900 hover:text-white text-sm font-arabic font-medium rounded-xl transition-all duration-200 active:scale-95"
               >
                 <BookOpen className="w-4 h-4" />
-                اقرأ الآن
+                {t("card.readNow", lang)}
               </Link>
             )}
             <FavoriteButton novelId={novel.id} />
             <button
               onClick={() => setShowCCP(true)}
-              title="دعم عبر CCP"
+              title={t("card.supportCCP", lang)}
               className="flex items-center justify-center w-10 h-10 rounded-xl border border-parchment-300 dark:border-white/10 text-gold-500 hover:bg-gold-500/10 active:scale-95 transition-all duration-150"
             >
               <Wallet className="w-4 h-4" />

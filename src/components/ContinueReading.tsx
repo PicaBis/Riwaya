@@ -5,9 +5,12 @@ import { BookOpen, ArrowLeft } from "lucide-react";
 import { useApp } from "@/context/AppContext";
 import { novels } from "@/data/novels";
 import { NovelCard } from "./NovelCard";
+import { t } from "@/lib/i18n";
 
 export function ContinueReading() {
-  const { bookmarks, readHistory } = useApp();
+  const { bookmarks, readHistory, lang } = useApp();
+  const dir = lang === "ar" ? "rtl" : "ltr";
+  const fontClass = lang === "ar" ? "font-arabic" : "font-sans";
 
   const continueNovels = readHistory
     .filter((e) => bookmarks[e.novelId] && bookmarks[e.novelId] > 1)
@@ -21,21 +24,21 @@ export function ContinueReading() {
   if (continueNovels.length === 0) return null;
 
   return (
-    <div className="mb-10" dir="rtl">
+    <div className="mb-10" dir={dir}>
       <div className="flex items-center gap-3 mb-5">
         <div className="flex items-center gap-2">
           <div className="w-1 h-6 bg-gold-500 rounded-full" />
-          <h2 className="font-arabic text-xl sm:text-2xl font-bold text-gray-900 dark:text-gray-100">
-            متابعة القراءة
+          <h2 className={`text-xl sm:text-2xl font-bold text-gray-900 dark:text-gray-100 ${fontClass}`}>
+            {t("section.continue", lang)}
           </h2>
         </div>
         {continueNovels.length > 1 && (
           <Link
             href="/library"
-            className="text-xs text-gold-500 hover:text-gold-600 font-arabic transition-colors ms-auto"
+            className={`text-xs text-gold-500 hover:text-gold-600 transition-colors ms-auto ${fontClass}`}
           >
-            عرض الكل
-            <ArrowLeft className="w-3 h-3 inline-block ms-0.5" />
+            {t("section.viewAll", lang)}
+            <ArrowLeft className={`w-3 h-3 inline-block ms-0.5 ${dir === "ltr" ? "rotate-180" : ""}`} />
           </Link>
         )}
       </div>
@@ -58,11 +61,11 @@ export function ContinueReading() {
                 <BookOpen className="w-5 h-5 text-gold-500" />
               </div>
               <div className="flex-1 min-w-0">
-                <p className="font-arabic font-bold text-sm text-gray-900 dark:text-gray-100 truncate">
+                <p className={`font-bold text-sm text-gray-900 dark:text-gray-100 truncate ${fontClass}`}>
                   {novel.title}
                 </p>
-                <p className="text-xs text-gray-400 font-arabic mt-0.5">
-                  {daysAgo === 0 ? "اليوم" : daysAgo === 1 ? "أمس" : `قبل ${daysAgo} أيام`}
+                <p className={`text-xs text-gray-400 mt-0.5 ${fontClass}`}>
+                  {daysAgo === 0 ? t("library.today", lang) : daysAgo === 1 ? t("library.yesterday", lang) : t("library.daysAgo", lang, { n: daysAgo })}
                 </p>
                 <div className="flex items-center gap-2 mt-2">
                   <div className="flex-1 h-1 bg-parchment-200 dark:bg-white/10 rounded-full overflow-hidden">

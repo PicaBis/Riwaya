@@ -64,9 +64,26 @@ export function middleware(request: NextRequest) {
     "Permissions-Policy",
     "camera=(), microphone=(), geolocation=(), display-capture=(), screen-wake-lock=(), autoplay=()"
   );
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
+  let supabaseHttpOrigin = "";
+  let supabaseWsOrigin = "";
+  try {
+    if (supabaseUrl) {
+      const u = new URL(supabaseUrl);
+      supabaseHttpOrigin = u.origin;
+      supabaseWsOrigin = `wss://${u.host}`;
+    }
+  } catch {}
+  const connectSrc = [
+    "'self'",
+    "https://*.vercel-insights.com",
+    supabaseHttpOrigin,
+    supabaseWsOrigin,
+  ].filter(Boolean).join(" ");
+
   response.headers.set(
     "Content-Security-Policy",
-    "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.youtube.com https://cdnjs.cloudflare.com https://*.vercel-insights.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob:; frame-src 'self' https://www.youtube.com; connect-src 'self' https://*.vercel-insights.com; media-src 'self'; base-uri 'self'; form-action 'self';"
+    `default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.youtube.com https://*.vercel-insights.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob:; frame-src 'self' https://www.youtube.com; connect-src ${connectSrc}; worker-src 'self' blob:; media-src 'self'; base-uri 'self'; form-action 'self';`
   );
 
   return response;

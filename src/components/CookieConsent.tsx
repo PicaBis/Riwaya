@@ -4,9 +4,9 @@ import { useApp } from "@/context/AppContext";
 import { t } from "@/lib/i18n";
 
 export function CookieConsent() {
-  const { cookieConsent, acceptCookies, rejectCookies, lang } = useApp();
+  const { cookieConsent, acceptCookies, rejectCookies, lang, introReady } = useApp();
 
-  if (cookieConsent !== null) return null;
+  if (cookieConsent !== null || !introReady) return null;
 
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4 bg-black/20 animate-fade-in">

@@ -30,12 +30,12 @@ export function Header() {
         <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
 
           {/* ── Logo ──────────────────────────────────── */}
-          <Link href="/" className="flex items-center gap-2.5 group flex-shrink-0" dir="rtl" onClick={() => setMobileMenuOpen(false)}>
+          <Link href="/" className="flex items-center gap-2.5 group flex-shrink-0" dir={lang === "ar" ? "rtl" : "ltr"} onClick={() => setMobileMenuOpen(false)}>
             <div className="w-8 h-8 flex-shrink-0">
-              <Image src="/logo.svg" alt="روايتي" width={32} height={32} />
+              <Image src="/logo.svg" alt={t("site.name", lang)} width={32} height={32} />
             </div>
-            <span className="font-arabic text-xl font-bold text-gray-900 dark:text-gray-100 tracking-wide">
-              روايتي
+            <span className={`text-xl font-bold text-gray-900 dark:text-gray-100 tracking-wide ${lang === "ar" ? "font-arabic" : "font-sans"}`}>
+              {t("site.name", lang)}
             </span>
           </Link>
 
@@ -63,7 +63,7 @@ export function Header() {
               onClick={() => setShowContact(true)}
               className={`px-2 py-1 rounded-lg text-sm text-gray-600 dark:text-gray-400 hover:text-gold-500 dark:hover:text-gold-400 hover:bg-parchment-100 dark:hover:bg-white/8 transition-colors ${lang === "ar" ? "font-arabic" : "font-sans"}`}
             >
-              تواصل مع بيكا
+              {t("contact.title", lang)}
             </button>
             <button
               onClick={() => setShowSubs(true)}
@@ -83,7 +83,7 @@ export function Header() {
               <Link
                 href="/admin"
                 className="flex items-center gap-1 px-2 py-1 rounded-lg text-sm text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-500/10 transition-colors font-arabic"
-                title="لوحة التحكم"
+                title={t("nav.adminPanel", lang)}
               >
                 <LayoutDashboard className="w-3.5 h-3.5" />
               </Link>
@@ -97,7 +97,7 @@ export function Header() {
             {/* Theme toggle */}
             <button
               onClick={toggleTheme}
-              title={isDark ? "الوضع النهاري" : "الوضع الليلي"}
+              title={isDark ? t("theme.toDay", lang) : t("theme.toNight", lang)}
               className="relative w-9 h-9 flex items-center justify-center rounded-lg text-gray-500 dark:text-gray-400 hover:bg-parchment-200 dark:hover:bg-white/10 transition-all duration-200"
             >
               <Sun className={`w-5 h-5 absolute transition-all duration-300 ${isDark ? "opacity-100 rotate-0" : "opacity-0 rotate-90"}`} />
@@ -115,7 +115,7 @@ export function Header() {
                 </div>
                 <button
                   onClick={logout}
-                  title="تسجيل الخروج"
+                  title={t("nav.logout", lang)}
                   className="w-9 h-9 flex items-center justify-center rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors"
                 >
                   <LogOut className="w-4 h-4" />
@@ -124,10 +124,10 @@ export function Header() {
             ) : (
               <button
                 onClick={() => setShowLogin(true)}
-                className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-gold-500 hover:bg-gold-600 active:scale-95 text-white text-sm font-arabic font-medium transition-all duration-150 shadow-sm"
+                className={`flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-gold-500 hover:bg-gold-600 active:scale-95 text-white text-sm font-medium transition-all duration-150 shadow-sm ${lang === "ar" ? "font-arabic" : "font-sans"}`}
               >
                 <User className="w-4 h-4" />
-                <span>دخول كضيف</span>
+                <span>{t("nav.login", lang)}</span>
               </button>
             )}
           </div>
@@ -137,7 +137,7 @@ export function Header() {
             <LanguageSwitcher />
             <button
               onClick={toggleTheme}
-              title={isDark ? "الوضع النهاري" : "الوضع الليلي"}
+              title={isDark ? t("theme.toDay", lang) : t("theme.toNight", lang)}
               className="relative w-9 h-9 flex items-center justify-center rounded-lg text-gray-500 dark:text-gray-400 hover:bg-parchment-200 dark:hover:bg-white/10 transition-all duration-200"
             >
               <Sun className={`w-5 h-5 absolute transition-all duration-300 ${isDark ? "opacity-100 rotate-0" : "opacity-0 rotate-90"}`} />
@@ -146,7 +146,7 @@ export function Header() {
             <button
               onClick={() => setMobileMenuOpen(prev => !prev)}
               className="w-9 h-9 flex items-center justify-center rounded-lg text-gray-600 dark:text-gray-400 hover:bg-parchment-200 dark:hover:bg-white/10 transition-colors"
-              aria-label="القائمة"
+              aria-label={t("nav.menu", lang)}
             >
               {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
             </button>
@@ -155,57 +155,57 @@ export function Header() {
 
         {/* ── Mobile Menu Drawer ─────────────────────── */}
         {mobileMenuOpen && (
-          <div className="sm:hidden border-t border-parchment-200 dark:border-white/8 bg-parchment-50/98 dark:bg-onyx-900/98 backdrop-blur-md animate-fade-up pb-4" dir="rtl">
+          <div className={`sm:hidden border-t border-parchment-200 dark:border-white/8 bg-parchment-50/98 dark:bg-onyx-900/98 backdrop-blur-md animate-fade-up pb-4 ${lang === "ar" ? "font-arabic" : "font-sans"}`} dir={lang === "ar" ? "rtl" : "ltr"}>
             {/* Nav links */}
             <nav className="px-4 pt-3 pb-3 flex flex-col gap-1 border-b border-parchment-200 dark:border-white/8">
               <Link
                 href="/"
                 onClick={() => setMobileMenuOpen(false)}
-                className="px-3 py-2.5 rounded-xl text-sm font-arabic text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-parchment-100 dark:hover:bg-white/8 transition-colors"
+                className="px-3 py-2.5 rounded-xl text-sm text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-parchment-100 dark:hover:bg-white/8 transition-colors"
               >
-                الرئيسية
+                {t("nav.home", lang)}
               </Link>
               <Link
                 href="/library"
                 onClick={() => setMobileMenuOpen(false)}
-                className="px-3 py-2.5 rounded-xl text-sm font-arabic text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-parchment-100 dark:hover:bg-white/8 transition-colors"
+                className="px-3 py-2.5 rounded-xl text-sm text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-parchment-100 dark:hover:bg-white/8 transition-colors"
               >
-                مكتبتي
+                {t("nav.library", lang)}
               </Link>
               <button
                 onClick={() => { setShowAbout(true); setMobileMenuOpen(false); }}
-                className="px-3 py-2.5 rounded-xl text-sm font-arabic text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-parchment-100 dark:hover:bg-white/8 transition-colors text-right"
+                className="px-3 py-2.5 rounded-xl text-sm text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-parchment-100 dark:hover:bg-white/8 transition-colors text-right"
               >
-                عن المنصة
+                {t("nav.about", lang)}
               </button>
               <button
                 onClick={() => { setShowContact(true); setMobileMenuOpen(false); }}
-                className="px-3 py-2.5 rounded-xl text-sm font-arabic text-gray-700 dark:text-gray-300 hover:text-gold-500 dark:hover:text-gold-400 hover:bg-parchment-100 dark:hover:bg-white/8 transition-colors text-right"
+                className="px-3 py-2.5 rounded-xl text-sm text-gray-700 dark:text-gray-300 hover:text-gold-500 dark:hover:text-gold-400 hover:bg-parchment-100 dark:hover:bg-white/8 transition-colors text-right"
               >
-                تواصل مع بيكا
+                {t("contact.title", lang)}
               </button>
               <button
                 onClick={() => { setShowSubs(true); setMobileMenuOpen(false); }}
-                className="px-3 py-2.5 rounded-xl text-sm font-arabic text-gray-700 dark:text-gray-300 hover:text-gold-500 dark:hover:text-gold-400 hover:bg-parchment-100 dark:hover:bg-white/8 transition-colors text-right flex items-center gap-1.5"
+                className="px-3 py-2.5 rounded-xl text-sm text-gray-700 dark:text-gray-300 hover:text-gold-500 dark:hover:text-gold-400 hover:bg-parchment-100 dark:hover:bg-white/8 transition-colors text-right flex items-center gap-1.5"
               >
                 <Coins className="w-4 h-4" />
-                الاشتراكات
+                {t("nav.subscriptions", lang)}
               </button>
               <button
                 onClick={() => { setShowDevCode(true); setMobileMenuOpen(false); }}
-                className="px-3 py-2.5 rounded-xl text-sm font-arabic text-gray-400 dark:text-gray-500 hover:text-rose-500 dark:hover:text-rose-400 hover:bg-parchment-100 dark:hover:bg-white/8 transition-colors text-right flex items-center gap-1.5"
+                className="px-3 py-2.5 rounded-xl text-sm text-gray-400 dark:text-gray-500 hover:text-rose-500 dark:hover:text-rose-400 hover:bg-parchment-100 dark:hover:bg-white/8 transition-colors text-right flex items-center gap-1.5"
               >
                 <Shield className="w-4 h-4" />
-                درع المطور
+                {t("nav.devShield", lang)}
               </button>
               {isAdmin && (
                 <Link
                   href="/admin"
                   onClick={() => setMobileMenuOpen(false)}
-                  className="px-3 py-2.5 rounded-xl text-sm font-arabic text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-500/10 transition-colors text-right flex items-center gap-1.5"
+                  className="px-3 py-2.5 rounded-xl text-sm text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-500/10 transition-colors text-right flex items-center gap-1.5"
                 >
                   <LayoutDashboard className="w-4 h-4" />
-                  لوحة التحكم
+                  {t("nav.adminPanel", lang)}
                 </Link>
               )}
             </nav>
@@ -215,19 +215,19 @@ export function Header() {
               <div className="rounded-2xl bg-white dark:bg-onyx-800 border border-parchment-200 dark:border-white/10 p-4 shadow-sm">
                 <div className="flex items-center gap-3 mb-3">
                   <div className="w-11 h-11 rounded-xl overflow-hidden border border-gold-500/20 flex-shrink-0">
-                    <Image src="/author.jpg" alt="بيكا" width={44} height={44} className="w-full h-full object-cover" />
+                    <Image src="/author.jpg" alt={t("author.penName", lang)} width={44} height={44} className="w-full h-full object-cover" />
                   </div>
                   <div>
-                    <p className="font-bold text-sm text-gray-900 dark:text-gray-100 font-arabic">بيكا — Pica</p>
-                    <p className="text-xs text-gold-500 font-arabic">@ProfPica</p>
+                    <p className="font-bold text-sm text-gray-900 dark:text-gray-100">{t("author.penName", lang)} — Pica</p>
+                    <p className="text-xs text-gold-500">@ProfPica</p>
                   </div>
                 </div>
-                <p className="text-xs text-gray-600 dark:text-gray-400 font-arabic leading-relaxed mb-3">
-                  مبرمج تطبيقات ويب وهواتف ذكية، كاتب روايات (فانتازيا، غموض، رعب، وثقافة)، ورسام يقوم برسم وتصميم مقاطع ومشاهد رواياته الخاصة.
+                <p className="text-xs text-gray-600 dark:text-gray-400 leading-relaxed mb-3">
+                  {t("about.bio", lang)}
                 </p>
                 <div className="flex flex-wrap gap-1.5">
-                  {["برمجة", "روايات", "فنون رقمية"].map(tag => (
-                    <span key={tag} className="text-[11px] px-2 py-0.5 rounded-full bg-parchment-100 dark:bg-white/5 border border-parchment-200 dark:border-white/10 text-gray-500 dark:text-gray-400 font-arabic">
+                  {[t("tags.programming", lang), t("tags.novels", lang), t("tags.digitalArt", lang)].map(tag => (
+                    <span key={tag} className="text-[11px] px-2 py-0.5 rounded-full bg-parchment-100 dark:bg-white/5 border border-parchment-200 dark:border-white/10 text-gray-500 dark:text-gray-400">
                       {tag}
                     </span>
                   ))}
@@ -242,22 +242,22 @@ export function Header() {
                       <div className="w-6 h-6 rounded-full bg-gold-500 flex items-center justify-center">
                         <span className="text-white text-xs font-bold">{guest.name.charAt(0).toUpperCase()}</span>
                       </div>
-                      <span className="text-sm font-arabic text-gold-600 dark:text-gold-400 font-medium">{guest.name}</span>
+                      <span className="text-sm text-gold-600 dark:text-gold-400 font-medium">{guest.name}</span>
                     </div>
                     <button
                       onClick={() => { logout(); setMobileMenuOpen(false); }}
-                      className="text-xs text-gray-400 hover:text-red-500 font-arabic transition-colors"
+                      className="text-xs text-gray-400 hover:text-red-500 transition-colors"
                     >
-                      خروج
+                      {t("nav.logout", lang)}
                     </button>
                   </div>
                 ) : (
                   <button
                     onClick={() => { setShowLogin(true); setMobileMenuOpen(false); }}
-                    className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-gold-500 hover:bg-gold-600 text-white text-sm font-arabic font-medium transition-all duration-150 active:scale-95"
+                    className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-gold-500 hover:bg-gold-600 text-white text-sm font-medium transition-all duration-150 active:scale-95"
                   >
                     <User className="w-4 h-4" />
-                    دخول كضيف
+                    {t("nav.login", lang)}
                   </button>
                 )}
               </div>

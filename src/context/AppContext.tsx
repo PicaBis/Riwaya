@@ -57,6 +57,8 @@ interface AppContextValue {
   cookieConsent: boolean | null;
   acceptCookies: () => void;
   rejectCookies: () => void;
+  introReady: boolean;
+  dismissIntro: () => void;
   totalReadingTime: number;
   addReadingTime: (seconds: number) => void;
   achievements: Achievement[];
@@ -80,6 +82,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [bookmarks, setBookmarks] = useState<Record<string, number>>({});
   const [readHistory, setReadHistory] = useState<ReadEntry[]>([]);
   const [cookieConsent, setCookieConsent] = useState<boolean | null>(null);
+  const [introReady, setIntroReady] = useState(false);
   const [totalReadingTime, setTotalReadingTime] = useState(0);
   const [achievements, setAchievements] = useState<Achievement[]>([
     { id: "first-read", title: "بداية الرحلة", description: "قرأت أول صفحة", icon: "📖" },
@@ -124,6 +127,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     if (savedBookmarks) setBookmarks(JSON.parse(savedBookmarks));
     if (savedHistory) setReadHistory(JSON.parse(savedHistory));
     if (savedCookie) setCookieConsent(savedCookie === "1");
+    if (sessionStorage.getItem("riwayati_fs")) setIntroReady(true);
     const savedTime = localStorage.getItem("riwayati_reading_time");
     if (savedTime) setTotalReadingTime(parseInt(savedTime, 10) || 0);
     const savedAchievements = localStorage.getItem("riwayati_achievements");
@@ -276,6 +280,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     localStorage.setItem("riwayati_cookies", "0");
   }, []);
 
+  const dismissIntro = useCallback(() => {
+    setIntroReady(true);
+  }, []);
+
   const addReadingTime = useCallback((seconds: number) => {
     setTotalReadingTime((prev) => {
       const next = prev + seconds;
@@ -340,6 +348,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         cookieConsent,
         acceptCookies,
         rejectCookies,
+        introReady,
+        dismissIntro,
         totalReadingTime,
         addReadingTime,
         achievements,
