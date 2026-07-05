@@ -244,7 +244,7 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, 
 
     render();
     return () => { cancelled = true; };
-  }, [pdf, currentPage, status, totalPages, containerWidth, displayScale, onPageChange]);
+  }, [pdf, currentPage, status, totalPages, containerWidth, displayScale, onPageChange, isMobile]);
 
   /* ── Navigation ─────────────────────────────────────── */
   const goToPrev = useCallback(() => {
@@ -436,7 +436,7 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, 
     };
     el.addEventListener("wheel", onWheel, { passive: false });
     return () => el.removeEventListener("wheel", onWheel);
-  }, []);
+  }, [displayScale, visualScale]);
 
   /* ── Center horizontal scroll when zoomed in ──────────── */
   useEffect(() => {

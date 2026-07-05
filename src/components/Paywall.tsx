@@ -98,7 +98,7 @@ export function Paywall({ onUnlock, price = 500, ripNumber = BANK.ripNumber, tit
               <div className="h-1 w-12 bg-gold-500 mx-auto rounded-full opacity-50" />
               {preview && (
                 <p className={`text-sm text-gray-500 dark:text-gray-400 leading-relaxed italic line-clamp-3 ${fontClass}`}>
-                  "{preview}"
+                  &quot;{preview}&quot;
                 </p>
               )}
             </div>
