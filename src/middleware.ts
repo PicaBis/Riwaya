@@ -124,5 +124,5 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: "/((?!_next/static|_next/image|favicon\\.svg|logo\\.svg|manifest\\.json|sitemap\\.xml).*)",
+  matcher: "/((?!_next/static|_next/image|favicon\\.svg|logo\\.svg|manifest\\.json|sitemap\\.xml|robots\\.txt|apple-touch-icon\\.png|icon-192\\.png|icon-512\\.png|author\\.jpg|sw\\.js|pdf\\.worker\\.min\\.js).*)",
 };
