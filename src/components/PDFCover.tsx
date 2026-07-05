@@ -4,14 +4,17 @@ import { useEffect, useRef, useState } from "react";
 import { BookOpen } from "lucide-react";
 import { useApp } from "@/context/AppContext";
 import { t } from "@/lib/i18n";
+import { resolveProtectedPdfSource } from "@/lib/asset-client";
 
 interface PDFCoverProps {
   pdfUrl: string;
+  /** Novel id — used to request a short-lived asset token for the protected file. */
+  novelId?: string;
   title: string;
   className?: string;
 }
 
-export function PDFCover({ pdfUrl, title, className = "" }: PDFCoverProps) {
+export function PDFCover({ pdfUrl, novelId, title, className = "" }: PDFCoverProps) {
   const { lang } = useApp();
   const fontClass = lang === "ar" ? "font-arabic" : "font-sans";
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -45,7 +48,15 @@ export function PDFCover({ pdfUrl, title, className = "" }: PDFCoverProps) {
         const pdfjsLib = await import("pdfjs-dist");
         pdfjsLib.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.js";
 
-        const loadingTask = pdfjsLib.getDocument(pdfUrl);
+        const source = novelId
+          ? await resolveProtectedPdfSource(novelId, pdfUrl)
+          : { url: pdfUrl };
+        if (cancelled) return;
+        const loadingTask = pdfjsLib.getDocument({
+          url: source.url,
+          httpHeaders: source.httpHeaders,
+          withCredentials: true,
+        });
         const pdf = await loadingTask.promise;
         if (cancelled) return;
 
@@ -84,7 +95,7 @@ export function PDFCover({ pdfUrl, title, className = "" }: PDFCoverProps) {
     return () => {
       cancelled = true;
     };
-  }, [pdfUrl]);
+  }, [pdfUrl, novelId]);
 
   return (
     <div className={`relative overflow-hidden bg-parchment-100 dark:bg-onyx-900 ${className}`}>

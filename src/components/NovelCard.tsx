@@ -10,17 +10,19 @@ import { CCPModal } from "./CCPModal";
 import { FavoriteButton } from "./FavoriteButton";
 import { useApp } from "@/context/AppContext";
 import { t, type Lang } from "@/lib/i18n";
+import { prefetchProtectedPdf } from "@/lib/asset-client";
 
 const prefetched = new Set<string>();
 
-function prefetchPdf(pdfFile: string) {
+function prefetchPdf(novelId: string, pdfFile: string) {
   if (!pdfFile || prefetched.has(pdfFile)) return;
   prefetched.add(pdfFile);
-  const link = document.createElement("link");
-  link.rel = "prefetch";
-  link.href = `/api/novel-asset/${pdfFile}`;
-  link.as = "fetch";
-  document.head.appendChild(link);
+  // The asset route now requires a short-lived signed token (see
+  // src/lib/asset-token.ts), so a plain <link rel="prefetch"> — which can't
+  // carry a custom header — would just get a 403. Warm the cache with a real
+  // fetch() carrying the token instead; the response is still cached the
+  // same way for the follow-up load in PDFViewer/PDFCover.
+  void prefetchProtectedPdf(novelId, `/api/novel-asset/${pdfFile}`);
 }
 
 export function estimateReadTime(novel: Novel, lang: Lang): string {
@@ -57,7 +59,7 @@ export function NovelCard({ novel, index = 0 }: NovelCardProps) {
       (entries) => {
         entries.forEach((entry) => {
           if (entry.isIntersecting) {
-            prefetchPdf(novel.pdfFile!);
+            prefetchPdf(novel.id, novel.pdfFile!);
             observer.unobserve(el);
           }
         });
@@ -66,7 +68,7 @@ export function NovelCard({ novel, index = 0 }: NovelCardProps) {
     );
     observer.observe(el);
     return () => observer.disconnect();
-  }, [novel.pdfFile, isComingSoon]);
+  }, [novel.id, novel.pdfFile, isComingSoon]);
 
   return (
     <>
@@ -80,7 +82,7 @@ export function NovelCard({ novel, index = 0 }: NovelCardProps) {
           href={`/novel/${novel.id}`}
           className="block relative"
           onMouseEnter={() => {
-            if (novel.pdfFile) prefetchPdf(novel.pdfFile);
+            if (novel.pdfFile) prefetchPdf(novel.id, novel.pdfFile);
           }}
         >
           {isComingSoon ? (
@@ -127,6 +129,7 @@ export function NovelCard({ novel, index = 0 }: NovelCardProps) {
             <div className="relative w-full aspect-[3/4] overflow-hidden">
               <PDFCover
                 pdfUrl={`/api/novel-asset/${novel.pdfFile}`}
+                novelId={novel.id}
                 title={novel.title}
                 className="w-full aspect-[3/4] object-cover"
               />

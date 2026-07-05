@@ -6,6 +6,7 @@ import clsx from "clsx";
 import { Paywall } from "./Paywall";
 import { useApp } from "@/context/AppContext";
 import { t } from "@/lib/i18n";
+import { resolveProtectedPdfSource } from "@/lib/asset-client";
 
 export interface Chapter {
   title: string;
@@ -169,7 +170,15 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, 
       try {
         const pdfjsLib = await import("pdfjs-dist");
         pdfjsLib.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.js";
-        const loadedPdf = await pdfjsLib.getDocument(pdfUrl).promise;
+        const source = novelId
+          ? await resolveProtectedPdfSource(novelId, pdfUrl)
+          : { url: pdfUrl };
+        if (cancelled) return;
+        const loadedPdf = await pdfjsLib.getDocument({
+          url: source.url,
+          httpHeaders: source.httpHeaders,
+          withCredentials: true,
+        }).promise;
         if (cancelled) return;
         setPdf(loadedPdf);
         setTotalPages(loadedPdf.numPages);
@@ -177,7 +186,7 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, 
       } catch { if (!cancelled) setStatus("error"); }
     })();
     return () => { cancelled = true; };
-  }, [pdfUrl, retryKey]);
+  }, [pdfUrl, novelId, retryKey]);
 
   /* ── Measure scroll container ───────────────────────── */
   useEffect(() => {

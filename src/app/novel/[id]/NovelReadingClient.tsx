@@ -182,7 +182,7 @@ export function NovelReadingClient({ novel, startPage }: NovelReadingClientProps
               {/* Cover */}
               <div className="w-full max-w-[220px] mx-auto md:mx-0 flex-shrink-0">
                 <div className="rounded-2xl overflow-hidden shadow-book border border-parchment-200 dark:border-white/8">
-                  <PDFCover pdfUrl={pdfUrl} title={novel.title} className="w-full aspect-[3/4]" />
+                  <PDFCover pdfUrl={pdfUrl} novelId={novel.id} title={novel.title} className="w-full aspect-[3/4]" />
                 </div>
               </div>
 

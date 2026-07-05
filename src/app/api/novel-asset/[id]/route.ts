@@ -1,22 +1,39 @@
 import { NextRequest, NextResponse } from "next/server";
 import { readFile } from "fs/promises";
 import path from "path";
+import { novels } from "@/data/novels";
+import { SESSION_COOKIE_NAME, verifySession } from "@/lib/session";
+import { verifyAssetToken } from "@/lib/asset-token";
+import { refererMatchesHost } from "@/lib/origin-check";
 
-const ALLOWED = ["shajarat-sina.pdf"];
+// Single source of truth for which files may ever be served — derived from
+// the real novel registry instead of a hand-maintained list that drifts.
+const ALLOWED = new Set(novels.map((n) => n.pdfFile).filter((f): f is string => !!f));
 
 export async function GET(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
   const filename = params.id;
-  if (!ALLOWED.includes(filename)) {
+  if (!ALLOWED.has(filename)) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 
-  const referer = request.headers.get("referer") || "";
-  const host = request.headers.get("host") || "";
+  // Primary gate: a short-lived token, minted server-side via /api/asset-token,
+  // scoped to this exact file and bound to the caller's own session id. This
+  // replaces the old "empty Referer = allowed through" logic, which let anyone
+  // who knew the static URL download the file directly.
+  const session = await verifySession(request.cookies.get(SESSION_COOKIE_NAME)?.value);
+  const token = request.headers.get("x-asset-token");
+  const tokenValid = session ? await verifyAssetToken(token, filename, session.sid) : false;
+  if (!tokenValid) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
 
-  if (!referer.includes(host) && referer !== "") {
+  // Secondary, defense-in-depth signal — reject if Origin/Referer clearly
+  // points elsewhere (still permissive when both are absent; the token above
+  // is what actually carries the security weight).
+  if (!refererMatchesHost(request)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
@@ -28,7 +45,11 @@ export async function GET(
       headers: {
         "Content-Type": "application/pdf",
         "Content-Disposition": "inline; filename=\"" + filename + "\"",
-        "Cache-Control": "public, max-age=3600, stale-while-revalidate=86400",
+        // `private` (not `public`): only this browser's own cache may keep a
+        // copy — shared/CDN caches won't serve one user's fetch to another.
+        // Custom headers (the token) aren't part of the cache key, so a warm
+        // cache still answers instantly without needing a fresh token.
+        "Cache-Control": "private, max-age=3600, stale-while-revalidate=86400",
         "X-Content-Type-Options": "nosniff",
       },
     });
