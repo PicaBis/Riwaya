@@ -88,67 +88,76 @@ export function Paywall({ onUnlock, price = 500, ripNumber = BANK.ripNumber, tit
       className="absolute inset-0 z-30 flex items-center justify-center bg-parchment-50/95 dark:bg-onyx-950/97 backdrop-blur-md p-3 sm:p-4"
       dir={dir}
     >
-      <div className="w-full max-w-sm max-h-[90vh] flex flex-col rounded-2xl bg-white dark:bg-onyx-900 border border-parchment-200 dark:border-white/10 shadow-2xl overflow-hidden">
-        <div className="flex-1 overflow-y-auto overscroll-contain p-4 sm:p-5 space-y-4 scrollbar-thin">
+      <div className="w-full max-w-sm max-h-[90vh] flex flex-col rounded-[2.5rem] bg-white/95 dark:bg-onyx-900/95 border border-parchment-200 dark:border-white/10 shadow-[0_20px_50px_rgba(0,0,0,0.3)] overflow-hidden animate-in fade-in zoom-in duration-500">
+        <div className="flex-1 overflow-y-auto overscroll-contain p-6 sm:p-8 space-y-6 scrollbar-none">
           {title && (
-            <div className="text-center">
-              <h2 className={`text-2xl font-bold text-gray-900 dark:text-gray-100 mb-2 ${fontClass}`}>
+            <div className="text-center space-y-2">
+              <h2 className={`text-2xl font-black text-gray-900 dark:text-gray-100 tracking-tight ${fontClass}`}>
                 {title}
               </h2>
+              <div className="h-1 w-12 bg-gold-500 mx-auto rounded-full opacity-50" />
               {preview && (
-                <p className={`text-sm text-gray-500 dark:text-gray-400 leading-relaxed ${fontClass}`}>
-                  {preview}
+                <p className={`text-sm text-gray-500 dark:text-gray-400 leading-relaxed italic line-clamp-3 ${fontClass}`}>
+                  "{preview}"
                 </p>
               )}
             </div>
           )}
 
-          <div className="flex justify-center">
-            <div className="w-16 h-16 rounded-2xl bg-gold-500/10 border border-gold-500/20 flex items-center justify-center">
-              <Lock className="w-8 h-8 text-gold-500" />
+          <div className="flex justify-center relative">
+            <div className="absolute inset-0 bg-gold-500/20 blur-3xl rounded-full" />
+            <div className="relative w-20 h-20 rounded-[2rem] bg-gradient-to-br from-gold-400 to-gold-600 shadow-lg shadow-gold-500/40 flex items-center justify-center transform rotate-3 hover:rotate-0 transition-transform duration-500">
+              <Lock className="w-10 h-10 text-white" />
             </div>
           </div>
 
-          <div className="text-center">
-            <h3 className={`text-xl font-bold text-gray-900 dark:text-gray-100 mb-2 ${fontClass}`}>
+          <div className="text-center space-y-1">
+            <h3 className={`text-xl font-bold text-gray-900 dark:text-gray-100 ${fontClass}`}>
               {t("paywall.title", lang)}
             </h3>
-            <p className={`text-sm text-gray-500 dark:text-gray-400 text-center max-w-xs leading-relaxed mb-2 mx-auto ${fontClass}`}>
+            <p className={`text-xs uppercase tracking-widest text-gold-600 dark:text-gold-400 font-black ${fontClass}`}>
               {t("paywall.limit", lang)}
             </p>
-            <p className={`text-xl font-bold text-gold-500 mb-4 text-center ${fontClass}`}>
-              {price} {t("paywall.price", lang)}
-            </p>
+            <div className="py-4">
+              <div className="inline-flex items-baseline gap-1 bg-parchment-100 dark:bg-white/5 px-6 py-3 rounded-2xl border border-parchment-200 dark:border-white/10">
+                <span className="text-3xl font-black text-gray-900 dark:text-white">{price}</span>
+                <span className={`text-sm font-bold text-gray-500 dark:text-gray-400 ${fontClass}`}>{t("paywall.price", lang)}</span>
+              </div>
+            </div>
           </div>
 
           {!showPayment ? (
             <div className="flex flex-col items-center gap-3 w-full">
               <button
                 onClick={() => setShowPayment(true)}
-                className={`w-full flex items-center justify-center gap-2 py-3 bg-gold-500 hover:bg-gold-600 active:scale-95 text-white rounded-xl font-medium transition-all duration-150 shadow-md ${fontClass}`}
+                className={`w-full flex items-center justify-center gap-3 py-4 bg-gradient-to-r from-gold-500 to-gold-600 hover:from-gold-600 hover:to-gold-700 active:scale-[0.98] text-white rounded-[1.25rem] font-bold transition-all duration-300 shadow-[0_10px_20px_rgba(212,175,55,0.3)] ${fontClass}`}
               >
-                <Wallet className="w-4 h-4" />
+                <Wallet className="w-5 h-5" />
                 {t("paywall.subscribe", lang)}
               </button>
 
-              <div className="text-center w-full">
-                <p className={`text-xs text-gray-400 dark:text-gray-600 mb-2 ${fontClass}`}>
-                  {t("paywall.hasCode", lang)}
-                </p>
+              <div className="text-center w-full pt-4">
+                <div className="flex items-center gap-2 mb-4">
+                  <div className="h-px flex-1 bg-parchment-200 dark:bg-white/10" />
+                  <p className={`text-[10px] uppercase tracking-widest text-gray-400 dark:text-gray-500 font-bold ${fontClass}`}>
+                    {t("paywall.hasCode", lang)}
+                  </p>
+                  <div className="h-px flex-1 bg-parchment-200 dark:bg-white/10" />
+                </div>
                 <form onSubmit={handleCodeSubmit} className="flex gap-2">
-                  <div className="relative flex-1">
+                  <div className="relative flex-1 group">
                     <input
                       type={showCode ? "text" : "password"}
                       value={code}
                       onChange={(e) => { setCode(e.target.value); setError(""); }}
                       placeholder={t("paywall.enterCode", lang)}
-                      className={`ps-10 pe-4 py-2 rounded-lg border border-parchment-300 dark:border-white/10 bg-white dark:bg-white/5 text-gray-800 dark:text-gray-200 placeholder-gray-400 text-sm focus:outline-none focus:ring-2 focus:ring-gold-500/40 w-full ${fontClass}`}
+                      className={`ps-10 pe-4 py-3 rounded-xl border border-parchment-300 dark:border-white/10 bg-white dark:bg-white/5 text-gray-800 dark:text-gray-200 placeholder-gray-400 text-sm focus:outline-none focus:ring-2 focus:ring-gold-500/40 w-full transition-all ${fontClass}`}
                       dir="ltr"
                     />
                     <button
                       type="button"
                       onClick={() => setShowCode((s) => !s)}
-                      className="absolute inset-y-0 start-0 ps-3 flex items-center text-gray-400"
+                      className="absolute inset-y-0 start-0 ps-3 flex items-center text-gray-400 group-focus-within:text-gold-500 transition-colors"
                     >
                       {showCode ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                     </button>
@@ -156,9 +165,9 @@ export function Paywall({ onUnlock, price = 500, ripNumber = BANK.ripNumber, tit
                   <button
                     type="submit"
                     disabled={checking || !code.trim()}
-                    className={`px-4 py-2 bg-gray-900 dark:bg-white hover:bg-gold-500 dark:hover:bg-gold-500 text-white dark:text-gray-900 hover:text-white text-sm rounded-lg transition-all duration-150 disabled:opacity-40 ${fontClass}`}
+                    className={`px-6 py-3 bg-gray-900 dark:bg-white hover:bg-gold-500 dark:hover:bg-gold-500 text-white dark:text-gray-900 hover:text-white text-sm font-bold rounded-xl transition-all duration-300 disabled:opacity-40 active:scale-95 ${fontClass}`}
                   >
-                    {checking ? "…" : t("paywall.enter", lang)}
+                    {checking ? <div className="w-4 h-4 border-2 border-current border-t-transparent animate-spin rounded-full" /> : t("paywall.enter", lang)}
                   </button>
                 </form>
                 {error && (
