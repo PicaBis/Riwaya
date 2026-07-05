@@ -71,16 +71,6 @@ export async function middleware(request: NextRequest) {
   response.headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
   response.headers.set("X-XSS-Protection", "1; mode=block");
   response.headers.set("Strict-Transport-Security", "max-age=31536000; includeSubDomains; preload");
-  // NOTE: deliberately NOT setting Cross-Origin-Embedder-Policy. Verified by
-  // isolated reproduction that both "require-corp" and "credentialless"
-  // block the ambient-music YouTube iframe outright (Chrome
-  // net::ERR_BLOCKED_BY_RESPONSE) — embedding a cross-origin *document*
-  // under COEP requires that document to send its own matching, enforcing
-  // Cross-Origin-Embedder-Policy header, and YouTube only sends one
-  // report-only (never enforced), so it can never satisfy either mode.
-  // COEP's only payoff is cross-origin isolation for APIs this site doesn't
-  // use (SharedArrayBuffer, high-res timers) — not worth breaking a real,
-  // requested feature for a benefit that goes unused.
   response.headers.set(
     "Cross-Origin-Opener-Policy",
     "same-origin"
@@ -91,12 +81,7 @@ export async function middleware(request: NextRequest) {
   );
   response.headers.set(
     "Permissions-Policy",
-    // `autoplay=()` (empty allowlist) would also block the ambient-music
-    // YouTube iframe in PDFViewer from playing when told to via postMessage —
-    // that command isn't a *direct* user gesture from the iframe's own
-    // point of view, so the browser only allows it if the top-level
-    // Permissions-Policy explicitly grants the iframe's origin the feature.
-    'camera=(), microphone=(), geolocation=(), display-capture=(), screen-wake-lock=(), autoplay=(self "https://www.youtube.com")'
+    "camera=(), microphone=(), geolocation=(), display-capture=()"
   );
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
   let supabaseHttpOrigin = "";
@@ -117,7 +102,7 @@ export async function middleware(request: NextRequest) {
 
   response.headers.set(
     "Content-Security-Policy",
-    `default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.youtube.com https://*.vercel-insights.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob:; frame-src 'self' https://www.youtube.com; connect-src ${connectSrc}; worker-src 'self' blob:; media-src 'self'; base-uri 'self'; form-action 'self';`
+    `default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://*.vercel-insights.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob:; connect-src ${connectSrc}; worker-src 'self' blob:; media-src 'self'; base-uri 'self'; form-action 'self';`
   );
 
   return withSession(response);

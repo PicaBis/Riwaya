@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, useCallback } from "react";
-import { ZoomIn, ZoomOut, RotateCcw, Maximize2, Minimize2, BookOpen, Speaker, VolumeX, List, ChevronLeft, ChevronRight, BookMarked } from "lucide-react";
+import { ZoomIn, ZoomOut, RotateCcw, Maximize2, Minimize2, List, ChevronLeft, ChevronRight, BookMarked, BookOpen } from "lucide-react";
 import clsx from "clsx";
 import { Paywall } from "./Paywall";
 import { TTSButton } from "./TTSButton";
@@ -12,10 +12,6 @@ import { ReadingTimer } from "./ReadingTimer";
 import { useApp } from "@/context/AppContext";
 import { t } from "@/lib/i18n";
 import { resolveProtectedPdfSource } from "@/lib/asset-client";
-import { loadYouTubeIframeAPI } from "@/lib/youtube";
-
-const AMBIENT_TRACK_ID = "LCfEqudu4pc";
-const AMBIENT_TRACK_START = 3383;
 
 export interface Chapter {
   title: string;
@@ -49,41 +45,26 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, 
   const [status, setStatus] = useState<RenderStatus>("idle");
   const [retryKey, setRetryKey] = useState(0);
   const [isFullscreen, setIsFullscreen] = useState(false);
-  const [playing, setPlaying] = useState(false);
-  const [musicReady, setMusicReady] = useState(false);
-  const [musicError, setMusicError] = useState(false);
-  const ytPlayerRef = useRef<any>(null);
+  const watermarkRef = useRef<HTMLDivElement | null>(null);
   const [tocOpen, setTocOpen] = useState(false);
   const [pageSize, setPageSize] = useState({ width: 0, height: 0 });
   const [containerWidth, setContainerWidth] = useState(0);
   const pageRenderRef = useRef(0);
   const [currentChapter, setCurrentChapter] = useState<string>("");
-  const watermarkRef = useRef<HTMLDivElement | null>(null);
 
-  /* ── "Hand tool": long-press grab-to-pan ──────────────
-   * Mouse: press-and-hold 300ms in fullscreen → cursor turns into a
+  /* ── "Hand tool": instant grab-to-pan ──────────────────────
+   * Mouse: click-and-hold in fullscreen → cursor turns into a
    * grabbing hand → drag moves the viewport (scrollLeft/scrollTop).
-   * Touch: same long-press → grab-to-pan takes over from native scroll.
+   * Touch: long-press (300ms) → grab-to-pan takes over from native scroll.
    * Two-finger pinch-zoom continues to work independently. */
   const [panMode, setPanMode] = useState(false);
   const panStartRef = useRef<{ x: number; y: number; sl: number; st: number } | null>(null);
-  const longPressTimerRef = useRef<number | null>(null);
-  const touchPanActiveRef = useRef(false);
-  const touchStartPosRef = useRef<{ x: number; y: number } | null>(null);
-
-  const clearLongPressTimer = useCallback(() => {
-    if (longPressTimerRef.current !== null) {
-      window.clearTimeout(longPressTimerRef.current);
-      longPressTimerRef.current = null;
-    }
-  }, []);
 
   const startPan = useCallback((x: number, y: number) => {
     const el = scrollRef.current;
     if (!el) return;
     panStartRef.current = { x, y, sl: el.scrollLeft, st: el.scrollTop };
     setPanMode(true);
-    if (navigator.vibrate) navigator.vibrate(15);
   }, []);
 
   const doPan = useCallback((x: number, y: number) => {
@@ -103,9 +84,8 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, 
     if (!isFullscreen) return;
     const target = e.target as HTMLElement;
     if (target.closest("button") || target.closest("a") || target.closest("input")) return;
-    clearLongPressTimer();
-    longPressTimerRef.current = window.setTimeout(() => startPan(e.clientX, e.clientY), 300);
-  }, [isFullscreen, clearLongPressTimer, startPan]);
+    startPan(e.clientX, e.clientY);
+  }, [isFullscreen, startPan]);
 
   const onMouseMovePan = useCallback((e: React.MouseEvent) => {
     if (!panMode) return;
@@ -113,55 +93,45 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, 
   }, [panMode, doPan]);
 
   const endMousePan = useCallback(() => {
-    clearLongPressTimer();
     if (panMode) endPan();
-  }, [panMode, clearLongPressTimer, endPan]);
+  }, [panMode, endPan]);
+
+  const onTouchStartRef = useRef<{ x: number; y: number; timer?: ReturnType<typeof setTimeout> } | null>(null);
 
   const onTouchStartPan = useCallback((e: React.TouchEvent) => {
-    if (!isFullscreen || e.touches.length !== 1) {
-      clearLongPressTimer();
-      return;
-    }
+    if (!isFullscreen || e.touches.length !== 1) return;
     const t = e.touches[0];
-    touchStartPosRef.current = { x: t.clientX, y: t.clientY };
-    clearLongPressTimer();
-    longPressTimerRef.current = window.setTimeout(() => {
-      touchPanActiveRef.current = true;
+    onTouchStartRef.current = { x: t.clientX, y: t.clientY };
+    const timer = setTimeout(() => {
+      onTouchStartRef.current = null;
       startPan(t.clientX, t.clientY);
     }, 300);
-  }, [isFullscreen, clearLongPressTimer, startPan]);
+    onTouchStartRef.current.timer = timer;
+  }, [isFullscreen, startPan]);
+
+  const onTouchMovePan = useCallback((e: React.TouchEvent) => {
+    if (!isFullscreen || e.touches.length !== 1) return;
+    const t = e.touches[0];
+    if (panMode) {
+      e.preventDefault();
+      doPan(t.clientX, t.clientY);
+    } else if (onTouchStartRef.current?.timer) {
+      const dx = Math.abs(t.clientX - onTouchStartRef.current.x);
+      const dy = Math.abs(t.clientY - onTouchStartRef.current.y);
+      if (dx > 10 || dy > 10) {
+        clearTimeout(onTouchStartRef.current.timer);
+        onTouchStartRef.current = null;
+      }
+    }
+  }, [isFullscreen, panMode, doPan]);
 
   const onTouchEndPan = useCallback(() => {
-    clearLongPressTimer();
-    touchPanActiveRef.current = false;
-    touchStartPosRef.current = null;
+    if (onTouchStartRef.current?.timer) {
+      clearTimeout(onTouchStartRef.current.timer);
+      onTouchStartRef.current = null;
+    }
     if (panMode) endPan();
-  }, [panMode, clearLongPressTimer, endPan]);
-
-  /* Native non-passive touchmove for grab-pan (React 18 attachOrder makes
-   * React's onTouchMove passive, so preventDefault silently no-ops there).
-   * This listener handles the actual pan + cancels the long-press timer when
-   * the finger moved before the timer fired (indicating a regular scroll). */
-  useEffect(() => {
-    const el = scrollRef.current;
-    if (!el) return;
-    const onTouchMove = (e: TouchEvent) => {
-      if (touchPanActiveRef.current && e.touches.length === 1) {
-        e.preventDefault();
-        const t = e.touches[0];
-        doPan(t.clientX, t.clientY);
-        return;
-      }
-      if (longPressTimerRef.current !== null && touchStartPosRef.current && e.touches.length === 1) {
-        const t = e.touches[0];
-        const dx = Math.abs(t.clientX - touchStartPosRef.current.x);
-        const dy = Math.abs(t.clientY - touchStartPosRef.current.y);
-        if (dx > 10 || dy > 10) clearLongPressTimer();
-      }
-    };
-    el.addEventListener("touchmove", onTouchMove, { passive: false });
-    return () => el.removeEventListener("touchmove", onTouchMove);
-  }, [doPan, clearLongPressTimer]);
+  }, [panMode, endPan]);
 
   /* ── Watermark overlay effect ───────────────────────── */
   useEffect(() => {
@@ -179,94 +149,6 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, 
     requestAnimationFrame(move);
     return () => window.clearTimeout(raf);
   }, []);
-  /* ── Ambient music (real YouTube IFrame Player API, not hand-rolled
-   * postMessage against a raw iframe — the raw approach never actually
-   * completed its onReady handshake, so the button looked wired up but
-   * silently did nothing). A hidden 1x1 placeholder gets replaced by the
-   * API with the real player iframe. */
-  useEffect(() => {
-    if (!novelId || typeof window === "undefined") return;
-    setMusicReady(false);
-    setMusicError(false);
-    let cancelled = false;
-    let player: any = null;
-
-    const placeholder = document.createElement("div");
-    placeholder.style.cssText = "position:fixed;left:0;bottom:0;width:1px;height:1px;opacity:0;pointer-events:none;z-index:0;";
-    document.body.appendChild(placeholder);
-
-    const failSafe = window.setTimeout(() => {
-      if (!cancelled && !ytPlayerRef.current) setMusicError(true);
-    }, 8000);
-
-    loadYouTubeIframeAPI()
-      .then((YT) => {
-        if (cancelled) return;
-        if (!YT?.Player) { setMusicError(true); return; }
-        player = new YT.Player(placeholder, {
-          videoId: AMBIENT_TRACK_ID,
-          playerVars: {
-            autoplay: 0,
-            controls: 0,
-            start: AMBIENT_TRACK_START,
-            playsinline: 1,
-            mute: 1,
-          },
-          events: {
-            onReady: () => {
-              if (cancelled) return;
-              ytPlayerRef.current = player;
-              window.clearTimeout(failSafe);
-              setMusicReady(true);
-            },
-            onError: () => {
-              if (!cancelled) setMusicError(true);
-            },
-            onStateChange: (e: any) => {
-              if (cancelled) return;
-              if (e.data === 0 /* YT.PlayerState.ENDED */) {
-                player.seekTo(AMBIENT_TRACK_START, true);
-                player.playVideo();
-              }
-            },
-          },
-        });
-      })
-      .catch(() => {
-        if (!cancelled) setMusicError(true);
-      });
-
-    return () => {
-      cancelled = true;
-      window.clearTimeout(failSafe);
-      try { player?.destroy?.(); } catch {}
-      placeholder.remove();
-      ytPlayerRef.current = null;
-      setMusicReady(false);
-      setPlaying(false);
-    };
-  }, [novelId]);
-
-  const toggleMusic = useCallback(() => {
-    const player = ytPlayerRef.current;
-    if (!player) return;
-    try {
-      if (playing) {
-        player.pauseVideo();
-        setPlaying(false);
-      } else {
-        player.seekTo(AMBIENT_TRACK_START, true);
-        player.setVolume(100);
-        player.unMute();
-        player.playVideo();
-        setPlaying(true);
-      }
-    } catch (err) {
-      console.error("[PDFViewer] music toggle failed", err);
-      setMusicError(true);
-      setPlaying(false);
-    }
-  }, [playing]);
 
   /* ── Paywall ────────────────────────────────────────── */
   const [isUnlocked, setIsUnlocked] = useState(() => {
@@ -361,8 +243,7 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, 
 
     render();
     return () => { cancelled = true; };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-   }, [pdf, currentPage, status, totalPages, containerWidth, displayScale, onPageChange]);
+  }, [pdf, currentPage, status, totalPages, containerWidth, displayScale, onPageChange]);
 
   /* ── Navigation ─────────────────────────────────────── */
   const goToPrev = useCallback(() => {
@@ -494,9 +375,6 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, 
     const onTouchS = (e: TouchEvent) => {
       if (e.touches.length === 2) {
         lastDist = getDist(e.touches[0], e.touches[1]);
-        clearLongPressTimer();
-        touchPanActiveRef.current = false;
-        if (panMode) endPan();
       }
     };
     const onTouchM = (e: TouchEvent) => {
@@ -516,7 +394,7 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, 
     el.addEventListener("touchstart", onTouchS, { passive: false });
     el.addEventListener("touchmove", onTouchM, { passive: false });
     return () => { el.removeEventListener("touchstart", onTouchS); el.removeEventListener("touchmove", onTouchM); cancelAnimationFrame(raf); };
-  }, [panMode, clearLongPressTimer, endPan]);
+  }, []);
 
   /* ── Mouse wheel zoom ───────────────────────────────── */
   useEffect(() => {
@@ -589,23 +467,6 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, 
             <ToolBtn onClick={() => setTocOpen((v) => !v)} title={t("pdf.toc", lang)}><List className="w-4 h-4" /></ToolBtn>
           )}
           <TTSButton />
-          <ToolBtn
-            onClick={toggleMusic}
-            disabled={!musicReady || musicError}
-            title={
-              musicError
-                ? t("pdf.musicError", lang)
-                : playing
-                  ? t("pdf.musicStop", lang)
-                  : t("pdf.musicPlay", lang)
-            }
-            className={clsx(
-              musicError && "opacity-40 cursor-not-allowed",
-              playing && "text-gold-500"
-            )}
-          >
-            {musicError ? <VolumeX className="w-4 h-4" /> : playing ? <VolumeX className="w-4 h-4 text-gold-500" /> : <Speaker className="w-4 h-4" />}
-          </ToolBtn>
           <ToolBtn onClick={toggleFullscreen} title={isFullscreen ? t("pdf.exitFullscreen", lang) : t("pdf.fullscreen", lang)} className="bg-gold-500/10 dark:bg-white/10 rounded-lg hover:bg-gold-500/20 dark:hover:bg-white/20">
             {isFullscreen ? <Minimize2 className="w-4 h-4 text-gold-500" /> : <Maximize2 className="w-4 h-4 text-gold-500" />}
           </ToolBtn>
@@ -682,6 +543,7 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, 
         onMouseUp={endMousePan}
         onMouseLeave={endMousePan}
         onTouchStart={onTouchStartPan}
+        onTouchMove={onTouchMovePan}
         onTouchEnd={onTouchEndPan}
         onTouchCancel={onTouchEndPan}
       >
