@@ -59,27 +59,24 @@ main {
 /* Firefox scrollbar */
 * { scrollbar-width: thin; scrollbar-color: var(--border) transparent; }
 
-/* ─── Selection ─────────────────────────────────────────── */
-::selection { background: transparent !important; color: var(--text); }
-.dark ::selection { background: transparent !important; color: #e6e0d5; }
-
-/* ─── Anti-copy / anti-drag protections ──────────────────── */
-*, *::before, *::after {
+/* ─── Reading-page content guard (scoped, NOT site-wide) ───
+ * Applied only inside the PDF reader via the `.reader-guard` class on
+ * its root container — the rest of the site (nav, about page, footer,
+ * modals…) keeps completely normal text selection and image handling. */
+.reader-guard, .reader-guard *, .reader-guard *::before, .reader-guard *::after {
   -webkit-user-select: none !important;
   user-select: none !important;
-  -webkit-user-drag: none !important;
-  user-drag: none !important;
-  pointer-events: auto;
 }
-input, textarea {
+.reader-guard input, .reader-guard textarea {
   -webkit-user-select: text !important;
   user-select: text !important;
 }
-img, canvas, video, svg {
+.reader-guard img, .reader-guard canvas, .reader-guard video, .reader-guard svg {
   -webkit-user-drag: none !important;
   user-drag: none !important;
   -webkit-touch-callout: none !important;
 }
+.reader-guard::selection, .reader-guard *::selection { background: transparent !important; }
 
 /* ─── Focus-visible for keyboard navigation ────────────── */
 *:focus-visible {

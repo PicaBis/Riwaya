@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
+import { SESSION_COOKIE_NAME, SESSION_MAX_AGE_SECONDS, createSession, verifySession } from "@/lib/session";
 
 const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
 
@@ -15,21 +16,43 @@ function rateLimit(key: string, max: number, windowMs: number): boolean {
   return false;
 }
 
-export function middleware(request: NextRequest) {
+export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
+
+  /* ── Server-issued session identity (foundation for signed asset
+   * URLs / watermarking in later phases). Every visitor — guest or not —
+   * gets an HttpOnly, HMAC-signed session id the client can never read or
+   * forge, minted on first contact and refreshed only when missing/invalid. */
+  const existingPayload = await verifySession(request.cookies.get(SESSION_COOKIE_NAME)?.value);
+  const minted = existingPayload ? null : await createSession();
+  const sid = existingPayload?.sid ?? minted!.payload.sid;
+
+  const withSession = (response: NextResponse): NextResponse => {
+    if (minted) {
+      response.cookies.set(SESSION_COOKIE_NAME, minted.token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "lax",
+        path: "/",
+        maxAge: SESSION_MAX_AGE_SECONDS,
+      });
+    }
+    response.headers.set("x-rw-sid", sid);
+    return response;
+  };
 
   /* ── Rate limiting for API routes ──────────────────── */
   if (pathname.startsWith("/api/")) {
     const ip = request.headers.get("x-forwarded-for") || request.headers.get("x-real-ip") || "unknown";
     if (rateLimit(ip + pathname, 30, 60000)) {
-      return NextResponse.json({ error: "Too many requests" }, { status: 429 });
+      return withSession(NextResponse.json({ error: "Too many requests" }, { status: 429 }));
     }
 
     const response = NextResponse.next();
     response.headers.set("X-Content-Type-Options", "nosniff");
     response.headers.set("X-Frame-Options", "DENY");
     response.headers.set("Cross-Origin-Resource-Policy", "same-origin");
-    return response;
+    return withSession(response);
   }
 
   /* ── Block common attack patterns ──────────────────── */
@@ -86,7 +109,7 @@ export function middleware(request: NextRequest) {
     `default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.youtube.com https://*.vercel-insights.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob:; frame-src 'self' https://www.youtube.com; connect-src ${connectSrc}; worker-src 'self' blob:; media-src 'self'; base-uri 'self'; form-action 'self';`
   );
 
-  return response;
+  return withSession(response);
 }
 
 export const config = {

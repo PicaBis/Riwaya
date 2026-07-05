@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import "./globals.css";
 import { AppProvider } from "@/context/AppContext";
 import { Header } from "@/components/Header";
-import { AntiScreenshot } from "@/components/AntiScreenshot";
 import { SplashScreen } from "@/components/SplashScreen";
 import { BugReporter } from "@/components/BugReporter";
 import { CookieConsent } from "@/components/CookieConsent";
@@ -128,7 +127,6 @@ export default function RootLayout({
       <body className="min-h-screen flex flex-col">
         <AppProvider>
           <SplashScreen />
-          <AntiScreenshot />
           <AutoFullscreen />
           <Header />
           <main className="flex-1 premium-bg">{children}</main>

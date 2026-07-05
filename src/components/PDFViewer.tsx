@@ -237,27 +237,6 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, 
     // eslint-disable-next-line react-hooks/exhaustive-deps
    }, [pdf, currentPage, status, totalPages, containerWidth, displayScale, onPageChange]);
 
-  /* ── Blank canvas on blur immediately ───────────────── */
-  useEffect(() => {
-    const blank = () => {
-      const canvas = canvasRef.current;
-      if (!canvas) return;
-      const ctx = canvas.getContext("2d", { alpha: false });
-      if (!ctx) return;
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      ctx.fillStyle = "#ffffff";
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-    };
-    const onBlur = () => blank();
-    const onVis = () => { if (document.hidden) blank(); };
-    window.addEventListener("blur", onBlur);
-    document.addEventListener("visibilitychange", onVis);
-    return () => {
-      window.removeEventListener("blur", onBlur);
-      document.removeEventListener("visibilitychange", onVis);
-    };
-  }, [pdf, status, currentPage, containerWidth, displayScale]);
-
   /* ── Navigation ─────────────────────────────────────── */
   const goToPrev = useCallback(() => {
     setCurrentPage((p) => {
@@ -331,6 +310,43 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, 
     return () => document.removeEventListener("fullscreenchange", handler);
   }, []);
 
+  /* ── Reading-page content guard ────────────────────────
+   * Scoped to this component's lifetime only (i.e. only while a reading
+   * page is open). Blocks the small set of default browser actions that
+   * would let someone save/print/select the rendered page directly:
+   * copy, cut, drag-out, text selection, and the Ctrl+C/S/P/A shortcuts.
+   * Deliberately does NOT touch focus/blur/visibilitychange/pagehide and
+   * never blanks or dims the page — normal tab-switching, alt-tabbing and
+   * screenshots are left completely alone. */
+  useEffect(() => {
+    const isTypingTarget = (t: EventTarget | null) => {
+      const el = t as HTMLElement | null;
+      return !!el && (el.tagName === "INPUT" || el.tagName === "TEXTAREA" || el.isContentEditable);
+    };
+    const onCopyCut = (e: ClipboardEvent) => { if (!isTypingTarget(e.target)) e.preventDefault(); };
+    const onSelectStart = (e: Event) => { if (!isTypingTarget(e.target)) e.preventDefault(); };
+    const onDragStart = (e: DragEvent) => { if (!isTypingTarget(e.target)) e.preventDefault(); };
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (isTypingTarget(e.target)) return;
+      const key = e.key.toLowerCase();
+      if ((e.ctrlKey || e.metaKey) && ["c", "s", "p", "a"].includes(key)) {
+        e.preventDefault();
+      }
+    };
+    document.addEventListener("copy", onCopyCut);
+    document.addEventListener("cut", onCopyCut);
+    document.addEventListener("selectstart", onSelectStart);
+    document.addEventListener("dragstart", onDragStart);
+    document.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.removeEventListener("copy", onCopyCut);
+      document.removeEventListener("cut", onCopyCut);
+      document.removeEventListener("selectstart", onSelectStart);
+      document.removeEventListener("dragstart", onDragStart);
+      document.removeEventListener("keydown", onKeyDown);
+    };
+  }, []);
+
   /* ── Pinch-to-zoom ──────────────────────────────────── */
   useEffect(() => {
     const el = containerRef.current;
@@ -400,7 +416,7 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, 
     <div
       ref={containerRef}
       className={clsx(
-        "flex flex-col bg-parchment-100 dark:bg-onyx-950 select-none transition-all duration-300 isolate",
+        "reader-guard flex flex-col bg-parchment-100 dark:bg-onyx-950 select-none transition-all duration-300 isolate",
         isFullscreen ? "fixed inset-0 z-[9999] h-[100dvh] w-screen overflow-hidden pdf-fullscreen-active" : "h-full"
       )}
     >
