@@ -4,7 +4,6 @@ import { useEffect, useRef, useState, useCallback } from "react";
 import { ZoomIn, ZoomOut, RotateCcw, Maximize2, Minimize2, List, ChevronLeft, ChevronRight, BookMarked, BookOpen } from "lucide-react";
 import clsx from "clsx";
 import { Paywall } from "./Paywall";
-import { TTSButton } from "./TTSButton";
 import { Achievements } from "./Achievements";
 import { ShareButtons } from "./ShareButtons";
 import { ReaderPrefsPanel } from "./ReaderPrefsPanel";
@@ -466,7 +465,6 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, 
           {chapters && chapters.length > 0 && (
             <ToolBtn onClick={() => setTocOpen((v) => !v)} title={t("pdf.toc", lang)}><List className="w-4 h-4" /></ToolBtn>
           )}
-          <TTSButton />
           <ToolBtn onClick={toggleFullscreen} title={isFullscreen ? t("pdf.exitFullscreen", lang) : t("pdf.fullscreen", lang)} className="bg-gold-500/10 dark:bg-white/10 rounded-lg hover:bg-gold-500/20 dark:hover:bg-white/20">
             {isFullscreen ? <Minimize2 className="w-4 h-4 text-gold-500" /> : <Maximize2 className="w-4 h-4 text-gold-500" />}
           </ToolBtn>
