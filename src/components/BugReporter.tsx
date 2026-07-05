@@ -3,14 +3,13 @@
 import { Bug } from "lucide-react";
 import { useApp } from "@/context/AppContext";
 import { t } from "@/lib/i18n";
-
-const AUTHOR_EMAIL = "Medjahed10abdelhadi@gmail.com";
+import { AUTHOR } from "@/lib/constants";
 
 export function BugReporter() {
   const { lang } = useApp();
   const handleReport = () => {
     window.open(
-      `mailto:${AUTHOR_EMAIL}?subject=${encodeURIComponent(t("bug.subject", lang))}&body=${encodeURIComponent(t("bug.body", lang))}:%0D%0A%0D%0A%0D%0A`,
+      `mailto:${AUTHOR.email}?subject=${encodeURIComponent(t("bug.subject", lang))}&body=${encodeURIComponent(t("bug.body", lang))}:%0D%0A%0D%0A%0D%0A`,
       "_blank"
     );
   };

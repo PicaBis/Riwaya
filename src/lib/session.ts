@@ -25,14 +25,12 @@ export interface SessionPayload {
 export function getSessionSecret(): string {
   const s = process.env.SESSION_SECRET;
   if (s && s.length >= 16) return s;
+  const msg = "[session] SESSION_SECRET is not set or too short — refusing to operate with a weak fallback.";
   if (process.env.NODE_ENV === "production") {
-    // Falling back silently in production would be a real vulnerability —
-    // make sure it's loud in the server logs so it actually gets fixed.
-    console.warn(
-      "[session] SESSION_SECRET is not set (or too short). Using a weak built-in fallback — " +
-        "set a long random SESSION_SECRET in your deployment environment before relying on this for real protection."
-    );
+    console.error(msg);
+    throw new Error(msg);
   }
+  console.warn(msg + " Using dev fallback.");
   return "riwayati-dev-fallback-secret-change-me-please-32chars";
 }
 

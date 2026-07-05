@@ -5,6 +5,7 @@ import Image from "next/image";
 import { X, BookOpen, PenTool, Code2, Smartphone, Quote, Feather, Shield, AlertCircle, CheckCircle2 } from "lucide-react";
 import { useApp } from "@/context/AppContext";
 import { t } from "@/lib/i18n";
+import { verifyDevCode } from "@/lib/auth";
 
 export function AboutModal({ onClose }: { onClose: () => void }) {
   const { isAdmin, setAdmin, lang } = useApp();
@@ -15,9 +16,10 @@ export function AboutModal({ onClose }: { onClose: () => void }) {
   const [devError, setDevError] = useState("");
   const [devSuccess, setDevSuccess] = useState("");
 
-  const handleDevCode = (e: React.FormEvent) => {
+  const handleDevCode = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (devCode.trim() === "Blazixz") {
+    const ok = await verifyDevCode(devCode.trim());
+    if (ok) {
       setAdmin(true);
       setDevSuccess(t("aboutModal.devSuccess", lang));
       setDevError("");

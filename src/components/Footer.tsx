@@ -2,6 +2,7 @@
 
 import { useApp } from "@/context/AppContext";
 import { t } from "@/lib/i18n";
+import { AUTHOR } from "@/lib/constants";
 
 export function Footer() {
   const { lang } = useApp();
@@ -35,13 +36,13 @@ export function Footer() {
             <h4 className={`text-sm font-bold text-gray-800 dark:text-gray-200 mb-3 ${fontClass}`}>{t("footer.contactAuthor", lang)}</h4>
             <div className="flex flex-wrap gap-2">
               <a
-                href="mailto:Medjahed10abdelhadi@gmail.com"
+                href={`mailto:${AUTHOR.email}`}
                 className={`px-3 py-1.5 rounded-lg bg-parchment-100 dark:bg-white/5 border border-parchment-200 dark:border-white/10 text-xs text-gray-600 dark:text-gray-400 hover:text-gold-500 hover:border-gold-500/30 transition-colors ${fontClass}`}
               >
                 {t("footer.email", lang)}
               </a>
                <a
-                 href="https://www.instagram.com/prof_pica/"
+                 href={AUTHOR.instagramUrl}
                  target="_blank"
                  rel="noopener noreferrer"
                 className={`px-3 py-1.5 rounded-lg bg-parchment-100 dark:bg-white/5 border border-parchment-200 dark:border-white/10 text-xs text-gray-600 dark:text-gray-400 hover:text-gold-500 hover:border-gold-500/30 transition-colors ${fontClass}`}
@@ -50,7 +51,7 @@ export function Footer() {
               </a>
             </div>
             <p className="text-xs text-gray-400 mt-3" dir="ltr">
-              Medjahed10abdelhadi@gmail.com
+              {AUTHOR.email}
             </p>
           </div>
         </div>

@@ -24,12 +24,6 @@ export function GuestLoginModal({ onClose }: GuestLoginModalProps) {
       setError(t("guest.error", lang));
       return;
     }
-    if (trimmed === "Blazixz") {
-      setSuccess(t("guest.adminSuccess", lang));
-      setError("");
-    } else {
-      setSuccess("");
-    }
     loginAsGuest(trimmed);
     setTimeout(() => {
       onClose();

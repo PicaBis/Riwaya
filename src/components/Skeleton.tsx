@@ -1,5 +1,8 @@
 "use client";
 
+import { useApp } from "@/context/AppContext";
+import { t } from "@/lib/i18n";
+
 export function SkeletonCard() {
   return (
     <div className="bg-white dark:bg-onyx-800 rounded-2xl overflow-hidden border border-parchment-200 dark:border-white/8" dir="rtl">
@@ -44,11 +47,14 @@ export function SkeletonCard() {
 }
 
 export function SkeletonReader() {
+  const { lang } = useApp();
+  const fontClass = lang === "ar" ? "font-arabic" : "font-sans";
+
   return (
     <div className="flex-1 flex flex-col items-center justify-center min-h-[60vh] gap-4">
       <div className="w-12 h-12 rounded-full border-[3px] border-gold-500/20 border-t-gold-500 animate-spin" />
-      <span className="text-sm text-gray-400 dark:text-gray-500 font-arabic font-medium">
-        جاري تحميل الرواية…
+      <span className={`text-sm text-gray-400 dark:text-gray-500 font-medium ${fontClass}`}>
+        {t("pdf.loading", lang)}
       </span>
       <div className="w-full max-w-md aspect-[1/1.4] bg-parchment-200 dark:bg-white/5 rounded-lg relative overflow-hidden mt-2">
         <div className="absolute inset-0 shimmer-skeleton" />

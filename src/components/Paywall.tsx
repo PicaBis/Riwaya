@@ -15,10 +15,9 @@ interface PaywallProps {
   preview?: string;
 }
 
-const RIP_NUMBER = "00799999002885975343";
-const AUTHOR_EMAIL = "Medjahed10abdelhadi@gmail.com";
+import { BANK, AUTHOR } from "@/lib/constants";
 
-export function Paywall({ onUnlock, price = 500, ripNumber = RIP_NUMBER, title, preview }: PaywallProps) {
+export function Paywall({ onUnlock, price = 500, ripNumber = BANK.ripNumber, title, preview }: PaywallProps) {
   const { lang } = useApp();
   const dir = lang === "ar" ? "rtl" : "ltr";
   const fontClass = lang === "ar" ? "font-arabic" : "font-sans";
@@ -35,11 +34,21 @@ export function Paywall({ onUnlock, price = 500, ripNumber = RIP_NUMBER, title, 
     setChecking(true);
     setError("");
 
-    // 1) Developer bypass code (never expires).
+    // 1) Developer bypass code — verified server-side via hashed digest
     const isDev = await verifyDevCode(code.trim());
     if (isDev) {
+      // Store a signed token instead of a raw boolean
+      try {
+        const tok = await fetch("/api/admin/dev-verify", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ code: code.trim() }),
+        }).then(r => r.json().then(d => ({ ok: r.ok, token: d.token })));
+        if (tok.ok && tok.token) {
+          sessionStorage.setItem("riwayati_dev_token", tok.token as string);
+        }
+      } catch {}
       sessionStorage.setItem("riwayati_unlocked", "1");
-      localStorage.setItem("riwayati_unlocked", "1");
       onUnlock();
       setChecking(false);
       return;
@@ -75,7 +84,7 @@ export function Paywall({ onUnlock, price = 500, ripNumber = RIP_NUMBER, title, 
   };
 
   const openEmail = () => {
-    window.open(`mailto:${AUTHOR_EMAIL}?subject=${encodeURIComponent(t("paywall.emailSubject", lang))}`, "_blank");
+      window.open(`mailto:${AUTHOR.email}?subject=${encodeURIComponent(t("paywall.emailSubject", lang))}`, "_blank");
   };
 
   return (
@@ -208,7 +217,7 @@ export function Paywall({ onUnlock, price = 500, ripNumber = RIP_NUMBER, title, 
                   className="flex items-center justify-center gap-2 w-full py-2 rounded-lg bg-amber-100 dark:bg-amber-800/30 border border-amber-200 dark:border-amber-700/30 text-amber-800 dark:text-amber-300 text-sm font-sans font-medium hover:bg-amber-200 dark:hover:bg-amber-800/50 transition-colors"
                 >
                   <Mail className="w-4 h-4" />
-                  {AUTHOR_EMAIL}
+                  {AUTHOR.email}
                 </button>
               </div>
 

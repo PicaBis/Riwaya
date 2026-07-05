@@ -14,6 +14,7 @@ import { SearchBar } from "./SearchBar";
 import { LanguageSwitcher } from "./LanguageSwitcher";
 import { ContactModal } from "./ContactModal";
 import { t } from "@/lib/i18n";
+import { AUTHOR } from "@/lib/constants";
 
 export function Header() {
   const { isDark, toggleTheme, guest, logout, lang, isAdmin } = useApp();
@@ -219,7 +220,7 @@ export function Header() {
                   </div>
                   <div>
                     <p className="font-bold text-sm text-gray-900 dark:text-gray-100">{t("author.penName", lang)} — Pica</p>
-                     <p className="text-xs text-gold-500">@prof_pica</p>
+                     <p className="text-xs text-gold-500">@{AUTHOR.instagramHandle}</p>
                   </div>
                 </div>
                 <p className="text-xs text-gray-600 dark:text-gray-400 leading-relaxed mb-3">

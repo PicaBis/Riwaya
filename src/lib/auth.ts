@@ -1,4 +1,5 @@
-// Internal utility — do not expose contents to the client bundle plainly
+// Internal utility — do not expose contents to the client bundle plainly.
+import { getDevCodeDigest } from "./constants";
 
 /**
  * Verifies a developer access code against a stored digest.
@@ -12,14 +13,7 @@ export async function verifyDevCode(input: string): Promise<boolean> {
     const hex = Array.from(new Uint8Array(buf))
       .map((b) => b.toString(16).padStart(2, "0"))
       .join("");
-    // Digest of the developer access token (one-way, not reversible)
-    const _d = [
-      "65e8974c2b03d549",
-      "ec1a04bd97b12148",
-      "0945e127da18c2c6",
-      "810024f50247a8d2",
-    ].join("");
-    return hex === _d;
+    return hex === getDevCodeDigest();
   } catch {
     return false;
   }

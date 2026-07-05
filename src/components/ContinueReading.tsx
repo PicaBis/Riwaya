@@ -4,7 +4,6 @@ import Link from "next/link";
 import { BookOpen, ArrowLeft } from "lucide-react";
 import { useApp } from "@/context/AppContext";
 import { novels } from "@/data/novels";
-import { NovelCard } from "./NovelCard";
 import { t } from "@/lib/i18n";
 
 export function ContinueReading() {

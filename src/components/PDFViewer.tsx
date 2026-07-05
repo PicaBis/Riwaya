@@ -4,6 +4,11 @@ import { useEffect, useRef, useState, useCallback } from "react";
 import { ZoomIn, ZoomOut, RotateCcw, Maximize2, Minimize2, BookOpen, Speaker, VolumeX, List, ChevronLeft, ChevronRight, BookMarked } from "lucide-react";
 import clsx from "clsx";
 import { Paywall } from "./Paywall";
+import { TTSButton } from "./TTSButton";
+import { Achievements } from "./Achievements";
+import { ShareButtons } from "./ShareButtons";
+import { ReaderPrefsPanel } from "./ReaderPrefsPanel";
+import { ReadingTimer } from "./ReadingTimer";
 import { useApp } from "@/context/AppContext";
 import { t } from "@/lib/i18n";
 import { resolveProtectedPdfSource } from "@/lib/asset-client";
@@ -468,9 +473,11 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, 
         </div>
         <span className="text-xs font-sans text-gray-400 font-bold">{currentPage} / {totalPages}</span>
         <div className="flex items-center gap-0.5">
+          <ReadingTimer />
           {chapters && chapters.length > 0 && (
             <ToolBtn onClick={() => setTocOpen((v) => !v)} title={t("pdf.toc", lang)}><List className="w-4 h-4" /></ToolBtn>
           )}
+          <TTSButton />
           <ToolBtn
             onClick={toggleMusic}
             disabled={!musicReady || musicError}
@@ -491,7 +498,9 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, 
           <ToolBtn onClick={toggleFullscreen} title={isFullscreen ? t("pdf.exitFullscreen", lang) : t("pdf.fullscreen", lang)} className="bg-gold-500/10 dark:bg-white/10 rounded-lg hover:bg-gold-500/20 dark:hover:bg-white/20">
             {isFullscreen ? <Minimize2 className="w-4 h-4 text-gold-500" /> : <Maximize2 className="w-4 h-4 text-gold-500" />}
           </ToolBtn>
-
+          <Achievements />
+          <ReaderPrefsPanel />
+          <ShareButtons title={title} url={typeof window !== "undefined" ? window.location.pathname : ""} />
         </div>
       </div>
 

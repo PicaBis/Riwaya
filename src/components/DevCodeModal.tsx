@@ -5,6 +5,7 @@ import Link from "next/link";
 import { X, Shield, AlertCircle, CheckCircle2, LayoutDashboard } from "lucide-react";
 import { useApp } from "@/context/AppContext";
 import { t } from "@/lib/i18n";
+import { verifyDevCode } from "@/lib/auth";
 
 export function DevCodeModal({ onClose }: { onClose: () => void }) {
   const { isAdmin, setAdmin, lang } = useApp();
@@ -14,16 +15,19 @@ export function DevCodeModal({ onClose }: { onClose: () => void }) {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (code.trim() === "Blazixz") {
+    if (!code.trim()) {
+      setError(t("dev.empty", lang));
+      return;
+    }
+    const ok = await verifyDevCode(code.trim());
+    if (ok) {
       setAdmin(true);
       try { sessionStorage.setItem("riwayati_devcode", code.trim()); } catch {}
       setSuccess(t("dev.success", lang));
       setError("");
       setTimeout(() => onClose(), 1000);
-    } else if (code.trim() === "") {
-      setError(t("dev.empty", lang));
     } else {
       setError(t("dev.error", lang));
       setSuccess("");

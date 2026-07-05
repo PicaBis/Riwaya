@@ -3,19 +3,22 @@
 import { useState } from "react";
 import { Settings, X, Type, AlignLeft, FileText, Sun } from "lucide-react";
 import { useApp } from "@/context/AppContext";
+import { t } from "@/lib/i18n";
 
 export function ReaderPrefsPanel() {
-  const { readerPrefs, setReaderPrefs } = useApp();
+  const { readerPrefs, setReaderPrefs, lang } = useApp();
+  const fontClass = lang === "ar" ? "font-arabic" : "font-sans";
+  const dir = lang === "ar" ? "rtl" : "ltr";
   const [open, setOpen] = useState(false);
 
   return (
     <>
       <button
         onClick={() => setOpen(true)}
-        className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-arabic text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-parchment-100 dark:hover:bg-white/10 transition-colors"
+        className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-parchment-100 dark:hover:bg-white/10 transition-colors ${fontClass}`}
       >
         <Settings className="w-3.5 h-3.5" />
-        <span className="hidden sm:inline">إعدادات القراءة</span>
+        <span className="hidden sm:inline">{t("readerPrefs.title", lang)}</span>
       </button>
 
       {open && (
@@ -23,11 +26,11 @@ export function ReaderPrefsPanel() {
           className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-fade-in"
           onClick={(e) => e.target === e.currentTarget && setOpen(false)}
         >
-          <div className="relative w-full max-w-sm bg-white dark:bg-onyx-800 rounded-2xl shadow-2xl p-5 animate-scale-in" dir="rtl">
+          <div className="relative w-full max-w-sm bg-white dark:bg-onyx-800 rounded-2xl shadow-2xl p-5 animate-scale-in" dir={dir}>
             <div className="flex items-center justify-between mb-5">
-              <h3 className="font-arabic font-bold text-gray-900 dark:text-gray-100 flex items-center gap-2">
+              <h3 className={`font-bold text-gray-900 dark:text-gray-100 flex items-center gap-2 ${fontClass}`}>
                 <Settings className="w-5 h-5 text-gold-500" />
-                إعدادات القراءة
+                {t("readerPrefs.title", lang)}
               </h3>
               <button onClick={() => setOpen(false)} className="p-1 rounded-lg text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors">
                 <X className="w-5 h-5" />
@@ -38,9 +41,9 @@ export function ReaderPrefsPanel() {
               {/* Font Size */}
               <div>
                 <div className="flex items-center justify-between mb-2">
-                  <label className="text-sm font-arabic text-gray-700 dark:text-gray-300 flex items-center gap-1.5">
+                  <label className={`text-sm text-gray-700 dark:text-gray-300 flex items-center gap-1.5 ${fontClass}`}>
                     <Type className="w-4 h-4 text-gold-500" />
-                    حجم الخط
+                    {t("readerPrefs.fontSize", lang)}
                   </label>
                   <span className="text-xs font-sans text-gray-400">{readerPrefs.fontSize}px</span>
                 </div>
@@ -58,9 +61,9 @@ export function ReaderPrefsPanel() {
               {/* Line Height */}
               <div>
                 <div className="flex items-center justify-between mb-2">
-                  <label className="text-sm font-arabic text-gray-700 dark:text-gray-300 flex items-center gap-1.5">
+                  <label className={`text-sm text-gray-700 dark:text-gray-300 flex items-center gap-1.5 ${fontClass}`}>
                     <AlignLeft className="w-4 h-4 text-gold-500" />
-                    تباعد الأسطر
+                    {t("readerPrefs.lineHeight", lang)}
                   </label>
                   <span className="text-xs font-sans text-gray-400">{readerPrefs.lineHeight.toFixed(1)}</span>
                 </div>
@@ -77,20 +80,20 @@ export function ReaderPrefsPanel() {
 
               {/* Font Family */}
               <div>
-                <label className="text-sm font-arabic text-gray-700 dark:text-gray-300 flex items-center gap-1.5 mb-2">
+                <label className={`text-sm text-gray-700 dark:text-gray-300 flex items-center gap-1.5 mb-2 ${fontClass}`}>
                   <FileText className="w-4 h-4 text-gold-500" />
-                  نوع الخط
+                  {t("readerPrefs.fontFamily", lang)}
                 </label>
                 <div className="grid grid-cols-2 gap-2">
                   <button
                     onClick={() => setReaderPrefs({ ...readerPrefs, fontFamily: "amiri" })}
-                    className={`py-2.5 rounded-xl text-sm font-arabic border transition-all ${
+                    className={`py-2.5 rounded-xl text-sm border transition-all ${lang === "ar" ? "font-arabic" : "font-sans"} ${
                       readerPrefs.fontFamily === "amiri"
                         ? "bg-gold-500/10 border-gold-500 text-gold-600"
                         : "bg-white dark:bg-white/5 border-parchment-200 dark:border-white/10 text-gray-600 dark:text-gray-400"
                     }`}
                   >
-                    أميري
+                    {t("font.family.amiri", lang)}
                   </button>
                   <button
                     onClick={() => setReaderPrefs({ ...readerPrefs, fontFamily: "sans" })}
@@ -107,19 +110,19 @@ export function ReaderPrefsPanel() {
 
               {/* Sepia Mode */}
               <div>
-                <label className="text-sm font-arabic text-gray-700 dark:text-gray-300 flex items-center gap-1.5 mb-2">
+                <label className={`text-sm text-gray-700 dark:text-gray-300 flex items-center gap-1.5 mb-2 ${fontClass}`}>
                   <Sun className="w-4 h-4 text-gold-500" />
-                  وضع الصفحات
+                  {t("readerPrefs.sepia", lang)}
                 </label>
                 <button
                   onClick={() => setReaderPrefs({ ...readerPrefs, sepiaMode: !readerPrefs.sepiaMode })}
-                  className={`w-full py-2.5 rounded-xl text-sm font-arabic border transition-all ${
+                  className={`w-full py-2.5 rounded-xl text-sm border transition-all ${fontClass} ${
                     readerPrefs.sepiaMode
                       ? "bg-amber-100 dark:bg-amber-900/30 border-amber-400 text-amber-700 dark:text-amber-300"
                       : "bg-white dark:bg-white/5 border-parchment-200 dark:border-white/10 text-gray-600 dark:text-gray-400"
                   }`}
                 >
-                  {readerPrefs.sepiaMode ? "وضع سيبيا (مفعل)" : "وضع عادي"}
+                  {readerPrefs.sepiaMode ? t("readerPrefs.sepia", lang) : t("theme.light", lang)}
                 </button>
               </div>
 
@@ -135,7 +138,7 @@ export function ReaderPrefsPanel() {
                 }}
               >
                 <p className="text-gray-800 dark:text-gray-200 leading-relaxed">
-                  هذا النص يوضح شكل القراءة. يمكنك تعديل الإعدادات كما تشاء.
+                  {t("readerPrefs.preview", lang)}
                 </p>
               </div>
             </div>

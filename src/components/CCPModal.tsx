@@ -10,9 +10,7 @@ interface CCPModalProps {
   onClose: () => void;
 }
 
-const RIP_NUMBER = "00799999002885975343";
-const AUTHOR_NAME = "Medjahed Abdelhadi";
-const AUTHOR_EMAIL = "Medjahed10abdelhadi@gmail.com";
+import { BANK, AUTHOR } from "@/lib/constants";
 
 export function CCPModal({ novelTitle, onClose }: CCPModalProps) {
   const { lang } = useApp();
@@ -21,7 +19,7 @@ export function CCPModal({ novelTitle, onClose }: CCPModalProps) {
   const [copied, setCopied] = useState(false);
 
   const copyAccount = async () => {
-    await navigator.clipboard.writeText(RIP_NUMBER);
+    await navigator.clipboard.writeText(BANK.ripNumber);
     setCopied(true);
     setTimeout(() => setCopied(false), 2500);
   };
@@ -75,7 +73,7 @@ export function CCPModal({ novelTitle, onClose }: CCPModalProps) {
                 dir="ltr"
                 className="text-base font-mono font-semibold text-gray-900 dark:text-gray-100 tracking-widest"
               >
-                {RIP_NUMBER}
+                {BANK.ripNumber}
               </span>
             </div>
           </div>
@@ -83,7 +81,7 @@ export function CCPModal({ novelTitle, onClose }: CCPModalProps) {
           <div className={`rounded-xl bg-parchment-100 dark:bg-white/5 border border-parchment-300 dark:border-white/10 p-3 ${dir === "rtl" ? "text-right" : "text-left"}`}>
             <p className={`text-xs text-gray-400 dark:text-gray-500 mb-0.5 ${fontClass}`}>{t("ccp.name", lang)}</p>
             <p className="font-medium text-gray-900 dark:text-gray-100">
-              {AUTHOR_NAME}
+              {AUTHOR.name}
             </p>
           </div>
 
@@ -99,11 +97,11 @@ export function CCPModal({ novelTitle, onClose }: CCPModalProps) {
               {t("ccp.hint", lang)}
             </p>
             <a
-              href={`mailto:${AUTHOR_EMAIL}`}
+              href={`mailto:${AUTHOR.email}`}
               className={`inline-flex items-center gap-1 text-xs text-gold-500 hover:text-gold-600 mt-1.5 transition-colors ${fontClass}`}
             >
               <Mail className="w-3.5 h-3.5" />
-              {AUTHOR_EMAIL}
+              {AUTHOR.email}
             </a>
           </div>
         </div>

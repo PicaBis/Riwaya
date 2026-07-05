@@ -3,6 +3,7 @@
 import { Mail, Instagram, MessageCircle, X } from "lucide-react";
 import { useApp } from "@/context/AppContext";
 import { t } from "@/lib/i18n";
+import { AUTHOR } from "@/lib/constants";
 
 interface ContactModalProps {
   onClose: () => void;
@@ -39,7 +40,7 @@ export function ContactModal({ onClose }: ContactModalProps) {
 
         <div className="space-y-3">
            <a
-             href="https://www.instagram.com/prof_pica/"
+             href={AUTHOR.instagramUrl}
              target="_blank"
              rel="noopener noreferrer"
             className="flex items-center gap-3 p-4 rounded-2xl border border-parchment-200 dark:border-white/8 hover:bg-parchment-50 dark:hover:bg-white/5 hover:border-gold-500/20 hover-lift transition-all duration-200"
@@ -49,12 +50,12 @@ export function ContactModal({ onClose }: ContactModalProps) {
             </div>
             <div>
               <p className={`text-sm font-medium text-gray-900 dark:text-gray-100 ${fontClass}`}>{t("contact.instagram", lang)}</p>
-              <p className="text-xs text-gray-500 font-sans">@prof_pica</p>
+              <p className="text-xs text-gray-500 font-sans">@{AUTHOR.instagramHandle}</p>
             </div>
           </a>
 
            <a
-             href="mailto:Medjahed10abdelhadi@gmail.com"
+             href={`mailto:${AUTHOR.email}`}
             className="flex items-center gap-3 p-4 rounded-2xl border border-parchment-200 dark:border-white/8 hover:bg-parchment-50 dark:hover:bg-white/5 hover:border-gold-500/20 hover-lift transition-all duration-200"
           >
             <div className="w-10 h-10 rounded-xl bg-gold-500/10 flex items-center justify-center flex-shrink-0">
@@ -62,7 +63,7 @@ export function ContactModal({ onClose }: ContactModalProps) {
             </div>
             <div>
               <p className={`text-sm font-medium text-gray-900 dark:text-gray-100 ${fontClass}`}>{t("contact.email", lang)}</p>
-               <p className="text-xs text-gray-500 font-sans">Medjahed10abdelhadi@gmail.com</p>
+               <p className="text-xs text-gray-500 font-sans">{AUTHOR.email}</p>
             </div>
           </a>
         </div>

@@ -191,14 +191,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const toggleTheme = useCallback(() => setIsDark((d) => !d), []);
 
   const loginAsGuest = useCallback((name: string) => {
-    if (name.trim() === "Blazixz") {
-      setIsAdmin(true);
-      localStorage.setItem("riwayati_admin", "1");
-      try { sessionStorage.setItem("riwayati_devcode", "Blazixz"); } catch {}
-      localStorage.removeItem("riwayati_guest");
-      setGuest(null);
-      return;
-    }
     const user: GuestUser = { name: name.trim(), loggedInAt: Date.now() };
     setGuest(user);
     localStorage.setItem("riwayati_guest", JSON.stringify(user));

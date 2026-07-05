@@ -7,6 +7,7 @@ import { t } from "@/lib/i18n";
 
 export function TTSButton() {
   const { lang } = useApp();
+  const fontClass = lang === "ar" ? "font-arabic" : "font-sans";
   const [speaking, setSpeaking] = useState(false);
   const synthRef = useRef<SpeechSynthesisUtterance | null>(null);
   const voicesLoadedRef = useRef(false);
@@ -57,15 +58,15 @@ export function TTSButton() {
   return (
     <button
       onClick={toggle}
-      title={speaking ? "إيقاف القراءة الصوتية" : "قراءة صوتية"}
-      className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-arabic transition-colors ${
+      title={speaking ? t("tts.stop", lang) : t("tts.read", lang)}
+      className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs transition-colors ${fontClass} ${
         speaking
           ? "bg-gold-500/10 text-gold-500 border border-gold-500/20"
           : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-parchment-100 dark:hover:bg-white/10"
       }`}
     >
       {speaking ? <Volume2 className="w-3.5 h-3.5" /> : <VolumeX className="w-3.5 h-3.5" />}
-      <span className="hidden sm:inline">{speaking ? "إيقاف" : "قراءة صوتية"}</span>
+      <span className="hidden sm:inline">{speaking ? t("tts.stop", lang) : t("tts.read", lang)}</span>
     </button>
   );
 }
