@@ -6,7 +6,6 @@ import clsx from "clsx";
 import { Paywall } from "./Paywall";
 import { Achievements } from "./Achievements";
 import { ShareButtons } from "./ShareButtons";
-import { ReaderPrefsPanel } from "./ReaderPrefsPanel";
 import { ReadingTimer } from "./ReadingTimer";
 import { useApp } from "@/context/AppContext";
 import { t } from "@/lib/i18n";
@@ -50,6 +49,7 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, 
   const [containerWidth, setContainerWidth] = useState(0);
   const pageRenderRef = useRef(0);
   const [currentChapter, setCurrentChapter] = useState<string>("");
+  const isMobile = typeof window !== "undefined" && window.innerWidth < 768;
 
   /* ── "Hand tool": instant grab-to-pan ──────────────────────
    * Mouse: click-and-hold in fullscreen → cursor turns into a
@@ -213,7 +213,8 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, 
         const nativeViewport = page.getViewport({ scale: 1.0 });
         const targetPixelWidth = containerWidth > 0 ? containerWidth * displayScale : 0;
         const neededScale = targetPixelWidth > 0 ? targetPixelWidth / nativeViewport.width : Math.max(displayScale, 1.0);
-        const optimalScale = Math.max(neededScale, 1.0);
+        const qualityFloor = isMobile ? 2.0 : 1.0;
+        const optimalScale = Math.max(neededScale, qualityFloor);
         const viewport = page.getViewport({ scale: optimalScale });
 
         canvas.width = viewport.width;
@@ -453,11 +454,25 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, 
           <ToolBtn onClick={goToNext} disabled={currentPage >= totalPages || totalPages === 0} title={t("pdf.nextPage", lang)}><ChevronLeft className="w-4 h-4" /></ToolBtn>
         </div>
         <div className="flex sm:hidden items-center gap-0.5">
-          <ToolBtn onClick={goToPrev} disabled={currentPage <= 1} title={t("pdf.prevPage", lang)}><ChevronRight className="w-3.5 h-3.5" /></ToolBtn>
-          <ToolBtn onClick={zoomOut} title={t("pdf.zoomOut", lang)}><ZoomOut className="w-3.5 h-3.5" /></ToolBtn>
-          <span onClick={resetZoom} className="text-[10px] font-mono text-gray-500 dark:text-gray-400 font-bold min-w-[30px] text-center cursor-pointer">{Math.round(displayScale * 100)}%</span>
-          <ToolBtn onClick={zoomIn} title={t("pdf.zoomIn", lang)}><ZoomIn className="w-3.5 h-3.5" /></ToolBtn>
-          <ToolBtn onClick={goToNext} disabled={currentPage >= totalPages || totalPages === 0} title={t("pdf.nextPage", lang)}><ChevronLeft className="w-3.5 h-3.5" /></ToolBtn>
+          <ToolBtn onClick={goToPrev} disabled={currentPage <= 1} title={t("pdf.prevPage", lang)}><ChevronRight className="w-3 h-3" /></ToolBtn>
+          <ToolBtn onClick={zoomOut} title={t("pdf.zoomOut", lang)}><ZoomOut className="w-3 h-3" /></ToolBtn>
+          <span onClick={resetZoom} className="text-[9px] font-mono text-gray-500 dark:text-gray-400 font-bold min-w-[22px] text-center cursor-pointer">{Math.round(displayScale * 100)}%</span>
+          <ToolBtn onClick={zoomIn} title={t("pdf.zoomIn", lang)}><ZoomIn className="w-3 h-3" /></ToolBtn>
+          <ToolBtn onClick={goToNext} disabled={currentPage >= totalPages || totalPages === 0} title={t("pdf.nextPage", lang)}><ChevronLeft className="w-3 h-3" /></ToolBtn>
+        </div>
+        <span className="text-[10px] sm:text-xs font-sans text-gray-400 font-bold">{currentPage} / {totalPages}</span>
+        <div className="flex items-center gap-0.5">
+          <span className="sm:hidden"><ReadingTimer /></span>
+          {chapters && chapters.length > 0 && (
+            <ToolBtn onClick={() => setTocOpen((v) => !v)} title={t("pdf.toc", lang)}><List className="w-3.5 h-3.5 sm:w-4 sm:h-4" /></ToolBtn>
+          )}
+          <ToolBtn onClick={toggleFullscreen} title={isFullscreen ? t("pdf.exitFullscreen", lang) : t("pdf.fullscreen", lang)} className="bg-gold-500/10 dark:bg-white/10 rounded-lg hover:bg-gold-500/20 dark:hover:bg-white/20">
+            {isFullscreen ? <Minimize2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-gold-500" /> : <Maximize2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-gold-500" />}
+          </ToolBtn>
+          <span className="hidden sm:flex items-center gap-0.5">
+            <Achievements />
+            <ShareButtons title={title} url={typeof window !== "undefined" ? window.location.pathname : ""} />
+          </span>
         </div>
         <span className="text-xs font-sans text-gray-400 font-bold">{currentPage} / {totalPages}</span>
         <div className="flex items-center gap-0.5">
@@ -469,7 +484,6 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, 
             {isFullscreen ? <Minimize2 className="w-4 h-4 text-gold-500" /> : <Maximize2 className="w-4 h-4 text-gold-500" />}
           </ToolBtn>
           <Achievements />
-          <ReaderPrefsPanel />
           <ShareButtons title={title} url={typeof window !== "undefined" ? window.location.pathname : ""} />
         </div>
       </div>

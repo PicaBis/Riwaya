@@ -78,6 +78,13 @@ main {
 }
 .reader-guard::selection, .reader-guard *::selection { background: transparent !important; }
 
+.scrollbar-thin::-webkit-scrollbar { width: 6px; }
+.scrollbar-thin::-webkit-scrollbar-track { background: transparent; }
+.scrollbar-thin::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.18); border-radius: 999px; }
+.dark .scrollbar-thin::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.18); }
+.scrollbar-thin { scrollbar-width: thin; scrollbar-color: rgba(0,0,0,0.18) transparent; }
+.dark .scrollbar-thin { scrollbar-color: rgba(255,255,255,0.18) transparent; }
+
 /* ─── Focus-visible for keyboard navigation ────────────── */
 *:focus-visible {
   outline: 2px solid var(--accent);
