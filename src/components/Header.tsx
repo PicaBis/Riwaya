@@ -219,7 +219,7 @@ export function Header() {
                   </div>
                   <div>
                     <p className="font-bold text-sm text-gray-900 dark:text-gray-100">{t("author.penName", lang)} — Pica</p>
-                    <p className="text-xs text-gold-500">@ProfPica</p>
+                     <p className="text-xs text-gold-500">@prof_pica</p>
                   </div>
                 </div>
                 <p className="text-xs text-gray-600 dark:text-gray-400 leading-relaxed mb-3">

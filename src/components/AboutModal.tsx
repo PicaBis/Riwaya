@@ -61,7 +61,7 @@ export function AboutModal({ onClose }: { onClose: () => void }) {
           <h2 className={`text-2xl sm:text-3xl font-bold text-gray-900 dark:text-gray-100 ${fontClass}`}>
             {t("author.penName", lang)} — Pica
           </h2>
-          <p className={`text-sm text-gold-500 font-medium mt-1 ${fontClass}`}>@ProfPica</p>
+          <p className={`text-sm text-gold-500 font-medium mt-1 ${fontClass}`}>@prof_pica</p>
           <p className={`text-sm text-gray-500 dark:text-gray-400 mt-2 ${fontClass}`}>
             {t("aboutModal.official", lang)}
           </p>

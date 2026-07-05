@@ -7,6 +7,10 @@ import { Paywall } from "./Paywall";
 import { useApp } from "@/context/AppContext";
 import { t } from "@/lib/i18n";
 import { resolveProtectedPdfSource } from "@/lib/asset-client";
+import { loadYouTubeIframeAPI } from "@/lib/youtube";
+
+const AMBIENT_TRACK_ID = "LCfEqudu4pc";
+const AMBIENT_TRACK_START = 3383;
 
 export interface Chapter {
   title: string;
@@ -43,9 +47,7 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, 
   const [playing, setPlaying] = useState(false);
   const [musicReady, setMusicReady] = useState(false);
   const [musicError, setMusicError] = useState(false);
-  const ytIframeRef = useRef<HTMLIFrameElement | null>(null);
-  const ytReadyRef = useRef(false);
-  const ytPlayerReadyRef = useRef(false);
+  const ytPlayerRef = useRef<any>(null);
   const [tocOpen, setTocOpen] = useState(false);
   const [pageSize, setPageSize] = useState({ width: 0, height: 0 });
   const [containerWidth, setContainerWidth] = useState(0);
@@ -69,84 +71,92 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, 
     requestAnimationFrame(move);
     return () => window.clearTimeout(raf);
   }, []);
+  /* ── Ambient music (real YouTube IFrame Player API, not hand-rolled
+   * postMessage against a raw iframe — the raw approach never actually
+   * completed its onReady handshake, so the button looked wired up but
+   * silently did nothing). A hidden 1x1 placeholder gets replaced by the
+   * API with the real player iframe. */
   useEffect(() => {
     if (!novelId || typeof window === "undefined") return;
     setMusicReady(false);
     setMusicError(false);
-    ytPlayerReadyRef.current = false;
+    let cancelled = false;
+    let player: any = null;
 
-    const iframe = document.createElement("iframe");
-    const videoId = "LCfEqudu4pc";
-    const startTime = 3383;
-    iframe.src = `https://www.youtube.com/embed/${videoId}?enablejsapi=1&autoplay=0&controls=0&loop=1&playlist=${videoId}&start=${startTime}&origin=${encodeURIComponent(window.location.origin)}`;
-    iframe.allow = "autoplay";
-    iframe.style.cssText = "position:fixed;left:-9999px;top:0;width:1px;height:1px;opacity:0;pointer-events:none;";
-    iframe.setAttribute("allow", "autoplay; encrypted-media");
-    document.body.appendChild(iframe);
-    ytIframeRef.current = iframe;
+    const placeholder = document.createElement("div");
+    placeholder.style.cssText = "position:fixed;left:0;bottom:0;width:1px;height:1px;opacity:0;pointer-events:none;z-index:0;";
+    document.body.appendChild(placeholder);
 
-    let messageTimer: number | null = null;
-    let cleanupIframe = false;
+    const failSafe = window.setTimeout(() => {
+      if (!cancelled && !ytPlayerRef.current) setMusicError(true);
+    }, 8000);
 
-    const msgHandler = (e: MessageEvent) => {
-      try {
-        const data = typeof e.data === "string" ? JSON.parse(e.data) : e.data;
-        if (!data || typeof data !== "object") return;
-
-        if (data.event === "onReady") {
-          ytReadyRef.current = true;
-          setMusicReady(true);
-        }
-
-        if (data.event === "onStateChange" && data.info === 0) {
-          if (!cleanupIframe) {
-            iframe.contentWindow?.postMessage(JSON.stringify({ event: "command", func: "playVideo" }), "*");
-          }
-        }
-      } catch {}
-    };
-
-    const readyTimer = window.setTimeout(() => {
-      if (!ytReadyRef.current) {
-        setMusicReady(true);
-      }
-    }, 4000);
-
-    window.addEventListener("message", msgHandler);
-    iframe.addEventListener("load", () => {
-      window.setTimeout(() => {
-        if (!ytReadyRef.current) setMusicReady(true);
-      }, 3000);
-    });
+    loadYouTubeIframeAPI()
+      .then((YT) => {
+        if (cancelled) return;
+        if (!YT?.Player) { setMusicError(true); return; }
+        player = new YT.Player(placeholder, {
+          videoId: AMBIENT_TRACK_ID,
+          playerVars: {
+            autoplay: 0,
+            controls: 0,
+            start: AMBIENT_TRACK_START,
+            playsinline: 1,
+            mute: 1,
+          },
+          events: {
+            onReady: () => {
+              if (cancelled) return;
+              ytPlayerRef.current = player;
+              window.clearTimeout(failSafe);
+              setMusicReady(true);
+            },
+            onError: () => {
+              if (!cancelled) setMusicError(true);
+            },
+            onStateChange: (e: any) => {
+              if (cancelled) return;
+              if (e.data === 0 /* YT.PlayerState.ENDED */) {
+                player.seekTo(AMBIENT_TRACK_START, true);
+                player.playVideo();
+              }
+            },
+          },
+        });
+      })
+      .catch(() => {
+        if (!cancelled) setMusicError(true);
+      });
 
     return () => {
-      window.removeEventListener("message", msgHandler);
-      cleanupIframe = true;
-      if (messageTimer) window.clearTimeout(messageTimer);
-      if (readyTimer) window.clearTimeout(readyTimer);
-      iframe.remove();
-      ytIframeRef.current = null;
-      ytReadyRef.current = false;
-      ytPlayerReadyRef.current = false;
+      cancelled = true;
+      window.clearTimeout(failSafe);
+      try { player?.destroy?.(); } catch {}
+      placeholder.remove();
+      ytPlayerRef.current = null;
       setMusicReady(false);
       setPlaying(false);
     };
   }, [novelId]);
 
   const toggleMusic = useCallback(() => {
-    const iframe = ytIframeRef.current;
-    if (!iframe?.contentWindow) return;
+    const player = ytPlayerRef.current;
+    if (!player) return;
     try {
       if (playing) {
-        iframe.contentWindow.postMessage(JSON.stringify({ event: "command", func: "pauseVideo" }), "*");
+        player.pauseVideo();
         setPlaying(false);
       } else {
-        iframe.contentWindow.postMessage(JSON.stringify({ event: "command", func: "seekTo", args: [3383, true] }), "*");
-        iframe.contentWindow.postMessage(JSON.stringify({ event: "command", func: "playVideo" }), "*");
+        player.seekTo(AMBIENT_TRACK_START, true);
+        player.setVolume(100);
+        player.unMute();
+        player.playVideo();
         setPlaying(true);
       }
-    } catch {
+    } catch (err) {
+      console.error("[PDFViewer] music toggle failed", err);
       setMusicError(true);
+      setPlaying(false);
     }
   }, [playing]);
 
@@ -306,11 +316,21 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, 
   }, []);
 
   /* ── Fullscreen ─────────────────────────────────────── */
-  const toggleFullscreen = useCallback(() => {
+  const toggleFullscreen = useCallback(async () => {
     const isMobile = typeof window !== "undefined" && window.innerWidth < 768;
-    if (isMobile || !document.fullscreenEnabled) { setIsFullscreen((p) => !p); return; }
-    if (document.fullscreenElement === containerRef.current) document.exitFullscreen().catch(() => setIsFullscreen(false));
-    else if (!document.fullscreenElement || document.fullscreenElement === document.documentElement) containerRef.current?.requestFullscreen().catch(() => setIsFullscreen((p) => !p));
+    if (isMobile || !document.fullscreenEnabled) {
+      setIsFullscreen((p) => !p);
+      return;
+    }
+    try {
+      if (document.fullscreenElement) {
+        await document.exitFullscreen();
+      } else {
+        await containerRef.current?.requestFullscreen();
+      }
+    } catch {
+      setIsFullscreen((p) => !p);
+    }
   }, []);
 
   useEffect(() => {

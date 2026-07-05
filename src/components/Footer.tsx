@@ -40,10 +40,10 @@ export function Footer() {
               >
                 {t("footer.email", lang)}
               </a>
-              <a
-                href="https://www.instagram.com/profpica"
-                target="_blank"
-                rel="noopener noreferrer"
+               <a
+                 href="https://www.instagram.com/prof_pica/"
+                 target="_blank"
+                 rel="noopener noreferrer"
                 className={`px-3 py-1.5 rounded-lg bg-parchment-100 dark:bg-white/5 border border-parchment-200 dark:border-white/10 text-xs text-gray-600 dark:text-gray-400 hover:text-gold-500 hover:border-gold-500/30 transition-colors ${fontClass}`}
               >
                 {t("footer.instagram", lang)}

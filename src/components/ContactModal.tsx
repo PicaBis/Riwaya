@@ -38,10 +38,10 @@ export function ContactModal({ onClose }: ContactModalProps) {
         </div>
 
         <div className="space-y-3">
-          <a
-            href="https://www.instagram.com/profpica"
-            target="_blank"
-            rel="noopener noreferrer"
+           <a
+             href="https://www.instagram.com/prof_pica/"
+             target="_blank"
+             rel="noopener noreferrer"
             className="flex items-center gap-3 p-4 rounded-2xl border border-parchment-200 dark:border-white/8 hover:bg-parchment-50 dark:hover:bg-white/5 hover:border-gold-500/20 hover-lift transition-all duration-200"
           >
             <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center flex-shrink-0">
@@ -49,12 +49,12 @@ export function ContactModal({ onClose }: ContactModalProps) {
             </div>
             <div>
               <p className={`text-sm font-medium text-gray-900 dark:text-gray-100 ${fontClass}`}>{t("contact.instagram", lang)}</p>
-              <p className="text-xs text-gray-500 font-sans">@ProfPica</p>
+              <p className="text-xs text-gray-500 font-sans">@prof_pica</p>
             </div>
           </a>
 
-          <a
-            href="mailto:profpica@proton.me"
+           <a
+             href="mailto:Medjahed10abdelhadi@gmail.com"
             className="flex items-center gap-3 p-4 rounded-2xl border border-parchment-200 dark:border-white/8 hover:bg-parchment-50 dark:hover:bg-white/5 hover:border-gold-500/20 hover-lift transition-all duration-200"
           >
             <div className="w-10 h-10 rounded-xl bg-gold-500/10 flex items-center justify-center flex-shrink-0">
@@ -62,7 +62,7 @@ export function ContactModal({ onClose }: ContactModalProps) {
             </div>
             <div>
               <p className={`text-sm font-medium text-gray-900 dark:text-gray-100 ${fontClass}`}>{t("contact.email", lang)}</p>
-              <p className="text-xs text-gray-500 font-sans">profpica@proton.me</p>
+               <p className="text-xs text-gray-500 font-sans">Medjahed10abdelhadi@gmail.com</p>
             </div>
           </a>
         </div>
