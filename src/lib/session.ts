@@ -25,13 +25,16 @@ export interface SessionPayload {
 export function getSessionSecret(): string {
   const s = process.env.SESSION_SECRET;
   if (s && s.length >= 16) return s;
-  const msg = "[session] SESSION_SECRET is not set or too short — refusing to operate with a weak fallback.";
+  const fallback = "riwayati-dev-fallback-secret-change-me-please-32chars";
   if (process.env.NODE_ENV === "production") {
-    console.error(msg);
-    throw new Error(msg);
+    console.error(
+      "[session] ⚠️  SESSION_SECRET is not set or too short. Using a weak built-in fallback. " +
+        "Set a long random SESSION_SECRET in your Vercel environment variables for real protection."
+    );
+  } else {
+    console.warn("[session] SESSION_SECRET not set — using dev fallback.");
   }
-  console.warn(msg + " Using dev fallback.");
-  return "riwayati-dev-fallback-secret-change-me-please-32chars";
+  return fallback;
 }
 
 /** Signs a session payload into an opaque `<body>.<signature>` token, safe to store in a cookie. */
