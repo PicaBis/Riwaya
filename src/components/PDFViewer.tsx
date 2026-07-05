@@ -60,6 +60,109 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, 
   const [currentChapter, setCurrentChapter] = useState<string>("");
   const watermarkRef = useRef<HTMLDivElement | null>(null);
 
+  /* ── "Hand tool": long-press grab-to-pan ──────────────
+   * Mouse: press-and-hold 300ms in fullscreen → cursor turns into a
+   * grabbing hand → drag moves the viewport (scrollLeft/scrollTop).
+   * Touch: same long-press → grab-to-pan takes over from native scroll.
+   * Two-finger pinch-zoom continues to work independently. */
+  const [panMode, setPanMode] = useState(false);
+  const panStartRef = useRef<{ x: number; y: number; sl: number; st: number } | null>(null);
+  const longPressTimerRef = useRef<number | null>(null);
+  const touchPanActiveRef = useRef(false);
+  const touchStartPosRef = useRef<{ x: number; y: number } | null>(null);
+
+  const clearLongPressTimer = useCallback(() => {
+    if (longPressTimerRef.current !== null) {
+      window.clearTimeout(longPressTimerRef.current);
+      longPressTimerRef.current = null;
+    }
+  }, []);
+
+  const startPan = useCallback((x: number, y: number) => {
+    const el = scrollRef.current;
+    if (!el) return;
+    panStartRef.current = { x, y, sl: el.scrollLeft, st: el.scrollTop };
+    setPanMode(true);
+    if (navigator.vibrate) navigator.vibrate(15);
+  }, []);
+
+  const doPan = useCallback((x: number, y: number) => {
+    const el = scrollRef.current;
+    const start = panStartRef.current;
+    if (!el || !start) return;
+    el.scrollLeft = start.sl - (x - start.x);
+    el.scrollTop = start.st - (y - start.y);
+  }, []);
+
+  const endPan = useCallback(() => {
+    panStartRef.current = null;
+    setPanMode(false);
+  }, []);
+
+  const onMouseDownPan = useCallback((e: React.MouseEvent) => {
+    if (!isFullscreen) return;
+    const target = e.target as HTMLElement;
+    if (target.closest("button") || target.closest("a") || target.closest("input")) return;
+    clearLongPressTimer();
+    longPressTimerRef.current = window.setTimeout(() => startPan(e.clientX, e.clientY), 300);
+  }, [isFullscreen, clearLongPressTimer, startPan]);
+
+  const onMouseMovePan = useCallback((e: React.MouseEvent) => {
+    if (!panMode) return;
+    doPan(e.clientX, e.clientY);
+  }, [panMode, doPan]);
+
+  const endMousePan = useCallback(() => {
+    clearLongPressTimer();
+    if (panMode) endPan();
+  }, [panMode, clearLongPressTimer, endPan]);
+
+  const onTouchStartPan = useCallback((e: React.TouchEvent) => {
+    if (!isFullscreen || e.touches.length !== 1) {
+      clearLongPressTimer();
+      return;
+    }
+    const t = e.touches[0];
+    touchStartPosRef.current = { x: t.clientX, y: t.clientY };
+    clearLongPressTimer();
+    longPressTimerRef.current = window.setTimeout(() => {
+      touchPanActiveRef.current = true;
+      startPan(t.clientX, t.clientY);
+    }, 300);
+  }, [isFullscreen, clearLongPressTimer, startPan]);
+
+  const onTouchEndPan = useCallback(() => {
+    clearLongPressTimer();
+    touchPanActiveRef.current = false;
+    touchStartPosRef.current = null;
+    if (panMode) endPan();
+  }, [panMode, clearLongPressTimer, endPan]);
+
+  /* Native non-passive touchmove for grab-pan (React 18 attachOrder makes
+   * React's onTouchMove passive, so preventDefault silently no-ops there).
+   * This listener handles the actual pan + cancels the long-press timer when
+   * the finger moved before the timer fired (indicating a regular scroll). */
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const onTouchMove = (e: TouchEvent) => {
+      if (touchPanActiveRef.current && e.touches.length === 1) {
+        e.preventDefault();
+        const t = e.touches[0];
+        doPan(t.clientX, t.clientY);
+        return;
+      }
+      if (longPressTimerRef.current !== null && touchStartPosRef.current && e.touches.length === 1) {
+        const t = e.touches[0];
+        const dx = Math.abs(t.clientX - touchStartPosRef.current.x);
+        const dy = Math.abs(t.clientY - touchStartPosRef.current.y);
+        if (dx > 10 || dy > 10) clearLongPressTimer();
+      }
+    };
+    el.addEventListener("touchmove", onTouchMove, { passive: false });
+    return () => el.removeEventListener("touchmove", onTouchMove);
+  }, [doPan, clearLongPressTimer]);
+
   /* ── Watermark overlay effect ───────────────────────── */
   useEffect(() => {
     const el = watermarkRef.current;
@@ -381,16 +484,24 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, 
     };
   }, []);
 
-  /* ── Pinch-to-zoom ──────────────────────────────────── */
+  /* ── Pinch-to-zoom (two fingers) ────────────────────── */
   useEffect(() => {
     const el = containerRef.current;
     if (!el) return;
     let lastDist = 0;
     let raf = 0;
     const getDist = (t1: Touch, t2: Touch) => Math.hypot(t1.clientX - t2.clientX, t1.clientY - t2.clientY);
-    const onTouchS = (e: TouchEvent) => { if (e.touches.length === 2) lastDist = getDist(e.touches[0], e.touches[1]); };
+    const onTouchS = (e: TouchEvent) => {
+      if (e.touches.length === 2) {
+        lastDist = getDist(e.touches[0], e.touches[1]);
+        clearLongPressTimer();
+        touchPanActiveRef.current = false;
+        if (panMode) endPan();
+      }
+    };
     const onTouchM = (e: TouchEvent) => {
       if (e.touches.length === 2) {
+        e.preventDefault();
         const d = getDist(e.touches[0], e.touches[1]);
         const delta = d - lastDist;
         if (Math.abs(delta) > 1) {
@@ -402,10 +513,10 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, 
         }
       }
     };
-    el.addEventListener("touchstart", onTouchS, { passive: true });
-    el.addEventListener("touchmove", onTouchM, { passive: true });
+    el.addEventListener("touchstart", onTouchS, { passive: false });
+    el.addEventListener("touchmove", onTouchM, { passive: false });
     return () => { el.removeEventListener("touchstart", onTouchS); el.removeEventListener("touchmove", onTouchM); cancelAnimationFrame(raf); };
-  }, []);
+  }, [panMode, clearLongPressTimer, endPan]);
 
   /* ── Mouse wheel zoom ───────────────────────────────── */
   useEffect(() => {
@@ -557,8 +668,22 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, 
       {/* Vertical Scroll Area */}
       <div
         ref={scrollRef}
-        className="flex-1 overflow-auto relative"
+        className={clsx(
+          "flex-1 overflow-auto relative",
+          isFullscreen && (panMode ? "cursor-grabbing" : "cursor-grab")
+        )}
+        style={{
+          touchAction: "pan-x pan-y",
+          userSelect: panMode ? "none" : undefined,
+        }}
         onContextMenu={(e) => e.preventDefault()}
+        onMouseDown={onMouseDownPan}
+        onMouseMove={onMouseMovePan}
+        onMouseUp={endMousePan}
+        onMouseLeave={endMousePan}
+        onTouchStart={onTouchStartPan}
+        onTouchEnd={onTouchEndPan}
+        onTouchCancel={onTouchEndPan}
       >
         <div
           className="flex flex-col items-center w-full py-1 sm:py-2"
