@@ -49,6 +49,7 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, 
   const [containerWidth, setContainerWidth] = useState(0);
   const pageRenderRef = useRef(0);
   const [currentChapter, setCurrentChapter] = useState<string>("");
+  const [visualScale, setVisualScale] = useState(1);
   const isMobile = typeof window !== "undefined" && window.innerWidth < 768;
 
   /* ── "Hand tool": instant grab-to-pan ──────────────────────
@@ -58,6 +59,7 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, 
    * Two-finger pinch-zoom continues to work independently. */
   const [panMode, setPanMode] = useState(false);
   const panStartRef = useRef<{ x: number; y: number; sl: number; st: number } | null>(null);
+  const swipeRef = useRef<{ x: number; y: number; time: number } | null>(null);
 
   const startPan = useCallback((x: number, y: number) => {
     const el = scrollRef.current;
@@ -131,6 +133,56 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, 
     }
     if (panMode) endPan();
   }, [panMode, endPan]);
+
+
+  /* ── Fast Swipe Navigation (Left/Right Slide) ──────────────────────────── */
+  const swipeThreshold = 50;
+  const swipeTimeThreshold = 300;
+
+  const onSwipeStart = useCallback((x: number, y: number) => {
+    swipeRef.current = { x, y, time: Date.now() };
+  }, []);
+
+  const onSwipeEnd = useCallback((x: number, y: number) => {
+    if (!swipeRef.current) return;
+    const deltaX = x - swipeRef.current.x;
+    const deltaY = y - swipeRef.current.y;
+    const deltaTime = Date.now() - swipeRef.current.time;
+
+    if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > swipeThreshold && deltaTime < swipeTimeThreshold) {
+      if (deltaX > 0) {
+        goToPrev();
+      } else {
+        goToNext();
+      }
+      if (navigator.vibrate) navigator.vibrate(15);
+    }
+    swipeRef.current = null;
+  }, []);
+
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+
+    const onTouchStart = (e: TouchEvent) => {
+      if (e.touches.length === 1) {
+        onSwipeStart(e.touches[0].clientX, e.touches[0].clientY);
+      }
+    };
+
+    const onTouchEnd = (e: TouchEvent) => {
+      if (e.changedTouches.length === 1) {
+        onSwipeEnd(e.changedTouches[0].clientX, e.changedTouches[0].clientY);
+      }
+    };
+
+    el.addEventListener("touchstart", onTouchStart, { passive: true });
+    el.addEventListener("touchend", onTouchEnd, { passive: true });
+    return () => {
+      el.removeEventListener("touchstart", onTouchStart);
+      el.removeEventListener("touchend", onTouchEnd);
+    };
+  }, [onSwipeStart, onSwipeEnd]);
 
   /* ── Watermark overlay effect ───────────────────────── */
   useEffect(() => {
@@ -295,7 +347,6 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, 
   }, [goToPrev, goToNext]);
 
   /* ── Zoom ───────────────────────────────────────────── */
-  const [visualScale, setVisualScale] = useState(1);
   const zoomDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const updateActualScale = useCallback((newScale: number) => {
@@ -349,6 +400,28 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, 
    * never blanks or dims the page — normal tab-switching, alt-tabbing and
    * screenshots are left completely alone. */
   useEffect(() => {
+    const onPaste = (e: ClipboardEvent) => {
+      const el = e.target as HTMLElement | null;
+      const isTypingTarget = !!el && (el.tagName === "INPUT" || el.tagName === "TEXTAREA" || el.isContentEditable);
+      if (!isTypingTarget) {
+        e.preventDefault();
+        const canvas = document.createElement('canvas');
+        canvas.width = 1920;
+        canvas.height = 1080;
+        const ctx = canvas.getContext('2d');
+        if (ctx) {
+          ctx.fillStyle = '#FFFFFF';
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
+          canvas.toBlob((blob) => {
+            if (blob) {
+              const item = new ClipboardItem({ 'image/png': blob });
+              navigator.clipboard.write([item]).catch(() => {});
+            }
+          });
+        }
+      }
+    };
+    
     const isTypingTarget = (t: EventTarget | null) => {
       const el = t as HTMLElement | null;
       return !!el && (el.tagName === "INPUT" || el.tagName === "TEXTAREA" || el.isContentEditable);
@@ -359,18 +432,23 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, 
     const onKeyDown = (e: KeyboardEvent) => {
       if (isTypingTarget(e.target)) return;
       const key = e.key.toLowerCase();
-      if ((e.ctrlKey || e.metaKey) && ["c", "s", "p", "a"].includes(key)) {
+      if ((e.ctrlKey || e.metaKey) && ["c", "s", "p", "a", "v"].includes(key)) {
+        e.preventDefault();
+      }
+      if (key === "printscreen" || (e.shiftKey && key === "s")) {
         e.preventDefault();
       }
     };
     document.addEventListener("copy", onCopyCut);
     document.addEventListener("cut", onCopyCut);
+    document.addEventListener("paste", onPaste);
     document.addEventListener("selectstart", onSelectStart);
     document.addEventListener("dragstart", onDragStart);
     document.addEventListener("keydown", onKeyDown);
     return () => {
       document.removeEventListener("copy", onCopyCut);
       document.removeEventListener("cut", onCopyCut);
+      document.removeEventListener("paste", onPaste);
       document.removeEventListener("selectstart", onSelectStart);
       document.removeEventListener("dragstart", onDragStart);
       document.removeEventListener("keydown", onKeyDown);

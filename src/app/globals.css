@@ -443,3 +443,74 @@ main > * { animation: pageEnter 0.35s ease-out; }
 .animate-bounce-slow {
   animation: bounceSlow 2.5s ease-in-out infinite;
 }
+
+/* ─── Anti-Print Media Query ──────────────────────────── */
+@media print {
+  .reader-guard, .reader-guard * {
+    display: none !important;
+    visibility: hidden !important;
+  }
+  body {
+    background: white;
+  }
+  body::before {
+    content: "Printing is not allowed for this content.";
+    display: block;
+    text-align: center;
+    padding: 50px;
+    font-size: 24px;
+    color: #999;
+  }
+}
+
+/* ─── Prevent screenshot tools via CSS ──────────────────── */
+.reader-guard {
+  -webkit-user-select: none !important;
+  user-select: none !important;
+  pointer-events: auto !important;
+}
+
+/* Disable context menu on PDF canvas */
+.reader-guard canvas {
+  -webkit-user-select: none !important;
+  user-select: none !important;
+  -webkit-touch-callout: none !important;
+  -webkit-user-drag: none !important;
+}
+
+/* ─── Performance Optimizations ──────────────────────── */
+/* Reduce layout thrashing */
+.reader-guard {
+  will-change: auto;
+  contain: layout style paint;
+}
+
+/* Optimize canvas rendering */
+.reader-guard canvas {
+  will-change: transform;
+  image-rendering: crisp-edges;
+  image-rendering: -webkit-optimize-contrast;
+}
+
+/* Reduce repaints on scroll */
+.reader-guard [class*="scroll"] {
+  will-change: scroll-position;
+}
+
+/* Optimize animations */
+@media (prefers-reduced-motion: no-preference) {
+  .reader-guard * {
+    transition-duration: 150ms;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  }
+}
+
+/* Lazy load images */
+img {
+  loading: lazy;
+}
+
+/* Optimize font loading */
+@font-face {
+  font-display: swap;
+}
