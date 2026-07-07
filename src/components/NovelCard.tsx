@@ -90,19 +90,8 @@ export function NovelCard({ novel, index = 0 }: NovelCardProps) {
               {/* Fiery gradient backdrop */}
               <div className="absolute inset-0 bg-gradient-to-br from-amber-950 via-red-900 to-gold-600" />
               <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-black/20" />
-              {/* Mystical diagonal glow sweep */}
-              <div
-                className="absolute inset-0 opacity-30"
-                style={{
-                  width: "250%",
-                  left: "-125%",
-                  top: "-50%",
-                  background:
-                    "linear-gradient(135deg, transparent 40%, rgba(255,220,140,0.25) 48%, rgba(255,180,60,0.4) 50%, rgba(255,220,140,0.25) 52%, transparent 60%)",
-                  animation: "mysticSweep 5s ease-in-out infinite",
-                  willChange: "transform",
-                }}
-              />
+              {/* Synchronized diagonal shine */}
+              <div className="novel-shine" />
               {/* Floating particles */}
               <div className="absolute inset-0 pointer-events-none">
                 <span className="absolute top-[15%] left-[20%] w-1.5 h-1.5 rounded-full bg-amber-300/80 animate-float" style={{ animationDelay: "0s" }} />
@@ -135,19 +124,8 @@ export function NovelCard({ novel, index = 0 }: NovelCardProps) {
                 title={novel.title}
                 className="w-full aspect-[3/4] object-cover"
               />
-              {/* Mystical diagonal glow sweep (same as coming-soon card) */}
-              <div
-                className="absolute inset-0 opacity-25"
-                style={{
-                  width: "250%",
-                  left: "-125%",
-                  top: "-50%",
-                  background:
-                    "linear-gradient(135deg, transparent 40%, rgba(255,220,140,0.15) 48%, rgba(255,180,60,0.28) 50%, rgba(255,220,140,0.15) 52%, transparent 60%)",
-                  animation: "mysticSweep 5s ease-in-out infinite",
-                  willChange: "transform",
-                }}
-              />
+              {/* Synchronized diagonal shine (same as coming-soon card) */}
+              <div className="novel-shine" />
               {/* Floating particles (same as coming-soon card) */}
               <div className="absolute inset-0 pointer-events-none">
                 <span className="absolute top-[15%] left-[20%] w-1.5 h-1.5 rounded-full bg-amber-200/70 animate-float" style={{ animationDelay: "0s" }} />

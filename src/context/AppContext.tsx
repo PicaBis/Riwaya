@@ -68,6 +68,18 @@ interface AppContextValue {
   trackNovelView: (novelId: string) => void;
   favorites: string[];
   toggleFavorite: (novelId: string) => void;
+  /* ── Subscription / unlock state (reactive) ───────────── */
+  hydrated: boolean;
+  /** Global subscription/unlock (all novels) — set after purchase or redeem. */
+  unlocked: boolean;
+  /** Developer code active (session-scoped). */
+  devUnlocked: boolean;
+  /** Persist + broadcast the global unlock immediately. */
+  unlock: () => void;
+  /** Set/clear developer unlock (session-scoped). */
+  setDevUnlocked: (v: boolean) => void;
+  /** Lightweight toast for inline feedback (e.g. reading gate). */
+  showToast: (message: string, type?: "info" | "success" | "error") => void;
 }
 
 /* ─── Context ────────────────────────────────────────────── */
@@ -108,6 +120,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const lastSyncRef = useRef<Record<string, number>>({});
   const guestRef = useRef<GuestUser | null>(null);
 
+  /* ── Subscription / unlock (reactive, persisted) ──────── */
+  const [unlocked, setUnlocked] = useState(false);
+  const [devUnlocked, setDevUnlockedState] = useState(false);
+  const [toast, setToast] = useState<{ id: number; message: string; type: string } | null>(null);
+  const toastTimer = useRef<number | null>(null);
+
   /* Hydrate from localStorage on client */
   useEffect(() => {
     const savedLang = localStorage.getItem("riwayati_lang") as Lang | null;
@@ -138,6 +156,16 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     if (savedViews) setNovelViews(JSON.parse(savedViews));
     const savedFavorites = localStorage.getItem("riwayati_favorites");
     if (savedFavorites) setFavorites(JSON.parse(savedFavorites));
+
+    /* Hydrate subscription / unlock state */
+    try {
+      setUnlocked(localStorage.getItem("riwayati_unlocked") === "1");
+      setDevUnlockedState(
+        sessionStorage.getItem("riwayati_dev_token") === "1" ||
+          sessionStorage.getItem("riwayati_devcode") != null
+      );
+    } catch {}
+
     setMounted(true);
   }, []);
 
@@ -191,17 +219,63 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const toggleTheme = useCallback(() => setIsDark((d) => !d), []);
 
   const loginAsGuest = useCallback((name: string) => {
-    const user: GuestUser = { name: name.trim(), loggedInAt: Date.now() };
+    const clean = name.trim();
+    const user: GuestUser = { name: clean, loggedInAt: Date.now() };
     setGuest(user);
     localStorage.setItem("riwayati_guest", JSON.stringify(user));
     localStorage.removeItem("riwayati_admin");
     setIsAdmin(false);
+    /* Sync subscription state to this identity immediately so permissions
+       (e.g. carried over from an anonymous session) are not lost on login. */
+    try {
+      const map = JSON.parse(localStorage.getItem("riwayati_entitlements") || "{}");
+      if (map[clean]?.unlocked || localStorage.getItem("riwayati_unlocked") === "1") {
+        setUnlocked(true);
+        localStorage.setItem("riwayati_unlocked", "1");
+      }
+    } catch {}
   }, []);
 
   const setAdmin = useCallback((v: boolean) => {
     setIsAdmin(v);
     localStorage.setItem("riwayati_admin", v ? "1" : "0");
   }, []);
+
+  /* ── Subscription / unlock helpers ──────────────────── */
+  const unlock = useCallback(() => {
+    setUnlocked(true);
+    try {
+      localStorage.setItem("riwayati_unlocked", "1");
+      const name = guestRef.current?.name;
+      if (name) {
+        const map = JSON.parse(localStorage.getItem("riwayati_entitlements") || "{}");
+        map[name] = { unlocked: true };
+        localStorage.setItem("riwayati_entitlements", JSON.stringify(map));
+      }
+    } catch {}
+  }, []);
+
+  const setDevUnlocked = useCallback((v: boolean) => {
+    setDevUnlockedState(v);
+    try {
+      if (v) {
+        sessionStorage.setItem("riwayati_dev_token", "1");
+        localStorage.setItem("riwayati_unlocked", "1");
+        setUnlocked(true);
+      } else {
+        sessionStorage.removeItem("riwayati_dev_token");
+      }
+    } catch {}
+  }, []);
+
+  const showToast = useCallback(
+    (message: string, type: "info" | "success" | "error" = "info") => {
+      if (toastTimer.current) window.clearTimeout(toastTimer.current);
+      setToast({ id: Date.now(), message, type });
+      toastTimer.current = window.setTimeout(() => setToast(null), 4000);
+    },
+    []
+  );
 
   const logout = useCallback(() => {
     setGuest(null);
@@ -355,9 +429,36 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         trackNovelView,
         favorites,
         toggleFavorite,
+        hydrated: mounted,
+        unlocked,
+        devUnlocked,
+        unlock,
+        setDevUnlocked,
+        showToast,
       }}
     >
       {children}
+      {toast && (
+        <div
+          key={toast.id}
+          className="fixed inset-x-0 bottom-6 z-[100] flex justify-center px-4 pointer-events-none animate-fade-in"
+          dir={lang === "ar" ? "rtl" : "ltr"}
+        >
+          <div
+            className={
+              "max-w-sm w-full sm:w-auto px-5 py-3 rounded-2xl shadow-2xl text-sm font-arabic text-center border " +
+              (toast.type === "error"
+                ? "bg-red-50 dark:bg-red-950/90 border-red-300 dark:border-red-700 text-red-700 dark:text-red-200"
+                : toast.type === "success"
+                ? "bg-green-50 dark:bg-green-950/90 border-green-300 dark:border-green-700 text-green-700 dark:text-green-200"
+                : "bg-white dark:bg-onyx-800 border-parchment-200 dark:border-white/10 text-gray-800 dark:text-gray-100")
+            }
+            role="status"
+          >
+            {toast.message}
+          </div>
+        </div>
+      )}
     </AppContext.Provider>
   );
 }

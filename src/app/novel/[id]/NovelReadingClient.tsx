@@ -30,7 +30,7 @@ interface NovelReadingClientProps {
 }
 
 export function NovelReadingClient({ novel, startPage }: NovelReadingClientProps) {
-  const { bookmarks, ratings, setRating, guest, saveBookmark, trackNovelView, readerPrefs, lang } = useApp();
+  const { bookmarks, ratings, setRating, guest, saveBookmark, trackNovelView, readerPrefs, lang, unlocked, devUnlocked, showToast, hydrated } = useApp();
   const [showCCP, setShowCCP] = useState(false);
   const [pageCurl, setPageCurl] = useState(false);
   // Deep links (e.g. "Continue Reading" cards) pass an explicit startPage and
@@ -50,10 +50,26 @@ export function NovelReadingClient({ novel, startPage }: NovelReadingClientProps
   const pdfUrl = `/api/novel-asset/${novel.pdfFile}`;
   const hasProgress = (bookmarks[novel.id] || 0) > 1;
 
+  const canRead = hydrated && (guest !== null || devUnlocked);
+
   const beginReading = (page?: number) => {
+    // Requirement 4: no reading before logging in as guest or activating dev code.
+    if (!canRead) {
+      showToast(t("gate.loginRequired", lang));
+      return;
+    }
     setEntryPage(page || bookmarks[novel.id] || 1);
     setShowOverview(false);
   };
+
+  /* Deep links (e.g. "Continue Reading" / chapter links) that target a page
+     must also respect the reading gate once the app is hydrated. */
+  useEffect(() => {
+    if (hydrated && startPage && !canRead) {
+      setShowOverview(true);
+      showToast(t("gate.loginRequired", lang));
+    }
+  }, [hydrated, startPage, canRead, lang, showToast]);
 
   const handlePageChange = useCallback(
     (page: number, total?: number) => {
@@ -175,7 +191,7 @@ export function NovelReadingClient({ novel, startPage }: NovelReadingClientProps
       <div className="min-h-screen flex flex-col" dir={dir}>
         <Breadcrumb items={[{ label: novel.title }]} />
 
-        {showOverview ? (
+        {showOverview || !canRead ? (
           /* ── Overview screen ───────────────────────── */
           <div className="max-w-5xl mx-auto w-full px-4 sm:px-6 py-8 sm:py-10">
             <div className="flex flex-col md:flex-row gap-8">
@@ -285,7 +301,7 @@ export function NovelReadingClient({ novel, startPage }: NovelReadingClientProps
               {novel.chapters && novel.chapters.length > 0 ? (
                 <div className="grid sm:grid-cols-2 gap-2">
                   {novel.chapters.map((chapter, i) => {
-                    const isLocked = chapter.startPage > novel.freeUntilPage && novel.freeUntilPage > 0;
+                    const isLocked = !unlocked && !devUnlocked && chapter.startPage > novel.freeUntilPage && novel.freeUntilPage > 0;
                     return (
                       <button
                         key={i}

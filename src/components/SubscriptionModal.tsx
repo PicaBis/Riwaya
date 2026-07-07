@@ -9,7 +9,7 @@ import { useApp } from "@/context/AppContext";
 import { t } from "@/lib/i18n";
 
 export function SubscriptionModal({ onClose }: { onClose: () => void }) {
-  const { lang } = useApp();
+  const { lang, unlocked, devUnlocked } = useApp();
   const dir = lang === "ar" ? "rtl" : "ltr";
   const fontClass = lang === "ar" ? "font-arabic" : "font-sans";
   const [selectedNovelId, setSelectedNovelId] = useState<string | null>(null);
@@ -64,7 +64,7 @@ export function SubscriptionModal({ onClose }: { onClose: () => void }) {
             <div className="space-y-2">
               {(selectedNovel.chapters || []).length > 0 ? (
                 selectedNovel.chapters!.map((ch, i) => {
-                  const isLocked = ch.startPage > selectedNovel.freeUntilPage;
+                  const isLocked = !unlocked && !devUnlocked && ch.startPage > selectedNovel.freeUntilPage;
                   return (
                     <Link
                       key={i}

@@ -31,7 +31,7 @@ interface PDFViewerProps {
 type RenderStatus = "idle" | "loading" | "ready" | "error";
 
 export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, onPageChange, preview, novelId, chapters, readingTheme = "light" }: PDFViewerProps) {
-  const { lang } = useApp();
+  const { lang, unlocked, devUnlocked, unlock } = useApp();
   const containerRef = useRef<HTMLDivElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -203,15 +203,7 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, 
   }, []);
 
   /* ── Paywall ────────────────────────────────────────── */
-  const [isUnlocked, setIsUnlocked] = useState(() => {
-    if (typeof window !== "undefined") {
-      return (
-        sessionStorage.getItem("riwayati_unlocked") === "1" ||
-        localStorage.getItem("riwayati_unlocked") === "1"
-      );
-    }
-    return false;
-  });
+  const isUnlocked = unlocked || devUnlocked;
   const isLocked = !isUnlocked && currentPage > freeUntilPage;
   lockedRef.current = isLocked;
 
@@ -624,7 +616,7 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, 
         <div className="absolute top-11 right-0 z-50 w-64 bg-white dark:bg-onyx-800 rounded-b-2xl shadow-xl border border-parchment-200 dark:border-white/8 max-h-[60vh] overflow-y-auto animate-fade-in" dir={lang === "ar" ? "rtl" : "ltr"}>
           <div className="p-3 border-b border-parchment-200 dark:border-white/8"><h3 className={`text-sm font-bold text-gray-900 dark:text-gray-100 ${lang === "ar" ? "font-arabic" : "font-sans"}`}>{t("pdf.toc", lang)}</h3></div>
           {chapters.map((ch, i) => {
-            const isChapterLocked = ch.startPage > freeUntilPage;
+            const isChapterLocked = !isUnlocked && ch.startPage > freeUntilPage;
             const isCurrent = currentPage >= ch.startPage && (i === chapters.length - 1 || currentPage < chapters[i + 1].startPage);
             return (
               <button key={i} onClick={() => {
@@ -756,7 +748,7 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, 
       {/* ── Paywall overlay (fixed, above everything, zoom-independent) ── */}
       {isLocked && (
         <div className="absolute inset-0 z-50 flex items-center justify-center bg-parchment-50/95 dark:bg-onyx-950/97 backdrop-blur-md p-2 sm:p-4">
-          <Paywall onUnlock={() => setIsUnlocked(true)} price={500} title={title} preview={preview} />
+          <Paywall onUnlock={() => unlock()} price={500} title={title} preview={preview} />
         </div>
       )}
     </div>

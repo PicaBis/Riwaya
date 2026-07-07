@@ -20,7 +20,7 @@ interface PaywallProps {
 }
 
 export function Paywall({ onUnlock, price = 500, ripNumber = BANK.ripNumber, title, preview }: PaywallProps) {
-  const { lang } = useApp();
+  const { lang, unlock, setDevUnlocked } = useApp();
   const dir = lang === "ar" ? "rtl" : "ltr";
   const fontClass = lang === "ar" ? "font-arabic" : "font-sans";
   const [code, setCode] = useState("");
@@ -49,9 +49,14 @@ export function Paywall({ onUnlock, price = 500, ripNumber = BANK.ripNumber, tit
           sessionStorage.setItem("riwayati_dev_token", tok.token as string);
         }
       } catch {}
-      sessionStorage.setItem("riwayati_unlocked", "1");
       setUnlocking(true);
-      setTimeout(onUnlock, 600);
+      // Flip the global unlock state AFTER the animation so the "Content
+      // Unlocked" screen is visible and locks disappear without a reload.
+      setTimeout(() => {
+        setDevUnlocked(true);
+        unlock();
+        onUnlock();
+      }, 600);
       setChecking(false);
       return;
     }
@@ -66,10 +71,11 @@ export function Paywall({ onUnlock, price = 500, ripNumber = BANK.ripNumber, tit
       });
       const data = await res.json().catch(() => ({}));
       if (res.ok && data.ok) {
-        sessionStorage.setItem("riwayati_unlocked", "1");
-        localStorage.setItem("riwayati_unlocked", "1");
         setUnlocking(true);
-        setTimeout(onUnlock, 1000);
+        setTimeout(() => {
+          unlock();
+          onUnlock();
+        }, 1000);
       } else {
         setError(data.error || t("paywall.wrongCode", lang));
       }
@@ -254,16 +260,16 @@ export function Paywall({ onUnlock, price = 500, ripNumber = BANK.ripNumber, tit
                 </div>
               </div>
 
-              {/* ── Step 1b: International (RdotPay) ─ */}
+              {/* ── Step 1b: International (Redot Pay) ─ */}
               <div className="rounded-2xl bg-blue-50 dark:bg-blue-900/15 border border-blue-200 dark:border-blue-700/30 p-4 space-y-3">
                 <h4 className={`text-sm font-black text-blue-700 dark:text-blue-400 flex items-center gap-2 ${fontClass}`}>
                   <QrCode className="w-4 h-4" />
-                  {lang === "ar" ? "الدفع الدولي — RdotPay" : "International Payment — RdotPay"}
+                  {lang === "ar" ? "الدفع الدولي — Redot Pay" : "International Payment — Redot Pay"}
                 </h4>
 
                 <div className="rounded-xl bg-white dark:bg-white/5 border border-parchment-200 dark:border-white/10 p-3">
                   <p className={`text-[10px] text-gray-400 mb-1.5 ${fontClass}`}>
-                    {lang === "ar" ? "رقم حساب RdotPay" : "RdotPay Account ID"}
+                    {lang === "ar" ? "رقم حساب Redot Pay" : "Redot Pay Account ID"}
                   </p>
                   <div className="flex items-center justify-between gap-2">
                     <button
@@ -297,8 +303,8 @@ export function Paywall({ onUnlock, price = 500, ripNumber = BANK.ripNumber, tit
                   <AlertCircle className="w-4 h-4 text-red-500 mb-1.5" />
                   <p className={`text-[11px] leading-relaxed text-red-700 dark:text-red-400 font-semibold ${fontClass}`}>
                     {lang === "ar"
-                      ? "⚠️ تنبيه مهم: عند الدفع عبر RdotPay أو المحفظة، يجب اختيار شبكة BNB Smart Chain (BEP-20). لا تستخدم شبكة أخرى وإلا سيتعذر استلام المبلغ!"
-                      : "⚠️ Important: When paying via RdotPay or wallet, you MUST select the BNB Smart Chain (BEP-20) network. Do not use any other network or the payment will be lost!"}
+                      ? "⚠️ تنبيه مهم: عند الدفع عبر Redot Pay أو المحفظة، يجب اختيار شبكة BNB Smart Chain (BEP-20). لا تستخدم شبكة أخرى وإلا سيتعذر استلام المبلغ!"
+                      : "⚠️ Important: When paying via Redot Pay or wallet, you MUST select the BNB Smart Chain (BEP-20) network. Do not use any other network or the payment will be lost!"}
                   </p>
                 </div>
               </div>

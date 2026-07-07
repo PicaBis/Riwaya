@@ -8,7 +8,7 @@ import { t } from "@/lib/i18n";
 import { verifyDevCode } from "@/lib/auth";
 
 export function DevCodeModal({ onClose }: { onClose: () => void }) {
-  const { isAdmin, setAdmin, lang } = useApp();
+  const { isAdmin, setAdmin, setDevUnlocked, lang } = useApp();
   const dir = lang === "ar" ? "rtl" : "ltr";
   const fontClass = lang === "ar" ? "font-arabic" : "font-sans";
   const [code, setCode] = useState("");
@@ -22,8 +22,9 @@ export function DevCodeModal({ onClose }: { onClose: () => void }) {
       return;
     }
     const ok = await verifyDevCode(code.trim());
-    if (ok) {
+     if (ok) {
       setAdmin(true);
+      setDevUnlocked(true);
       try { sessionStorage.setItem("riwayati_devcode", code.trim()); } catch {}
       setSuccess(t("dev.success", lang));
       setError("");
