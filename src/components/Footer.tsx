@@ -59,7 +59,7 @@ export function Footer() {
         {/* Bottom bar */}
         <div className="border-t border-parchment-200 dark:border-white/8 pt-6 text-center">
           <p className={`text-sm text-gray-400 dark:text-gray-600 ${fontClass}`}>
-            {t("site.name", lang)} · riwayati.vercel.app
+            {t("site.name", lang)} · rewayati.vercel.app
           </p>
           <p className={`text-xs text-gray-300 dark:text-gray-700 mt-1 ${fontClass}`}>
             {t("footer.copyright", lang)} &copy; {new Date().getFullYear()}

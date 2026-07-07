@@ -17,8 +17,8 @@ export const BANK = {
 export const SITE = {
   nameAr: "روايتي",
   nameEn: "Rewayati",
-  domain: "riwayati.vercel.app",
-  url: "https://riwayati.vercel.app",
+  domain: "rewayati.vercel.app",
+  url: "https://rewayati.vercel.app",
 } as const;
 
 /** DEV_CODE digest — set this env var on Vercel. The raw value is NEVER

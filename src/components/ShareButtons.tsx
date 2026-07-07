@@ -12,7 +12,7 @@ export function ShareButtons({ title, url }: { title: string; url: string }) {
   const [open, setOpen] = useState(false);
   const [copied, setCopied] = useState(false);
 
-  const shareUrl = `https://riwayati.vercel.app${url}`;
+  const shareUrl = `https://rewayati.vercel.app${url}`;
   const shareText = `📖 ${title} — ${lang === "ar" ? "اقرأها الآن على منصة روايتي" : "Read it now on Rewayati"}`;
 
   const copyLink = async () => {

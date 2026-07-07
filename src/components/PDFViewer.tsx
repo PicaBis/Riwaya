@@ -150,9 +150,9 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, 
 
     if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > swipeThreshold && deltaTime < swipeTimeThreshold) {
       if (deltaX > 0) {
-        goToPrev();
-      } else {
         goToNext();
+      } else {
+        goToPrev();
       }
       if (navigator.vibrate) navigator.vibrate(15);
     }
@@ -249,7 +249,9 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, 
     return () => ro.disconnect();
   }, []);
 
-  /* ── Render current page ────────────────────────────── */
+  /* ── Render current page (double-buffered, no flash) ── */
+  const offscreenRef = useRef<HTMLCanvasElement | null>(null);
+
   useEffect(() => {
     if (!pdf || !canvasRef.current || status !== "ready" || totalPages === 0) return;
     const renderId = ++pageRenderRef.current;
@@ -264,10 +266,22 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, 
         const nativeViewport = page.getViewport({ scale: 1.0 });
         const targetPixelWidth = containerWidth > 0 ? containerWidth * displayScale : 0;
         const neededScale = targetPixelWidth > 0 ? targetPixelWidth / nativeViewport.width : Math.max(displayScale, 1.0);
-        // Increased quality floor for mobile to 4.0 for "400% Sharpness" as requested.
         const qualityFloor = isMobile ? 4.0 : 2.0;
         const optimalScale = Math.max(neededScale, qualityFloor);
         const viewport = page.getViewport({ scale: optimalScale });
+
+        if (!offscreenRef.current) {
+          offscreenRef.current = document.createElement("canvas");
+        }
+        const off = offscreenRef.current;
+        off.width = viewport.width;
+        off.height = viewport.height;
+        const octx = off.getContext("2d", { alpha: false });
+        if (!octx) return;
+
+        await page.render({ canvasContext: octx, viewport }).promise;
+
+        if (cancelled || renderId !== pageRenderRef.current) return;
 
         canvas.width = viewport.width;
         canvas.height = viewport.height;
@@ -275,12 +289,8 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, 
         canvas.style.height = "auto";
         canvas.style.aspectRatio = `${viewport.width} / ${viewport.height}`;
         canvas.style.backgroundColor = "#ffffff";
-
-        if (cancelled || renderId !== pageRenderRef.current) return;
-
         const ctx = canvas.getContext("2d", { alpha: false });
-        if (!ctx) return;
-        await page.render({ canvasContext: ctx, viewport }).promise;
+        if (ctx) ctx.drawImage(off, 0, 0);
 
         if (!cancelled && renderId === pageRenderRef.current) {
           setPageSize({ width: viewport.width, height: viewport.height });
@@ -553,33 +563,36 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, 
     >
       {/* Toolbar */}
       <div className="relative z-20 flex items-center justify-between gap-1 px-2 sm:px-4 py-2 sm:py-3 bg-white/80 dark:bg-onyx-900/80 backdrop-blur-md border-b border-parchment-200 dark:border-white/8 flex-shrink-0 transition-all duration-300">
-        <div className="flex items-center gap-1">
+        {/* Left: zoom controls */}
+        <div className="hidden sm:flex items-center gap-1">
+          <ToolBtn onClick={zoomOut} title={t("pdf.zoomOut", lang)}><ZoomOut className="w-4 h-4" /></ToolBtn>
+          <span onClick={resetZoom} className="px-2 py-1 text-xs font-mono text-gray-600 dark:text-gray-300 cursor-pointer min-w-[48px] text-center font-bold bg-parchment-100 dark:bg-white/5 rounded-md">
+            {Math.round(displayScale * visualScale * 100)}%
+          </span>
+          <ToolBtn onClick={zoomIn} title={t("pdf.zoomIn", lang)}><ZoomIn className="w-4 h-4" /></ToolBtn>
+        </div>
+
+        {/* Center: prev + page counter + next */}
+        <div className="flex items-center gap-2 sm:gap-3">
           <ToolBtn onClick={goToPrev} disabled={currentPage <= 1} title={t("pdf.prevPage", lang)} className="bg-parchment-50 dark:bg-white/5 shadow-sm">
-            <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5" />
+            <ChevronLeft className="w-5 h-5 sm:w-6 sm:h-6" />
           </ToolBtn>
-          <div className="hidden sm:flex items-center gap-1 mx-1">
-            <ToolBtn onClick={zoomOut} title={t("pdf.zoomOut", lang)}><ZoomOut className="w-4 h-4" /></ToolBtn>
-            <span onClick={resetZoom} className="px-2 py-1 text-xs font-mono text-gray-600 dark:text-gray-300 cursor-pointer min-w-[48px] text-center font-bold bg-parchment-100 dark:bg-white/5 rounded-md">
-              {Math.round(displayScale * visualScale * 100)}%
-            </span>
-            <ToolBtn onClick={zoomIn} title={t("pdf.zoomIn", lang)}><ZoomIn className="w-4 h-4" /></ToolBtn>
+          <div className="flex flex-col items-center">
+            <h1 className={`hidden md:block text-sm font-bold text-gray-800 dark:text-gray-200 mb-0.5 truncate max-w-[160px] ${lang === "ar" ? "font-arabic" : "font-sans"}`}>
+              {title}
+            </h1>
+            <div className="flex items-center gap-1.5 bg-gold-500/10 px-2 py-0.5 rounded-full border border-gold-500/20">
+              <span className="text-[10px] sm:text-xs font-mono text-gold-600 dark:text-gold-400 font-bold">
+                {currentPage} <span className="opacity-40">/</span> {totalPages}
+              </span>
+            </div>
           </div>
           <ToolBtn onClick={goToNext} disabled={currentPage >= totalPages || totalPages === 0} title={t("pdf.nextPage", lang)} className="bg-parchment-50 dark:bg-white/5 shadow-sm">
-            <ChevronLeft className="w-4 h-4 sm:w-5 sm:h-5" />
+            <ChevronRight className="w-5 h-5 sm:w-6 sm:h-6" />
           </ToolBtn>
         </div>
 
-        <div className="flex flex-col items-center">
-          <h1 className={`hidden md:block text-sm font-bold text-gray-800 dark:text-gray-200 mb-0.5 truncate max-w-[200px] ${lang === "ar" ? "font-arabic" : "font-sans"}`}>
-            {title}
-          </h1>
-          <div className="flex items-center gap-1.5 bg-gold-500/10 px-2 py-0.5 rounded-full border border-gold-500/20">
-            <span className="text-[10px] sm:text-xs font-mono text-gold-600 dark:text-gold-400 font-bold">
-              {currentPage} <span className="opacity-40">/</span> {totalPages}
-            </span>
-          </div>
-        </div>
-
+        {/* Right: extras */}
         <div className="flex items-center gap-1 sm:gap-2">
           <div className="hidden sm:flex items-center gap-1">
             <ReadingTimer />
@@ -725,7 +738,7 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, 
                 style={{ opacity: 0.04, transition: "transform 2s ease-in-out, opacity 2s ease-in-out" }}
                 aria-hidden="true"
               >
-                روايتي — riwayati.vercel.app
+                روايتي — rewayati.vercel.app
               </div>
               {isLocked && (
                 <div className="absolute inset-0 flex items-center justify-center bg-parchment-50/90 dark:bg-onyx-950/95 backdrop-blur-sm z-20">
