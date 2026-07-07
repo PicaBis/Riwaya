@@ -8,6 +8,8 @@ import { ContinueReading } from "@/components/ContinueReading";
 import { PopularSection } from "@/components/PopularSection";
 import { ReadingStats } from "@/components/ReadingStats";
 import { Reveal } from "@/components/Reveal";
+import { CountUp } from "@/components/CountUp";
+import { FeaturedNovel } from "@/components/FeaturedNovel";
 import { useApp } from "@/context/AppContext";
 import { t } from "@/lib/i18n";
 
@@ -83,7 +85,7 @@ export default function HomePage() {
           </div>
 
           <div className="flex flex-wrap items-center justify-center gap-3" dir={dir}>
-            <div className="flex items-center gap-2.5 px-4 py-2.5 rounded-xl bg-white dark:bg-white/5 border border-parchment-200 dark:border-white/10 shadow-sm hover-lift"><BookOpen className="w-4 h-4 text-gold-500" /><div><p className="text-base font-bold text-gray-900 dark:text-gray-100 leading-none">{novels.length}</p><p className={`text-xs text-gray-400 mt-0.5 ${fontClass}`}>{novels.length === 1 ? t("hero.novels", lang) : t("hero.novelsPlural", lang)}</p></div></div>
+            <div className="flex items-center gap-2.5 px-4 py-2.5 rounded-xl bg-white dark:bg-white/5 border border-parchment-200 dark:border-white/10 shadow-sm hover-lift"><BookOpen className="w-4 h-4 text-gold-500" /><div><p className="text-base font-bold text-gray-900 dark:text-gray-100 leading-none"><CountUp value={novels.length} /></p><p className={`text-xs text-gray-400 mt-0.5 ${fontClass}`}>{novels.length === 1 ? t("hero.novels", lang) : t("hero.novelsPlural", lang)}</p></div></div>
             <div className="flex items-center gap-2.5 px-4 py-2.5 rounded-xl bg-white dark:bg-white/5 border border-parchment-200 dark:border-white/10 shadow-sm hover-lift"><Feather className="w-4 h-4 text-gold-500" /><div><p className="text-base font-bold text-gray-900 dark:text-gray-100 leading-none">{t("author.penName", lang)}</p><p className={`text-xs text-gray-400 mt-0.5 ${fontClass}`}>{t("hero.author", lang)}</p></div></div>
           </div>
         </div>
@@ -123,6 +125,8 @@ export default function HomePage() {
           ))}
         </div>
       </Reveal>
+
+      <Reveal><FeaturedNovel /></Reveal>
 
       <span id="novels" className="block -mt-4 pt-4" />
 

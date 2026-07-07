@@ -7,6 +7,7 @@ import { BugReporter } from "@/components/BugReporter";
 import { CookieConsent } from "@/components/CookieConsent";
 import { AutoFullscreen } from "@/components/AutoFullscreen";
 import { ScrollToTop } from "@/components/ScrollToTop";
+import { ScrollProgress } from "@/components/ScrollProgress";
 import { Footer } from "@/components/Footer";
 import ScreenshotGuard from "@/components/ScreenshotGuard";
 
@@ -120,6 +121,7 @@ export default function RootLayout({
       <body className="min-h-screen flex flex-col">
         <ScreenshotGuard />
         <AppProvider>
+          <ScrollProgress />
           <SplashScreen />
           <AutoFullscreen />
           <Header />

@@ -575,20 +575,6 @@ img {
   loading: lazy;
 }
 
-/* ─── Screenshot Guard — site-wide clipboard protection ─── */
-
-/* Black flash overlay during screenshot attempt */
-#screenshot-guard-overlay.guard-visible {
-  display: flex !important;
-  opacity: 0.97 !important;
-}
-
-/* Body blur while snipping tool is active */
-body.guard-blur > * {
-  filter: blur(8px);
-  transition: filter 0.3s ease;
-}
-
 /* ─── Light-theme card border enhancement ─── */
 html:not(.dark) .border-parchment-200 {
   border-color: rgba(165, 145, 115, 0.45) !important;

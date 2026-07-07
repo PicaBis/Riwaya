@@ -3,6 +3,7 @@
 import { BookOpen, Trophy, Clock, Flame, TrendingUp } from "lucide-react";
 import Link from "next/link";
 import { useApp } from "@/context/AppContext";
+import { CountUp } from "./CountUp";
 import { t } from "@/lib/i18n";
 
 export function ReadingStats() {
@@ -57,7 +58,7 @@ export function ReadingStats() {
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           <div className="p-4 rounded-2xl bg-white dark:bg-onyx-800 border border-parchment-200 dark:border-white/8 text-center hover-lift card-glow">
             <BookOpen className="w-5 h-5 text-gold-500 mx-auto mb-2" />
-            <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{totalPages}</p>
+            <p className="text-2xl font-bold text-gray-900 dark:text-gray-100"><CountUp value={totalPages} /></p>
             <p className={`text-xs text-gray-400 mt-1 ${fontClass}`}>{t("stats.pagesRead", lang)}</p>
           </div>
           <div className="p-4 rounded-2xl bg-white dark:bg-onyx-800 border border-parchment-200 dark:border-white/8 text-center hover-lift card-glow">
@@ -67,12 +68,12 @@ export function ReadingStats() {
           </div>
           <div className="p-4 rounded-2xl bg-white dark:bg-onyx-800 border border-parchment-200 dark:border-white/8 text-center hover-lift card-glow">
             <Flame className="w-5 h-5 text-amber-500 mx-auto mb-2" />
-            <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{streak}</p>
+            <p className="text-2xl font-bold text-gray-900 dark:text-gray-100"><CountUp value={streak} /></p>
             <p className={`text-xs text-gray-400 mt-1 ${fontClass}`}>{streak === 1 ? t("stats.streakDaySingular", lang) : t("stats.streakDayPlural", lang)}</p>
           </div>
           <div className="p-4 rounded-2xl bg-white dark:bg-onyx-800 border border-parchment-200 dark:border-white/8 text-center hover-lift card-glow">
             <TrendingUp className="w-5 h-5 text-gold-500 mx-auto mb-2" />
-            <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{uniqueNovels}</p>
+            <p className="text-2xl font-bold text-gray-900 dark:text-gray-100"><CountUp value={uniqueNovels} /></p>
             <p className={`text-xs text-gray-400 mt-1 ${fontClass}`}>{uniqueNovels === 1 ? t("hero.novels", lang) : t("hero.novelsPlural", lang)}</p>
           </div>
         </div>
