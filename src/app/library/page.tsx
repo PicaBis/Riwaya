@@ -18,7 +18,7 @@ export default function LibraryPage() {
   const ratedNovels = novels.filter((n) => ratings[n.id] && ratings[n.id] > 0);
 
   return (
-    <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8 sm:py-10" dir={dir}>
+    <div className="max-w-6xl mx-auto px-2 sm:px-4 py-8 sm:py-10" dir={dir}>
       {/* Header */}
       <div className="flex items-center gap-3 mb-8">
         <Link

@@ -82,11 +82,10 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, 
   }, []);
 
   const onMouseDownPan = useCallback((e: React.MouseEvent) => {
-    if (!isFullscreen) return;
     const target = e.target as HTMLElement;
     if (target.closest("button") || target.closest("a") || target.closest("input")) return;
     startPan(e.clientX, e.clientY);
-  }, [isFullscreen, startPan]);
+  }, [startPan]);
 
   const onMouseMovePan = useCallback((e: React.MouseEvent) => {
     if (!panMode) return;
@@ -100,7 +99,7 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, 
   const onTouchStartRef = useRef<{ x: number; y: number; timer?: ReturnType<typeof setTimeout> } | null>(null);
 
   const onTouchStartPan = useCallback((e: React.TouchEvent) => {
-    if (!isFullscreen || e.touches.length !== 1) return;
+    if (e.touches.length !== 1) return;
     const t = e.touches[0];
     onTouchStartRef.current = { x: t.clientX, y: t.clientY };
     const timer = setTimeout(() => {
@@ -108,10 +107,10 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, 
       startPan(t.clientX, t.clientY);
     }, 300);
     onTouchStartRef.current.timer = timer;
-  }, [isFullscreen, startPan]);
+  }, [startPan]);
 
   const onTouchMovePan = useCallback((e: React.TouchEvent) => {
-    if (!isFullscreen || e.touches.length !== 1) return;
+    if (e.touches.length !== 1) return;
     const t = e.touches[0];
     if (panMode) {
       e.preventDefault();
@@ -124,7 +123,7 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, 
         onTouchStartRef.current = null;
       }
     }
-  }, [isFullscreen, panMode, doPan]);
+  }, [panMode, doPan]);
 
   const onTouchEndPan = useCallback(() => {
     if (onTouchStartRef.current?.timer) {
@@ -456,6 +455,8 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, 
   }, []);
 
   /* ── Pinch-to-zoom (two fingers) ────────────────────── */
+  const pinchScaleRef = useRef(1);
+
   useEffect(() => {
     const el = containerRef.current;
     if (!el) return;
@@ -476,26 +477,31 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, 
         if (Math.abs(ratio - 1) > 0.01) {
           cancelAnimationFrame(raf);
           raf = requestAnimationFrame(() => {
-            // Apply visual scale for immediate feedback
-            setVisualScale(prev => Math.min(Math.max(prev * ratio, 0.5), 3.0));
+            pinchScaleRef.current = Math.min(Math.max(pinchScaleRef.current * ratio, 0.5), 3.0);
+            setVisualScale(pinchScaleRef.current);
             
-            // Debounce the actual PDF re-render
             if (zoomDebounceRef.current) clearTimeout(zoomDebounceRef.current);
             zoomDebounceRef.current = setTimeout(() => {
+              const accumulated = pinchScaleRef.current;
               setDisplayScale(s => {
-                const newScale = Math.min(Math.max(s * visualScale, 0.3), 4.0);
-                setVisualScale(1); // Reset visual scale after applying to displayScale
+                const newScale = Math.min(Math.max(s * accumulated, 0.3), 4.0);
                 return newScale;
               });
+              pinchScaleRef.current = 1;
+              setVisualScale(1);
             }, 300);
           });
           lastDist = d;
         }
       }
     };
+    const onTouchE = () => {
+      lastDist = 0;
+    };
     el.addEventListener("touchstart", onTouchS, { passive: false });
     el.addEventListener("touchmove", onTouchM, { passive: false });
-    return () => { el.removeEventListener("touchstart", onTouchS); el.removeEventListener("touchmove", onTouchM); cancelAnimationFrame(raf); };
+    el.addEventListener("touchend", onTouchE);
+    return () => { el.removeEventListener("touchstart", onTouchS); el.removeEventListener("touchmove", onTouchM); el.removeEventListener("touchend", onTouchE); cancelAnimationFrame(raf); };
   }, []);
 
   /* ── Mouse wheel zoom ───────────────────────────────── */
@@ -514,7 +520,7 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, 
     };
     el.addEventListener("wheel", onWheel, { passive: false });
     return () => el.removeEventListener("wheel", onWheel);
-  }, [displayScale, visualScale]);
+  }, []);
 
   /* ── Center horizontal scroll when zoomed in ──────────── */
   useEffect(() => {
@@ -649,7 +655,7 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, 
         ref={scrollRef}
         className={clsx(
           "flex-1 overflow-auto relative",
-          isFullscreen && (panMode ? "cursor-grabbing" : "cursor-grab")
+          panMode ? "cursor-grabbing" : "cursor-grab"
         )}
         style={{
           touchAction: "pan-x pan-y",

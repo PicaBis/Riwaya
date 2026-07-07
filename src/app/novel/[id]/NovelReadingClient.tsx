@@ -302,8 +302,18 @@ export function NovelReadingClient({ novel, startPage }: NovelReadingClientProps
                 <p className={`text-sm text-gray-400 ${fontClass}`}>{t("overview.noChapters", lang)}</p>
               )}
             </div>
+
+            {/* ── Comments (overview) ──────────────────── */}
+            <div className="max-w-4xl mx-auto py-6 sm:py-8 w-full" dir={dir}>
+              <Comments novelId={novel.id} />
+            </div>
           </div>
         ) : (
+          /* ── Comments (top in reading mode) ──────────── */
+          <div className="max-w-4xl mx-auto px-3 sm:px-6 pt-4 sm:pt-6 pb-2 w-full" dir={dir}>
+            <Comments novelId={novel.id} />
+          </div>
+
           /* ── PDF Viewer ─────────────────────────────── */
           <div className={`min-h-[50vh] sm:min-h-[65vh] flex flex-col reading-theme-${readerPrefs.readingTheme} ${pageCurl ? "animate-page-curl" : ""}`} dir="ltr">
             <PDFViewer
@@ -319,11 +329,6 @@ export function NovelReadingClient({ novel, startPage }: NovelReadingClientProps
             />
           </div>
         )}
-
-        {/* ── Comments Section ───────────────────────── */}
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 py-4 sm:py-6 w-full" dir={dir}>
-          <Comments novelId={novel.id} />
-        </div>
       </div>
 
       {showCCP && (

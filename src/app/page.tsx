@@ -15,7 +15,7 @@ export default function HomePage() {
   const fontClass = lang === "ar" ? "font-arabic" : "font-sans";
 
   return (
-    <div className="max-w-6xl mx-auto px-4 sm:px-6">
+    <div className="max-w-6xl mx-auto px-2 sm:px-4">
 
       {/* ── Hero Banner ────────────────────────────── */}
       <section className="relative overflow-hidden mb-8 sm:mb-10 -mt-8 sm:-mt-10 pt-10 sm:pt-20 pb-14 sm:pb-20">
@@ -100,7 +100,7 @@ export default function HomePage() {
       {/* ── Novel Grid ────────────────────────────────── */}
       {novels.length > 0 ? (
         <div
-          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8 pb-10"
+          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-5 pb-10"
           dir={dir}
         >
           {novels.map((novel, i) => (
