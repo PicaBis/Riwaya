@@ -10,6 +10,7 @@ import { ReadingStats } from "@/components/ReadingStats";
 import { Reveal } from "@/components/Reveal";
 import { CountUp } from "@/components/CountUp";
 import { FeaturedNovel } from "@/components/FeaturedNovel";
+import { MysteryCard } from "@/components/MysteryCard";
 import { useApp } from "@/context/AppContext";
 import { t } from "@/lib/i18n";
 
@@ -69,7 +70,7 @@ export default function HomePage() {
           <div className="flex flex-wrap items-center justify-center gap-3 mb-6 sm:mb-7" dir={dir}>
             <a
               href="#novels"
-              className={`group inline-flex items-center gap-2 px-6 py-3 rounded-2xl bg-gradient-to-l from-gold-600 to-gold-500 text-white text-sm sm:text-base font-medium shadow-lg shadow-gold-500/20 hover:shadow-gold-500/40 hover:-translate-y-0.5 active:scale-95 transition-all duration-200 ${fontClass}`}
+              className={`group btn-sheen cta-glow inline-flex items-center gap-2 px-6 py-3 rounded-2xl bg-gradient-to-l from-gold-600 to-gold-500 text-white text-sm sm:text-base font-medium hover:-translate-y-0.5 active:scale-95 transition-all duration-200 ${fontClass}`}
             >
               <BookOpen className="w-4 h-4 sm:w-5 sm:h-5" />
               {t("cta.startReading", lang)}
@@ -162,7 +163,7 @@ export default function HomePage() {
               className="animate-fade-up"
               style={{ animationDelay: `${i * 100}ms`, animationFillMode: "both" }}
             >
-              <NovelCard novel={novel} index={i} />
+              {novel.mystery ? <MysteryCard /> : <NovelCard novel={novel} index={i} />}
             </div>
           ))}
         </div>

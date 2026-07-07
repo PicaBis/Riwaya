@@ -3,7 +3,7 @@ import { getNovelById, novels } from "@/data/novels";
 import { NovelReadingClient } from "./NovelReadingClient";
 
 export function generateStaticParams() {
-  return novels.map((n) => ({ id: n.id }));
+  return novels.filter((n) => !n.mystery).map((n) => ({ id: n.id }));
 }
 
 export function generateMetadata({ params }: { params: { id: string } }) {
@@ -23,7 +23,7 @@ export default function NovelPage({
   searchParams: { page?: string };
 }) {
   const novel = getNovelById(params.id);
-  if (!novel) notFound();
+  if (!novel || novel.mystery) notFound();
 
   const startPage = searchParams.page ? parseInt(searchParams.page, 10) || 1 : undefined;
 

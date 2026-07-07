@@ -18,6 +18,8 @@ export interface Novel {
   chapters?: NovelChapter[];
   lastUpdated?: string;
   status?: "published" | "coming-soon";
+  /** Anonymous teaser card — hidden title/details, "revealed in the future". */
+  mystery?: boolean;
 }
 
 export const novels: Novel[] = [
@@ -57,6 +59,32 @@ export const novels: Novel[] = [
     freeUntilPage: 0,
     status: "coming-soon",
     lastUpdated: "2025-07-02",
+  },
+  {
+    id: "mystery-1",
+    title: "؟؟؟",
+    subtitle: "قريباً",
+    description: "عملٌ جديد قيد الكتابة… ستُكشف تفاصيله في وقتٍ قادم.",
+    author: "Medjahed Abdelhadi — Pica",
+    genre: "غير معلوم",
+    year: 2026,
+    language: "ar",
+    freeUntilPage: 0,
+    status: "coming-soon",
+    mystery: true,
+  },
+  {
+    id: "mystery-2",
+    title: "؟؟؟",
+    subtitle: "قريباً",
+    description: "عملٌ جديد قيد الكتابة… ستُكشف تفاصيله في وقتٍ قادم.",
+    author: "Medjahed Abdelhadi — Pica",
+    genre: "غير معلوم",
+    year: 2026,
+    language: "ar",
+    freeUntilPage: 0,
+    status: "coming-soon",
+    mystery: true,
   },
 ];
 

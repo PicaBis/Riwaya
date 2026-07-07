@@ -12,7 +12,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { url: BASE + "/about", lastModified: now, changeFrequency: "monthly", priority: 0.6 },
   ];
 
-  const novelPages: MetadataRoute.Sitemap = novels.map((n) => ({
+  const novelPages: MetadataRoute.Sitemap = novels.filter((n) => !n.mystery).map((n) => ({
     url: `${BASE}/novel/${n.id}`,
     lastModified: n.lastUpdated ? new Date(n.lastUpdated) : now,
     changeFrequency: "monthly",

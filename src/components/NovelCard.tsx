@@ -161,7 +161,7 @@ export function NovelCard({ novel, index = 0 }: NovelCardProps) {
           {/* Title */}
           <Link href={`/novel/${novel.id}`}>
             <h2 className="font-arabic text-lg font-bold text-gray-900 dark:text-gray-100 leading-snug hover:text-gold-500 dark:hover:text-gold-400 transition-colors line-clamp-2">
-              {novel.title}
+              <span className="title-underline">{novel.title}</span>
             </h2>
           </Link>
 

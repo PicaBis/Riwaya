@@ -269,6 +269,46 @@ body {
   transform: translateY(-3px);
 }
 
+/* ─── Breathing glow for primary CTAs ───────────────────── */
+@keyframes ctaGlow {
+  0%, 100% { box-shadow: 0 8px 22px -8px rgba(184, 134, 11, 0.45); }
+  50%      { box-shadow: 0 12px 30px -6px rgba(212, 175, 55, 0.6); }
+}
+.cta-glow { animation: ctaGlow 3.6s ease-in-out infinite; }
+
+/* Sweeping sheen that crosses a button on hover */
+.btn-sheen { position: relative; overflow: hidden; }
+.btn-sheen::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -75%;
+  width: 50%;
+  height: 100%;
+  background: linear-gradient(120deg, transparent, rgba(255, 255, 255, 0.35), transparent);
+  transform: skewX(-20deg);
+  transition: left 0.6s ease;
+  pointer-events: none;
+}
+.btn-sheen:hover::after { left: 130%; }
+
+/* Animated underline reveal for card titles */
+.title-underline {
+  background-image: linear-gradient(currentColor, currentColor);
+  background-position: 0% 100%;
+  background-repeat: no-repeat;
+  background-size: 0% 1.5px;
+  transition: background-size 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.group:hover .title-underline { background-size: 100% 1.5px; }
+
+/* Gentle continuous float for coming-soon / mystery accents */
+@keyframes softBob {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-4px); }
+}
+.animate-soft-bob { animation: softBob 3.5s ease-in-out infinite; }
+
 /* Gold shimmer text */
 .text-shimmer {
   background: linear-gradient(
@@ -573,6 +613,22 @@ main > * { animation: pageEnter 0.35s ease-out; }
 /* Lazy load images */
 img {
   loading: lazy;
+}
+
+/* ─── Screenshot Guard — site-wide clipboard protection ─── */
+
+/* Black flash overlay during a genuine screenshot key attempt (PrintScreen /
+   snipping shortcut). NOTE: intentionally NOT triggered by window blur anymore,
+   so harmless browser popups / tab switches never black out the site. */
+#screenshot-guard-overlay.guard-visible {
+  display: flex !important;
+  opacity: 0.97 !important;
+}
+
+/* Body blur while snipping tool is active */
+body.guard-blur > * {
+  filter: blur(8px);
+  transition: filter 0.3s ease;
 }
 
 /* ─── Light-theme card border enhancement ─── */

@@ -82,7 +82,7 @@ export function FeaturedNovel() {
             <div>
               <Link
                 href={`/novel/${novel.id}`}
-                className={`group/btn inline-flex items-center gap-2 px-6 py-3 rounded-2xl bg-gradient-to-l from-gold-600 to-gold-500 text-white text-sm sm:text-base font-medium shadow-lg shadow-gold-500/20 hover:shadow-gold-500/40 hover:-translate-y-0.5 active:scale-95 transition-all duration-200 ${fontClass}`}
+                className={`group/btn btn-sheen cta-glow inline-flex items-center gap-2 px-6 py-3 rounded-2xl bg-gradient-to-l from-gold-600 to-gold-500 text-white text-sm sm:text-base font-medium hover:-translate-y-0.5 active:scale-95 transition-all duration-200 ${fontClass}`}
               >
                 <BookOpen className="w-4 h-4 sm:w-5 sm:h-5" />
                 {t("card.readNow", lang)}
