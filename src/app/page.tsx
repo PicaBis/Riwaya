@@ -1,11 +1,13 @@
 "use client";
 
-import { Sparkles, BookOpen, Feather, ChevronDown } from "lucide-react";
+import Link from "next/link";
+import { Sparkles, BookOpen, Feather, ChevronDown, ArrowLeft, Library, ShieldCheck, Smartphone, RefreshCw } from "lucide-react";
 import { novels } from "@/data/novels";
 import { NovelCard } from "@/components/NovelCard";
 import { ContinueReading } from "@/components/ContinueReading";
 import { PopularSection } from "@/components/PopularSection";
 import { ReadingStats } from "@/components/ReadingStats";
+import { Reveal } from "@/components/Reveal";
 import { useApp } from "@/context/AppContext";
 import { t } from "@/lib/i18n";
 
@@ -60,6 +62,26 @@ export default function HomePage() {
             </div>
           </div>
           <p className={`text-sm sm:text-base text-gray-500 dark:text-gray-400 leading-relaxed max-w-lg text-center mb-5 sm:mb-6 ${fontClass}`}>{t("hero.desc", lang)}</p>
+
+          {/* ── Primary CTAs ─────────────────────────────── */}
+          <div className="flex flex-wrap items-center justify-center gap-3 mb-6 sm:mb-7" dir={dir}>
+            <a
+              href="#novels"
+              className={`group inline-flex items-center gap-2 px-6 py-3 rounded-2xl bg-gradient-to-l from-gold-600 to-gold-500 text-white text-sm sm:text-base font-medium shadow-lg shadow-gold-500/20 hover:shadow-gold-500/40 hover:-translate-y-0.5 active:scale-95 transition-all duration-200 ${fontClass}`}
+            >
+              <BookOpen className="w-4 h-4 sm:w-5 sm:h-5" />
+              {t("cta.startReading", lang)}
+              <ArrowLeft className={`w-4 h-4 transition-transform group-hover:-translate-x-1 ${dir === "ltr" ? "rotate-180 group-hover:translate-x-1" : ""}`} />
+            </a>
+            <Link
+              href="/library"
+              className={`inline-flex items-center gap-2 px-6 py-3 rounded-2xl bg-white/70 dark:bg-white/5 backdrop-blur-sm border border-parchment-300 dark:border-white/10 text-gray-700 dark:text-gray-200 text-sm sm:text-base font-medium hover:border-gold-500/40 hover:text-gold-600 dark:hover:text-gold-400 hover:-translate-y-0.5 active:scale-95 transition-all duration-200 ${fontClass}`}
+            >
+              <Library className="w-4 h-4 sm:w-5 sm:h-5" />
+              {t("cta.browseLibrary", lang)}
+            </Link>
+          </div>
+
           <div className="flex flex-wrap items-center justify-center gap-3" dir={dir}>
             <div className="flex items-center gap-2.5 px-4 py-2.5 rounded-xl bg-white dark:bg-white/5 border border-parchment-200 dark:border-white/10 shadow-sm hover-lift"><BookOpen className="w-4 h-4 text-gold-500" /><div><p className="text-base font-bold text-gray-900 dark:text-gray-100 leading-none">{novels.length}</p><p className={`text-xs text-gray-400 mt-0.5 ${fontClass}`}>{novels.length === 1 ? t("hero.novels", lang) : t("hero.novelsPlural", lang)}</p></div></div>
             <div className="flex items-center gap-2.5 px-4 py-2.5 rounded-xl bg-white dark:bg-white/5 border border-parchment-200 dark:border-white/10 shadow-sm hover-lift"><Feather className="w-4 h-4 text-gold-500" /><div><p className="text-base font-bold text-gray-900 dark:text-gray-100 leading-none">{t("author.penName", lang)}</p><p className={`text-xs text-gray-400 mt-0.5 ${fontClass}`}>{t("hero.author", lang)}</p></div></div>
@@ -78,16 +100,41 @@ export default function HomePage() {
         </a>
       </section>
 
+      {/* ── Features / trust strip ─────────────────────── */}
+      <Reveal className="mb-10 sm:mb-12">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3" dir={dir}>
+          {[
+            { icon: ShieldCheck, title: t("feature.secure.title", lang), desc: t("feature.secure.desc", lang) },
+            { icon: Smartphone, title: t("feature.devices.title", lang), desc: t("feature.devices.desc", lang) },
+            { icon: RefreshCw, title: t("feature.updates.title", lang), desc: t("feature.updates.desc", lang) },
+          ].map(({ icon: Icon, title, desc }) => (
+            <div
+              key={title}
+              className="group flex items-center gap-3 p-4 rounded-2xl bg-white/70 dark:bg-onyx-800/70 backdrop-blur-sm border border-parchment-200 dark:border-white/8 hover:border-gold-500/30 transition-all duration-200 hover-lift"
+            >
+              <div className="flex items-center justify-center w-11 h-11 rounded-xl bg-gold-500/10 text-gold-500 flex-shrink-0 group-hover:scale-110 group-hover:bg-gold-500/15 transition-all duration-200">
+                <Icon className="w-5 h-5" />
+              </div>
+              <div className="min-w-0">
+                <p className={`text-sm font-bold text-gray-900 dark:text-gray-100 ${fontClass}`}>{title}</p>
+                <p className={`text-xs text-gray-400 dark:text-gray-500 mt-0.5 ${fontClass}`}>{desc}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </Reveal>
+
       <span id="novels" className="block -mt-4 pt-4" />
 
-      <ContinueReading />
-      <ReadingStats />
-      <PopularSection />
+      <Reveal><ContinueReading /></Reveal>
+      <Reveal><ReadingStats /></Reveal>
+      <Reveal><PopularSection /></Reveal>
 
       {/* ── Section header ────────────────────────────── */}
+      <Reveal>
       <div className="flex items-center gap-3 mb-6" dir={dir}>
         <div className="flex items-center gap-2">
-          <div className="w-1 h-6 bg-gold-500 rounded-full" />
+          <div className="w-1 h-6 bg-gradient-to-b from-gold-400 to-gold-600 rounded-full" />
           <h2 className={`text-xl sm:text-2xl font-bold text-gray-900 dark:text-gray-100 ${fontClass}`}>
             {t("section.available", lang)}
           </h2>
@@ -95,7 +142,9 @@ export default function HomePage() {
         <span className={`text-sm text-gray-400 bg-parchment-100 dark:bg-white/5 px-2.5 py-0.5 rounded-full border border-parchment-200 dark:border-white/8 ${fontClass}`}>
           {novels.length} {novels.length === 1 ? t("hero.novels", lang) : t("hero.novelsPlural", lang)}
         </span>
+        <div className="flex-1 h-px bg-gradient-to-l from-transparent via-parchment-300 dark:via-white/10 to-transparent ms-2" />
       </div>
+      </Reveal>
 
       {/* ── Novel Grid ────────────────────────────────── */}
       {novels.length > 0 ? (
