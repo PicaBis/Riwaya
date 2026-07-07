@@ -45,16 +45,37 @@ body {
   overscroll-behavior: none;
 }
 
+/* ─── Typography polish ─────────────────────────────────── */
+h1, h2, h3 {
+  text-wrap: balance;      /* avoid ugly single-word last lines */
+}
+p {
+  text-wrap: pretty;       /* fewer orphans in body copy */
+}
+/* Headings get a hair of negative tracking for a tighter, editorial look */
+h1, h2 {
+  letter-spacing: -0.01em;
+}
+/* Smooth anchor jumps clear the sticky header */
+:target {
+  scroll-margin-top: 5rem;
+}
+
 /* ─── Page transitions ──────────────────────────────────── */
 main {
   animation: fadeIn 0.4s ease-out;
 }
 
 /* ─── Scrollbar (webkit) ───────────────────────────────── */
-::-webkit-scrollbar { width: 6px; height: 6px; }
-::--webkit-scrollbar-track { background: transparent; }
-::--webkit-scrollbar-thumb { background: var(--border); border-radius: 999px; }
-::--webkit-scrollbar-thumb:hover { background: var(--accent); }
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 999px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+::-webkit-scrollbar-thumb:hover { background: var(--accent); background-clip: padding-box; }
 
 /* Firefox scrollbar */
 * { scrollbar-width: thin; scrollbar-color: var(--border) transparent; }
@@ -611,4 +632,23 @@ body input, body textarea, body [contenteditable="true"] {
 /* Optimize font loading */
 @font-face {
   font-display: swap;
+}
+
+/* ─── Smooth theme switch (View Transitions API) ─────────── */
+/* The new theme is revealed with a soft cross-fade expanding from the
+   toggle. Browsers without the API just flip instantly (graceful). */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+::view-transition-new(root) {
+  animation: themeReveal 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+@keyframes themeReveal {
+  from { clip-path: circle(0% at var(--theme-x, 50%) var(--theme-y, 0%)); }
+  to   { clip-path: circle(150% at var(--theme-x, 50%) var(--theme-y, 0%)); }
+}
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-new(root) { animation: none; }
 }

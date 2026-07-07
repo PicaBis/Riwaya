@@ -122,7 +122,7 @@ export function NovelCard({ novel, index = 0 }: NovelCardProps) {
                 pdfUrl={`/api/novel-asset/${novel.pdfFile}`}
                 novelId={novel.id}
                 title={novel.title}
-                className="w-full aspect-[3/4] object-cover"
+                className="w-full aspect-[3/4] object-cover transition-transform duration-[600ms] ease-out group-hover:scale-[1.05]"
               />
               {/* Synchronized diagonal shine (same as coming-soon card) */}
               <div className="novel-shine" />

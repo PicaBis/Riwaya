@@ -31,7 +31,7 @@ interface Note {
 }
 
 const SOUND_PRESETS: Record<SoundType, Note[]> = {
-  click: [{ freq: 660, dur: 0.05, type: "triangle", gain: 0.05 }],
+  click: [{ freq: 620, dur: 0.045, type: "triangle", gain: 0.035 }],
   open: [
     { freq: 523, dur: 0.08, type: "sine", gain: 0.05 },
     { freq: 784, dur: 0.1, type: "sine", gain: 0.04 },
@@ -40,7 +40,7 @@ const SOUND_PRESETS: Record<SoundType, Note[]> = {
     { freq: 440, dur: 0.08, type: "sine", gain: 0.05 },
     { freq: 320, dur: 0.12, type: "sine", gain: 0.04 },
   ],
-  toggle: [{ freq: 720, dur: 0.05, type: "square", gain: 0.025 }],
+  toggle: [{ freq: 700, dur: 0.045, type: "triangle", gain: 0.02 }],
   login: [
     { freq: 523, dur: 0.1, type: "sine", gain: 0.06 },
     { freq: 784, dur: 0.16, type: "sine", gain: 0.05 },
@@ -54,7 +54,7 @@ const SOUND_PRESETS: Record<SoundType, Note[]> = {
     { freq: 880, dur: 0.18, type: "sine", gain: 0.05 },
   ],
   error: [{ freq: 196, dur: 0.2, type: "sawtooth", gain: 0.035 }],
-  navigate: [{ freq: 600, dur: 0.04, type: "triangle", gain: 0.03 }],
+  navigate: [{ freq: 560, dur: 0.035, type: "sine", gain: 0.022 }],
 };
 
 /* ─── Types ─────────────────────────────────────────────── */
@@ -89,7 +89,7 @@ interface AppContextValue {
   lang: Lang;
   setLang: (l: Lang) => void;
   isDark: boolean;
-  toggleTheme: () => void;
+  toggleTheme: (e?: React.MouseEvent) => void;
   guest: GuestUser | null;
   loginAsGuest: (name: string) => void;
   logout: () => void;
@@ -178,9 +178,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [toast, setToast] = useState<{ id: number; message: string; type: string } | null>(null);
   const toastTimer = useRef<number | null>(null);
 
-  /* ── UI sounds ──────────────────────────────────────── */
-  const [soundEnabled, setSoundEnabled] = useState(true);
-  const soundEnabledRef = useRef(true);
+  /* ── UI sounds (opt-in: off until the user turns them on) ── */
+  const [soundEnabled, setSoundEnabled] = useState(false);
+  const soundEnabledRef = useRef(false);
   const audioCtxRef = useRef<AudioContext | null>(null);
 
   /* Hydrate from localStorage on client */
@@ -221,10 +221,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         sessionStorage.getItem("riwayati_dev_token") === "1" ||
           sessionStorage.getItem("riwayati_devcode") != null
       );
+      /* Sounds are opt-in: only enable if the user explicitly turned them on. */
       const savedSound = localStorage.getItem("riwayati_sound");
-      if (savedSound === "0") {
-        setSoundEnabled(false);
-        soundEnabledRef.current = false;
+      if (savedSound === "1") {
+        setSoundEnabled(true);
+        soundEnabledRef.current = true;
       }
     } catch {}
 
@@ -278,7 +279,28 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => { guestRef.current = guest; }, [guest]);
 
-  const toggleTheme = useCallback(() => setIsDark((d) => !d), []);
+  const toggleTheme = useCallback((e?: React.MouseEvent) => {
+    // Anchor the reveal at the click point (falls back to top-center).
+    try {
+      if (typeof document !== "undefined" && e) {
+        const x = (e.clientX / window.innerWidth) * 100;
+        const y = (e.clientY / window.innerHeight) * 100;
+        document.documentElement.style.setProperty("--theme-x", `${x}%`);
+        document.documentElement.style.setProperty("--theme-y", `${y}%`);
+      }
+    } catch {}
+    const doc = document as Document & {
+      startViewTransition?: (cb: () => void) => void;
+    };
+    const prefersReduced =
+      typeof window !== "undefined" &&
+      window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+    if (doc.startViewTransition && !prefersReduced) {
+      doc.startViewTransition(() => setIsDark((d) => !d));
+    } else {
+      setIsDark((d) => !d);
+    }
+  }, []);
 
   const loginAsGuest = useCallback((name: string) => {
     const clean = name.trim();

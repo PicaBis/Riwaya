@@ -115,13 +115,13 @@ export default function HomePage() {
         </div>
       ) : (
         <div className="flex flex-col items-center justify-center py-24 text-gray-400">
-          <BookOpen className="w-16 h-16 mb-4 opacity-30" />
-          <p className={`text-lg ${fontClass}`}>{t("reader.empty", lang)}</p>
-          <p className={`text-sm mt-1 text-gray-300 dark:text-gray-600 ${fontClass}`}>
-            {t("reader.emptyHint", lang)}{" "}
-            <code className="text-xs bg-gray-100 dark:bg-white/10 px-1.5 py-0.5 rounded">
-              src/data/novels.ts
-            </code>
+          <div className="relative mb-4">
+            <div className="absolute inset-0 bg-gold-500/20 blur-2xl rounded-full" />
+            <BookOpen className="relative w-16 h-16 opacity-40 text-gold-500" />
+          </div>
+          <p className={`text-lg text-gray-500 dark:text-gray-400 ${fontClass}`}>{t("reader.empty", lang)}</p>
+          <p className={`text-sm mt-1 text-gray-400 dark:text-gray-600 ${fontClass}`}>
+            {t("reader.emptyHint", lang)}
           </p>
         </div>
       )}
