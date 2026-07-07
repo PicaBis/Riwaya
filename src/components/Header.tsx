@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { Moon, Sun, User, LogOut, Menu, X, Shield, Coins, LayoutDashboard } from "lucide-react";
+import { Moon, Sun, User, LogOut, Menu, X, Shield, Coins, LayoutDashboard, Volume2, VolumeX } from "lucide-react";
 import { useApp } from "@/context/AppContext";
 import { GuestLoginModal } from "./GuestLoginModal";
 import { AboutModal } from "./AboutModal";
@@ -17,7 +17,7 @@ import { t } from "@/lib/i18n";
 import { AUTHOR } from "@/lib/constants";
 
 export function Header() {
-  const { isDark, toggleTheme, guest, logout, lang, isAdmin } = useApp();
+  const { isDark, toggleTheme, guest, logout, lang, isAdmin, soundEnabled, toggleSound } = useApp();
   const [showLogin, setShowLogin] = useState(false);
   const [showAbout, setShowAbout] = useState(false);
   const [showDevCode, setShowDevCode] = useState(false);
@@ -56,18 +56,21 @@ export function Header() {
             </Link>
             <button
               onClick={() => setShowAbout(true)}
+              data-sound="open"
               className={`px-2 py-1 rounded-lg text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-parchment-100 dark:hover:bg-white/8 transition-colors ${lang === "ar" ? "font-arabic" : "font-sans"}`}
             >
               {t("nav.about", lang)}
             </button>
             <button
               onClick={() => setShowContact(true)}
+              data-sound="open"
               className={`px-2 py-1 rounded-lg text-sm text-gray-600 dark:text-gray-400 hover:text-gold-500 dark:hover:text-gold-400 hover:bg-parchment-100 dark:hover:bg-white/8 transition-colors ${lang === "ar" ? "font-arabic" : "font-sans"}`}
             >
               {t("contact.title", lang)}
             </button>
             <button
               onClick={() => setShowSubs(true)}
+              data-sound="open"
               className={`flex items-center gap-1 px-2 py-1 rounded-lg text-sm text-gray-600 dark:text-gray-400 hover:text-gold-500 dark:hover:text-gold-400 hover:bg-parchment-100 dark:hover:bg-white/8 transition-colors ${lang === "ar" ? "font-arabic" : "font-sans"}`}
             >
               <Coins className="w-3.5 h-3.5" />
@@ -75,6 +78,7 @@ export function Header() {
             </button>
             <button
               onClick={() => setShowDevCode(true)}
+              data-sound="open"
               className={`flex items-center gap-1 px-2 py-1 rounded-lg text-sm text-gray-400 dark:text-gray-500 hover:text-rose-500 dark:hover:text-rose-400 hover:bg-parchment-100 dark:hover:bg-white/8 transition-colors ${lang === "ar" ? "font-arabic" : "font-sans"}`}
               title={t("nav.devShield", lang)}
             >
@@ -95,11 +99,20 @@ export function Header() {
           {/* ── Desktop Actions ────────────────────────── */}
           <div className="hidden sm:flex items-center gap-2">
             <LanguageSwitcher />
-            {/* Theme toggle */}
-            <button
-              onClick={toggleTheme}
-              title={isDark ? t("theme.toDay", lang) : t("theme.toNight", lang)}
-              className="relative w-9 h-9 flex items-center justify-center rounded-lg text-gray-500 dark:text-gray-400 hover:bg-parchment-200 dark:hover:bg-white/10 transition-all duration-200"
+              <button
+                onClick={toggleSound}
+                title={soundEnabled ? t("sound.on", lang) : t("sound.off", lang)}
+                data-sound={soundEnabled ? "toggle" : undefined}
+                className="relative w-9 h-9 flex items-center justify-center rounded-lg text-gray-500 dark:text-gray-400 hover:bg-parchment-200 dark:hover:bg-white/10 transition-all duration-200"
+              >
+                {soundEnabled ? <Volume2 className="w-5 h-5" /> : <VolumeX className="w-5 h-5" />}
+              </button>
+
+              {/* Theme toggle */}
+              <button
+                onClick={toggleTheme}
+                title={isDark ? t("theme.toDay", lang) : t("theme.toNight", lang)}
+                className="relative w-9 h-9 flex items-center justify-center rounded-lg text-gray-500 dark:text-gray-400 hover:bg-parchment-200 dark:hover:bg-white/10 transition-all duration-200"
             >
               <Sun className={`w-5 h-5 absolute transition-all duration-300 ${isDark ? "opacity-100 rotate-0" : "opacity-0 rotate-90"}`} />
               <Moon className={`w-5 h-5 absolute transition-all duration-300 ${isDark ? "opacity-0 -rotate-90" : "opacity-100 rotate-0"}`} />
@@ -117,6 +130,7 @@ export function Header() {
                 <button
                   onClick={logout}
                   title={t("nav.logout", lang)}
+                  data-sound="logout"
                   className="w-9 h-9 flex items-center justify-center rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors"
                 >
                   <LogOut className="w-4 h-4" />
@@ -124,8 +138,9 @@ export function Header() {
               </div>
             ) : (
               <button
-                onClick={() => setShowLogin(true)}
-                className={`flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-gold-500 hover:bg-gold-600 active:scale-95 text-white text-sm font-medium transition-all duration-150 shadow-sm ${lang === "ar" ? "font-arabic" : "font-sans"}`}
+              onClick={() => setShowLogin(true)}
+              data-sound="login"
+              className={`flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-gold-500 hover:bg-gold-600 active:scale-95 text-white text-sm font-medium transition-all duration-150 shadow-sm ${lang === "ar" ? "font-arabic" : "font-sans"}`}
               >
                 <User className="w-4 h-4" />
                 <span>{t("nav.login", lang)}</span>
@@ -145,7 +160,16 @@ export function Header() {
               <Moon className={`w-5 h-5 absolute transition-all duration-300 ${isDark ? "opacity-0 -rotate-90" : "opacity-100 rotate-0"}`} />
             </button>
             <button
+              onClick={toggleSound}
+              title={soundEnabled ? t("sound.on", lang) : t("sound.off", lang)}
+              data-sound={soundEnabled ? "toggle" : undefined}
+              className="relative w-9 h-9 flex items-center justify-center rounded-lg text-gray-500 dark:text-gray-400 hover:bg-parchment-200 dark:hover:bg-white/10 transition-all duration-200"
+            >
+              {soundEnabled ? <Volume2 className="w-5 h-5" /> : <VolumeX className="w-5 h-5" />}
+            </button>
+            <button
               onClick={() => setMobileMenuOpen(prev => !prev)}
+              data-sound="open"
               className="w-9 h-9 flex items-center justify-center rounded-lg text-gray-600 dark:text-gray-400 hover:bg-parchment-200 dark:hover:bg-white/10 transition-colors"
               aria-label={t("nav.menu", lang)}
             >
@@ -246,16 +270,18 @@ export function Header() {
                       <span className="text-sm text-gold-600 dark:text-gold-400 font-medium">{guest.name}</span>
                     </div>
                     <button
-                      onClick={() => { logout(); setMobileMenuOpen(false); }}
-                      className="text-xs text-gray-400 hover:text-red-500 transition-colors"
+                  onClick={() => { logout(); setMobileMenuOpen(false); }}
+                  data-sound="logout"
+                  className="text-xs text-gray-400 hover:text-red-500 transition-colors"
                     >
                       {t("nav.logout", lang)}
                     </button>
                   </div>
                 ) : (
-                  <button
-                    onClick={() => { setShowLogin(true); setMobileMenuOpen(false); }}
-                    className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-gold-500 hover:bg-gold-600 text-white text-sm font-medium transition-all duration-150 active:scale-95"
+              <button
+                onClick={() => { setShowLogin(true); setMobileMenuOpen(false); }}
+                data-sound="login"
+                className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-gold-500 hover:bg-gold-600 text-white text-sm font-medium transition-all duration-150 active:scale-95"
                   >
                     <User className="w-4 h-4" />
                     {t("nav.login", lang)}

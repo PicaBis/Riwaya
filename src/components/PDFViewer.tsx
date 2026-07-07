@@ -573,7 +573,7 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, 
 
         {/* Center: prev + page counter + next */}
         <div className="flex items-center gap-2 sm:gap-3">
-          <ToolBtn onClick={goToPrev} disabled={isLocked || currentPage <= 1} title={t("pdf.prevPage", lang)} className="bg-parchment-50 dark:bg-white/5 shadow-sm">
+          <ToolBtn onClick={goToPrev} disabled={isLocked || currentPage <= 1} title={t("pdf.prevPage", lang)} sound="navigate" className="bg-parchment-50 dark:bg-white/5 shadow-sm">
             <ChevronLeft className="w-5 h-5 sm:w-6 sm:h-6" />
           </ToolBtn>
           <div className="flex flex-col items-center">
@@ -586,7 +586,7 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, 
               </span>
             </div>
           </div>
-          <ToolBtn onClick={goToNext} disabled={isLocked || currentPage >= totalPages || totalPages === 0} title={t("pdf.nextPage", lang)} className="bg-parchment-50 dark:bg-white/5 shadow-sm">
+          <ToolBtn onClick={goToNext} disabled={isLocked || currentPage >= totalPages || totalPages === 0} title={t("pdf.nextPage", lang)} sound="navigate" className="bg-parchment-50 dark:bg-white/5 shadow-sm">
             <ChevronRight className="w-5 h-5 sm:w-6 sm:h-6" />
           </ToolBtn>
         </div>
@@ -748,16 +748,22 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, 
       {/* ── Paywall overlay (fixed, above everything, zoom-independent) ── */}
       {isLocked && (
         <div className="absolute inset-0 z-50 flex items-center justify-center bg-parchment-50/95 dark:bg-onyx-950/97 backdrop-blur-md p-2 sm:p-4">
-          <Paywall onUnlock={() => unlock()} price={500} title={title} preview={preview} />
+          <Paywall
+            onUnlock={() => unlock()}
+            onBackToFree={() => setCurrentPage(Math.max(1, freeUntilPage))}
+            price={500}
+            title={title}
+            preview={preview}
+          />
         </div>
       )}
     </div>
   );
 }
 
-function ToolBtn({ children, onClick, disabled, title, className }: { children: React.ReactNode; onClick?: () => void; disabled?: boolean; title?: string; className?: string }) {
+function ToolBtn({ children, onClick, disabled, title, className, sound }: { children: React.ReactNode; onClick?: () => void; disabled?: boolean; title?: string; className?: string; sound?: string }) {
   return (
-    <button onClick={onClick} disabled={disabled} title={title}
+    <button onClick={onClick} disabled={disabled} title={title} data-sound={sound}
       className={clsx("w-7 h-7 sm:w-8 sm:h-8 flex items-center justify-center rounded-lg text-gray-500 dark:text-gray-400 hover:bg-parchment-200 dark:hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed active:scale-90 transition-all duration-150", className)}>
       {children}
     </button>

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Lock, Wallet, Eye, EyeOff, CheckCircle2, AlertCircle, Copy, Mail, ShieldCheck, QrCode, RefreshCw } from "lucide-react";
+import { Lock, Wallet, Eye, EyeOff, CheckCircle2, AlertCircle, Copy, Mail, ShieldCheck, QrCode, RefreshCw, ArrowLeft } from "lucide-react";
 import { verifyDevCode } from "@/lib/auth";
 import { getUserKey } from "@/lib/device";
 import { useApp } from "@/context/AppContext";
@@ -13,14 +13,15 @@ const RDOTPAY_ID = "1042494411";
 
 interface PaywallProps {
   onUnlock: () => void;
+  onBackToFree?: () => void;
   price?: number;
   ripNumber?: string;
   title?: string;
   preview?: string;
 }
 
-export function Paywall({ onUnlock, price = 500, ripNumber = BANK.ripNumber, title, preview }: PaywallProps) {
-  const { lang, unlock, setDevUnlocked } = useApp();
+export function Paywall({ onUnlock, onBackToFree, price = 500, ripNumber = BANK.ripNumber, title, preview }: PaywallProps) {
+  const { lang, unlock, setDevUnlocked, playSound } = useApp();
   const dir = lang === "ar" ? "rtl" : "ltr";
   const fontClass = lang === "ar" ? "font-arabic" : "font-sans";
   const [code, setCode] = useState("");
@@ -50,6 +51,7 @@ export function Paywall({ onUnlock, price = 500, ripNumber = BANK.ripNumber, tit
         }
       } catch {}
       setUnlocking(true);
+      playSound("success");
       // Flip the global unlock state AFTER the animation so the "Content
       // Unlocked" screen is visible and locks disappear without a reload.
       setTimeout(() => {
@@ -72,12 +74,14 @@ export function Paywall({ onUnlock, price = 500, ripNumber = BANK.ripNumber, tit
       const data = await res.json().catch(() => ({}));
       if (res.ok && data.ok) {
         setUnlocking(true);
+        playSound("success");
         setTimeout(() => {
           unlock();
           onUnlock();
         }, 1000);
       } else {
         setError(data.error || t("paywall.wrongCode", lang));
+        playSound("error");
       }
     } catch {
       setError(t("paywall.verifyError", lang));
@@ -99,7 +103,7 @@ export function Paywall({ onUnlock, price = 500, ripNumber = BANK.ripNumber, tit
   /* ── Unlock complete animation ────────────────────── */
   if (unlocking) {
     return (
-      <div className="w-full max-w-md flex flex-col items-center justify-center gap-4 p-10 rounded-[2.5rem] bg-white/95 dark:bg-onyx-900/95 border border-gold-500/40 shadow-[0_20px_60px_rgba(212,175,55,0.3)] animate-in zoom-in-50 fade-in duration-700">
+      <div className="w-full max-w-lg sm:max-w-xl flex flex-col items-center justify-center gap-4 p-10 rounded-[2.5rem] bg-white/95 dark:bg-onyx-900/95 border border-gold-500/40 shadow-[0_20px_60px_rgba(212,175,55,0.3)] animate-in zoom-in-50 fade-in duration-700">
         <div className="relative w-20 h-20 flex items-center justify-center">
           <div className="absolute inset-0 bg-gold-500/30 rounded-full animate-ping" />
           <div className="absolute inset-0 bg-gold-500/20 rounded-full animate-pulse" />
@@ -118,7 +122,7 @@ export function Paywall({ onUnlock, price = 500, ripNumber = BANK.ripNumber, tit
   }
 
   return (
-    <div className="w-full max-w-lg max-h-[92vh] flex flex-col rounded-[2.5rem] bg-white/95 dark:bg-onyx-900/95 border border-parchment-200 dark:border-white/10 shadow-[0_25px_60px_rgba(0,0,0,0.35)] overflow-hidden animate-in fade-in zoom-in-95 duration-500" dir={dir}>
+    <div className="w-full max-w-2xl lg:max-w-3xl max-h-[92vh] flex flex-col rounded-[2.5rem] bg-white/95 dark:bg-onyx-900/95 border border-parchment-200 dark:border-white/10 shadow-[0_25px_60px_rgba(0,0,0,0.35)] overflow-hidden animate-in fade-in zoom-in-95 duration-500" dir={dir}>
         <div className="flex-1 overflow-y-auto overscroll-contain p-5 sm:p-7 space-y-5 scrollbar-none">
           {/* ── Header ─────────────────────────────── */}
           {title && (
@@ -176,6 +180,16 @@ export function Paywall({ onUnlock, price = 500, ripNumber = BANK.ripNumber, tit
                 <Wallet className="w-5 h-5" />
                 {t("paywall.subscribe", lang)}
               </button>
+
+              {onBackToFree && (
+                <button
+                  onClick={onBackToFree}
+                  className={`w-full flex items-center justify-center gap-2 py-2.5 rounded-[1.25rem] text-sm font-medium text-gray-500 dark:text-gray-400 hover:text-gold-600 dark:hover:text-gold-400 hover:bg-parchment-100 dark:hover:bg-white/5 transition-all duration-150 ${fontClass}`}
+                >
+                  <ArrowLeft className={`w-4 h-4 ${dir === "ltr" ? "rotate-180" : ""}`} />
+                  {t("paywall.backToFree", lang)}
+                </button>
+              )}
 
               <div className="flex items-center gap-2 w-full">
                 <div className="h-px flex-1 bg-parchment-200 dark:bg-white/10" />

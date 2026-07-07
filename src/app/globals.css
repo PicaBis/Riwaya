@@ -211,7 +211,7 @@ body {
     transparent 60%
   );
   transform: translate3d(-120%, -120%, 0);
-  animation: cardShine 4.5s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+  animation: cardShine 8s cubic-bezier(0.4, 0, 0.2, 1) infinite;
   will-change: transform;
 }
 

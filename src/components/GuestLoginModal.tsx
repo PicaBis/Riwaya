@@ -87,9 +87,10 @@ export function GuestLoginModal({ onClose }: GuestLoginModalProps) {
              )}
           </div>
 
-          <button
-            type="submit"
-            className={`w-full flex items-center justify-center gap-2 py-3 px-4 bg-gold-500 hover:bg-gold-600 active:scale-95 text-white rounded-xl text-sm font-medium transition-all duration-150 shadow-sm ${fontClass}`}
+            <button
+              type="submit"
+              data-sound="login"
+              className={`w-full flex items-center justify-center gap-2 py-3 px-4 bg-gold-500 hover:bg-gold-600 active:scale-95 text-white rounded-xl text-sm font-medium transition-all duration-150 shadow-sm ${fontClass}`}
           >
             <ArrowLeft className={`w-4 h-4 ${dir === "ltr" ? "rotate-180" : ""}`} />
             {t("guest.submit", lang)}

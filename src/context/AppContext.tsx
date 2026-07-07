@@ -11,6 +11,52 @@ import React, {
 import type { Lang } from "@/lib/i18n";
 import { getUserKey } from "@/lib/device";
 
+/* ─── UI sound presets (synthesized, no asset files) ─────── */
+export type SoundType =
+  | "click"
+  | "open"
+  | "close"
+  | "toggle"
+  | "login"
+  | "logout"
+  | "success"
+  | "error"
+  | "navigate";
+
+interface Note {
+  freq: number;
+  dur: number;
+  type: OscillatorType;
+  gain: number;
+}
+
+const SOUND_PRESETS: Record<SoundType, Note[]> = {
+  click: [{ freq: 660, dur: 0.05, type: "triangle", gain: 0.05 }],
+  open: [
+    { freq: 523, dur: 0.08, type: "sine", gain: 0.05 },
+    { freq: 784, dur: 0.1, type: "sine", gain: 0.04 },
+  ],
+  close: [
+    { freq: 440, dur: 0.08, type: "sine", gain: 0.05 },
+    { freq: 320, dur: 0.12, type: "sine", gain: 0.04 },
+  ],
+  toggle: [{ freq: 720, dur: 0.05, type: "square", gain: 0.025 }],
+  login: [
+    { freq: 523, dur: 0.1, type: "sine", gain: 0.06 },
+    { freq: 784, dur: 0.16, type: "sine", gain: 0.05 },
+  ],
+  logout: [
+    { freq: 440, dur: 0.1, type: "sine", gain: 0.05 },
+    { freq: 311, dur: 0.16, type: "sine", gain: 0.04 },
+  ],
+  success: [
+    { freq: 587, dur: 0.1, type: "sine", gain: 0.06 },
+    { freq: 880, dur: 0.18, type: "sine", gain: 0.05 },
+  ],
+  error: [{ freq: 196, dur: 0.2, type: "sawtooth", gain: 0.035 }],
+  navigate: [{ freq: 600, dur: 0.04, type: "triangle", gain: 0.03 }],
+};
+
 /* ─── Types ─────────────────────────────────────────────── */
 interface GuestUser {
   name: string;
@@ -80,6 +126,12 @@ interface AppContextValue {
   setDevUnlocked: (v: boolean) => void;
   /** Lightweight toast for inline feedback (e.g. reading gate). */
   showToast: (message: string, type?: "info" | "success" | "error") => void;
+  /** Play a synthesized UI sound. */
+  playSound: (type?: SoundType) => void;
+  /** Whether UI sounds are enabled. */
+  soundEnabled: boolean;
+  /** Toggle UI sounds on/off. */
+  toggleSound: () => void;
 }
 
 /* ─── Context ────────────────────────────────────────────── */
@@ -126,6 +178,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [toast, setToast] = useState<{ id: number; message: string; type: string } | null>(null);
   const toastTimer = useRef<number | null>(null);
 
+  /* ── UI sounds ──────────────────────────────────────── */
+  const [soundEnabled, setSoundEnabled] = useState(true);
+  const soundEnabledRef = useRef(true);
+  const audioCtxRef = useRef<AudioContext | null>(null);
+
   /* Hydrate from localStorage on client */
   useEffect(() => {
     const savedLang = localStorage.getItem("riwayati_lang") as Lang | null;
@@ -164,6 +221,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         sessionStorage.getItem("riwayati_dev_token") === "1" ||
           sessionStorage.getItem("riwayati_devcode") != null
       );
+      const savedSound = localStorage.getItem("riwayati_sound");
+      if (savedSound === "0") {
+        setSoundEnabled(false);
+        soundEnabledRef.current = false;
+      }
     } catch {}
 
     setMounted(true);
@@ -276,6 +338,82 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     },
     []
   );
+
+  /* ── UI sound engine (Web Audio, synthesized) ────────── */
+  const playSound = useCallback((type: SoundType = "click") => {
+    if (!soundEnabledRef.current) return;
+    try {
+      if (typeof window === "undefined") return;
+      const AC: typeof AudioContext | undefined =
+        window.AudioContext || (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+      if (!AC) return;
+      if (!audioCtxRef.current) audioCtxRef.current = new AC();
+      const ctx = audioCtxRef.current;
+      if (ctx.state === "suspended") void ctx.resume();
+      const notes = SOUND_PRESETS[type] || SOUND_PRESETS.click;
+      let t = ctx.currentTime;
+      for (const n of notes) {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = n.type;
+        osc.frequency.setValueAtTime(n.freq, t);
+        gain.gain.setValueAtTime(0.0001, t);
+        gain.gain.linearRampToValueAtTime(n.gain, t + 0.012);
+        gain.gain.exponentialRampToValueAtTime(0.0001, t + n.dur);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(t);
+        osc.stop(t + n.dur + 0.02);
+        t += n.dur * 0.6;
+      }
+    } catch {}
+  }, []);
+
+  const toggleSound = useCallback(() => {
+    setSoundEnabled((prev) => {
+      const next = !prev;
+      soundEnabledRef.current = next;
+      try {
+        localStorage.setItem("riwayati_sound", next ? "1" : "0");
+      } catch {}
+      if (next) {
+        // Resume context on this user gesture so the toggle itself can sound.
+        try {
+          if (!audioCtxRef.current) {
+            const AC: typeof AudioContext | undefined =
+              window.AudioContext ||
+              (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+            if (AC) audioCtxRef.current = new AC();
+          }
+          void audioCtxRef.current?.resume();
+        } catch {}
+        playSound("toggle");
+      }
+      return next;
+    });
+  }, [playSound]);
+
+  /* Global click → subtle UI sounds for buttons / links / menus. */
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      const target = e.target as HTMLElement | null;
+      if (!target) return;
+      if (target.closest("input, textarea, select, [contenteditable='true']")) return;
+      const tagged = target.closest("[data-sound]") as HTMLElement | null;
+      if (tagged) {
+        const s = tagged.getAttribute("data-sound");
+        if (s && (SOUND_PRESETS as Record<string, Note[]>)[s]) {
+          playSound(s as SoundType);
+          return;
+        }
+      }
+      if (target.closest("button, a, [role='button']")) {
+        playSound("click");
+      }
+    };
+    document.addEventListener("click", handler);
+    return () => document.removeEventListener("click", handler);
+  }, [playSound]);
 
   const logout = useCallback(() => {
     setGuest(null);
@@ -435,6 +573,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         unlock,
         setDevUnlocked,
         showToast,
+        playSound,
+        soundEnabled,
+        toggleSound,
       }}
     >
       {children}
