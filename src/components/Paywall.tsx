@@ -84,11 +84,7 @@ export function Paywall({ onUnlock, price = 500, ripNumber = BANK.ripNumber, tit
   };
 
   return (
-    <div
-      className="absolute inset-0 z-30 flex items-center justify-center bg-parchment-50/95 dark:bg-onyx-950/97 backdrop-blur-md p-3 sm:p-4"
-      dir={dir}
-    >
-      <div className="w-full max-w-sm max-h-[90vh] flex flex-col rounded-[2.5rem] bg-white/95 dark:bg-onyx-900/95 border border-parchment-200 dark:border-white/10 shadow-[0_20px_50px_rgba(0,0,0,0.3)] overflow-hidden animate-in fade-in zoom-in duration-500">
+    <div className="w-full max-w-sm max-h-[95vh] flex flex-col rounded-[2.5rem] bg-white/95 dark:bg-onyx-900/95 border border-parchment-200 dark:border-white/10 shadow-[0_20px_50px_rgba(0,0,0,0.3)] overflow-hidden animate-in fade-in zoom-in duration-500" dir={dir}>
         <div className="flex-1 overflow-y-auto overscroll-contain p-6 sm:p-8 space-y-6 scrollbar-none">
           {title && (
             <div className="text-center space-y-2">
@@ -200,7 +196,7 @@ export function Paywall({ onUnlock, price = 500, ripNumber = BANK.ripNumber, tit
                           ? <><CheckCircle2 className="w-3.5 h-3.5" />{t("paywall.copied", lang)}</>
                           : <><Copy className="w-3.5 h-3.5" />{t("paywall.copy", lang)}</>}
                       </button>
-                      <span dir="ltr" className="font-mono text-sm font-bold text-gray-900 dark:text-gray-100 tracking-wider select-all">
+                      <span dir="ltr" className="font-mono text-xs sm:text-sm font-bold text-gray-900 dark:text-gray-100 tracking-wider select-all truncate max-w-[140px] sm:max-w-[200px]">
                         {ripNumber}
                       </span>
                     </div>
@@ -220,10 +216,10 @@ export function Paywall({ onUnlock, price = 500, ripNumber = BANK.ripNumber, tit
                   </p>
                   <button
                     onClick={openEmail}
-                    className="flex items-center justify-center gap-2 w-full py-2 rounded-lg bg-amber-100 dark:bg-amber-800/30 border border-amber-200 dark:border-amber-700/30 text-amber-800 dark:text-amber-300 text-sm font-sans font-medium hover:bg-amber-200 dark:hover:bg-amber-800/50 transition-colors"
+                    className="flex items-center justify-center gap-2 w-full py-2 rounded-lg bg-amber-100 dark:bg-amber-800/30 border border-amber-200 dark:border-amber-700/30 text-amber-800 dark:text-amber-300 text-xs sm:text-sm font-sans font-medium hover:bg-amber-200 dark:hover:bg-amber-800/50 transition-colors truncate px-2"
                   >
-                    <Mail className="w-4 h-4" />
-                    {AUTHOR.email}
+                    <Mail className="w-4 h-4 flex-shrink-0" />
+                    <span className="truncate">{AUTHOR.email}</span>
                   </button>
                 </div>
 
@@ -247,6 +243,5 @@ export function Paywall({ onUnlock, price = 500, ripNumber = BANK.ripNumber, tit
           )}
         </div>
       </div>
-    </div>
-  );
-}
+    );
+  }

@@ -143,13 +143,13 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, 
   }, []);
 
   const onSwipeEnd = useCallback((x: number, y: number) => {
-    if (!swipeRef.current) return;
+    if (!swipeRef.current || isLocked) return;
     const deltaX = x - swipeRef.current.x;
     const deltaY = y - swipeRef.current.y;
     const deltaTime = Date.now() - swipeRef.current.time;
 
     if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > swipeThreshold && deltaTime < swipeTimeThreshold) {
-      if (deltaX > 0) {
+      if (deltaX < 0) {
         goToNext();
       } else {
         goToPrev();
@@ -157,7 +157,7 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, 
       if (navigator.vibrate) navigator.vibrate(15);
     }
     swipeRef.current = null;
-  }, []);
+  }, [goToNext, goToPrev, isLocked]);
 
   useEffect(() => {
     const el = scrollRef.current;
@@ -309,20 +309,22 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, 
 
   /* ── Navigation ─────────────────────────────────────── */
   const goToPrev = useCallback(() => {
+    if (isLocked) return;
     setCurrentPage((p) => {
       const next = Math.max(1, p - 1);
       if (next !== p && navigator.vibrate) navigator.vibrate(10);
       return next;
     });
-  }, []);
+  }, [isLocked]);
 
   const goToNext = useCallback(() => {
+    if (isLocked) return;
     setCurrentPage((p) => {
       const next = Math.min(totalPages, p + 1);
       if (next !== p && navigator.vibrate) navigator.vibrate(10);
       return next;
     });
-  }, [totalPages]);
+  }, [totalPages, isLocked]);
 
   useEffect(() => {
     if (!chapters || chapters.length === 0) {
@@ -574,7 +576,7 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, 
 
         {/* Center: prev + page counter + next */}
         <div className="flex items-center gap-2 sm:gap-3">
-          <ToolBtn onClick={goToPrev} disabled={currentPage <= 1} title={t("pdf.prevPage", lang)} className="bg-parchment-50 dark:bg-white/5 shadow-sm">
+          <ToolBtn onClick={goToPrev} disabled={isLocked || currentPage <= 1} title={t("pdf.prevPage", lang)} className="bg-parchment-50 dark:bg-white/5 shadow-sm">
             <ChevronLeft className="w-5 h-5 sm:w-6 sm:h-6" />
           </ToolBtn>
           <div className="flex flex-col items-center">
@@ -587,7 +589,7 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, 
               </span>
             </div>
           </div>
-          <ToolBtn onClick={goToNext} disabled={currentPage >= totalPages || totalPages === 0} title={t("pdf.nextPage", lang)} className="bg-parchment-50 dark:bg-white/5 shadow-sm">
+          <ToolBtn onClick={goToNext} disabled={isLocked || currentPage >= totalPages || totalPages === 0} title={t("pdf.nextPage", lang)} className="bg-parchment-50 dark:bg-white/5 shadow-sm">
             <ChevronRight className="w-5 h-5 sm:w-6 sm:h-6" />
           </ToolBtn>
         </div>
@@ -649,6 +651,7 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, 
             </div>
           )}
           <div className="h-1.5 bg-parchment-200/50 dark:bg-white/5 cursor-pointer group relative overflow-hidden" onClick={(e) => {
+              if (isLocked) return;
               const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
               const ratio = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
               const target = Math.max(1, Math.min(totalPages, Math.round(ratio * totalPages)));
@@ -740,15 +743,17 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, 
               >
                 روايتي — rewayati.vercel.app
               </div>
-              {isLocked && (
-                <div className="absolute inset-0 flex items-center justify-center bg-parchment-50/90 dark:bg-onyx-950/95 backdrop-blur-sm z-20">
-                  <Paywall onUnlock={() => setIsUnlocked(true)} price={500} title={title} preview={preview} />
-                </div>
-              )}
             </div>
           )}
         </div>
       </div>
+
+      {/* ── Paywall overlay (fixed, above everything, zoom-independent) ── */}
+      {isLocked && (
+        <div className="absolute inset-0 z-50 flex items-center justify-center bg-parchment-50/95 dark:bg-onyx-950/97 backdrop-blur-md p-2 sm:p-4">
+          <Paywall onUnlock={() => setIsUnlocked(true)} price={500} title={title} preview={preview} />
+        </div>
+      )}
     </div>
   );
 }
