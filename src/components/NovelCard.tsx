@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import Link from "next/link";
-import { BookOpen, Wallet, Calendar, Tag, Clock, Eye, Flame, Sparkles, Hourglass } from "lucide-react";
+import { BookOpen, Wallet, Calendar, Tag, Clock, Eye, Flame, Hourglass } from "lucide-react";
 import { Novel } from "@/data/novels";
 import { PDFCover } from "./PDFCover";
 import { StarRating } from "./StarRating";
@@ -135,18 +135,25 @@ export function NovelCard({ novel, index = 0 }: NovelCardProps) {
                 title={novel.title}
                 className="w-full aspect-[3/4] object-cover"
               />
-              {/* Animated shimmer sweep on cover */}
-              <div className="absolute inset-0 pointer-events-none" style={{
-                width: "200%", left: "-100%",
-                background: "linear-gradient(115deg, transparent 30%, rgba(212,175,55,0.12) 50%, transparent 70%)",
-                backgroundSize: "200% 100%", animation: "shimmer 4s linear infinite",
-              }} />
-              {/* Animated ember sparkles on cover */}
+              {/* Mystical diagonal glow sweep (same as coming-soon card) */}
+              <div
+                className="absolute inset-0 opacity-25"
+                style={{
+                  width: "250%",
+                  left: "-125%",
+                  top: "-50%",
+                  background:
+                    "linear-gradient(135deg, transparent 40%, rgba(255,220,140,0.15) 48%, rgba(255,180,60,0.28) 50%, rgba(255,220,140,0.15) 52%, transparent 60%)",
+                  animation: "mysticSweep 5s ease-in-out infinite",
+                  willChange: "transform",
+                }}
+              />
+              {/* Floating particles (same as coming-soon card) */}
               <div className="absolute inset-0 pointer-events-none">
-                <span className="absolute top-[15%] left-[20%] w-1 h-1 rounded-full bg-gold-400/50 animate-gentle-pulse" />
-                <span className="absolute top-[30%] right-[25%] w-1.5 h-1.5 rounded-full bg-amber-300/40 animate-gentle-pulse" style={{ animationDelay: "0.8s" }} />
-                <span className="absolute bottom-[30%] left-[35%] w-1 h-1 rounded-full bg-gold-400/40 animate-gentle-pulse" style={{ animationDelay: "1.4s" }} />
-                <span className="absolute bottom-[20%] right-[20%] w-1 h-1 rounded-full bg-amber-200/40 animate-gentle-pulse" style={{ animationDelay: "0.5s" }} />
+                <span className="absolute top-[15%] left-[20%] w-1.5 h-1.5 rounded-full bg-amber-200/70 animate-float" style={{ animationDelay: "0s" }} />
+                <span className="absolute top-[40%] right-[25%] w-1 h-1 rounded-full bg-gold-400/50 animate-float" style={{ animationDelay: "0.8s" }} />
+                <span className="absolute bottom-[25%] left-[35%] w-1 h-1 rounded-full bg-amber-200/60 animate-float" style={{ animationDelay: "1.5s" }} />
+                <span className="absolute bottom-[45%] right-[15%] w-1.5 h-1.5 rounded-full bg-gold-300/40 animate-float" style={{ animationDelay: "2.1s" }} />
               </div>
               {/* Hover overlay */}
               <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end p-4">
@@ -257,7 +264,7 @@ export function NovelCard({ novel, index = 0 }: NovelCardProps) {
                 href={`/novel/${novel.id}`}
                 className="flex-1 flex items-center justify-center gap-1.5 py-2.5 bg-gradient-to-r from-amber-700 to-gold-600 text-white text-sm font-arabic font-medium rounded-xl transition-all duration-200 active:scale-95 hover:from-amber-600 hover:to-gold-500"
               >
-                <Sparkles className="w-4 h-4" />
+                <Hourglass className="w-4 h-4" />
                 {t("card.comingSoonBtn", lang)}
               </Link>
             ) : (

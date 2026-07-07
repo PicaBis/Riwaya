@@ -286,7 +286,7 @@ export function Paywall({ onUnlock, price = 500, ripNumber = BANK.ripNumber, tit
                     <img
                       src="/qr-payment.jpg"
                       alt={lang === "ar" ? "رمز QR للدفع" : "Payment QR Code"}
-                      className="w-40 h-40 sm:w-48 sm:h-48 object-contain rounded-lg"
+                      className="w-64 h-64 sm:w-80 sm:h-80 object-contain rounded-lg"
                       loading="lazy"
                     />
                   </div>
