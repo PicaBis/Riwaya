@@ -510,6 +510,48 @@ img {
   loading: lazy;
 }
 
+/* ─── Screenshot Guard — site-wide clipboard protection ─── */
+
+/* Black flash overlay during screenshot attempt */
+#screenshot-guard-overlay.guard-visible {
+  display: flex !important;
+  opacity: 0.97 !important;
+}
+
+/* Body blur while snipping tool is active */
+body.guard-blur > * {
+  filter: blur(8px);
+  transition: filter 0.3s ease;
+}
+
+/* Site-wide: prevent text/image selection everywhere except inputs */
+body:not(.allow-select) {
+  -webkit-user-select: none !important;
+  user-select: none !important;
+}
+body input, body textarea, body [contenteditable="true"] {
+  -webkit-user-select: text !important;
+  user-select: text !important;
+}
+
+/* ─── Site-wide anti-print ─── */
+@media print {
+  body > * {
+    display: none !important;
+    visibility: hidden !important;
+  }
+  body::before {
+    content: "الطباعة غير مسموح بها";
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+    font-size: 24px;
+    color: #999;
+    direction: rtl;
+  }
+}
+
 /* Optimize font loading */
 @font-face {
   font-display: swap;
