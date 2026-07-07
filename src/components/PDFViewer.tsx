@@ -138,13 +138,14 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, 
   const swipeThreshold = 50;
   const swipeTimeThreshold = 300;
   const navRef = useRef({ goNext: () => {}, goPrev: () => {} });
+  const lockedRef = useRef(false);
 
   const onSwipeStart = useCallback((x: number, y: number) => {
     swipeRef.current = { x, y, time: Date.now() };
   }, []);
 
   const onSwipeEnd = useCallback((x: number, y: number) => {
-    if (!swipeRef.current || isLocked) return;
+    if (!swipeRef.current || lockedRef.current) return;
     const deltaX = x - swipeRef.current.x;
     const deltaY = y - swipeRef.current.y;
     const deltaTime = Date.now() - swipeRef.current.time;
@@ -158,7 +159,7 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, 
       if (navigator.vibrate) navigator.vibrate(15);
     }
     swipeRef.current = null;
-  }, [isLocked]);
+  }, []);
 
   useEffect(() => {
     const el = scrollRef.current;
@@ -212,6 +213,7 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, 
     return false;
   });
   const isLocked = !isUnlocked && currentPage > freeUntilPage;
+  lockedRef.current = isLocked;
 
   /* ── Load PDF ───────────────────────────────────────── */
   useEffect(() => {
