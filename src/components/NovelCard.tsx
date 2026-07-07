@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import Link from "next/link";
-import { BookOpen, Wallet, Calendar, Tag, Clock, Eye, Flame, Sparkles, PenLine } from "lucide-react";
+import { BookOpen, Wallet, Calendar, Tag, Clock, Eye, Flame, Sparkles, Hourglass } from "lucide-react";
 import { Novel } from "@/data/novels";
 import { PDFCover } from "./PDFCover";
 import { StarRating } from "./StarRating";
@@ -90,29 +90,31 @@ export function NovelCard({ novel, index = 0 }: NovelCardProps) {
               {/* Fiery gradient backdrop */}
               <div className="absolute inset-0 bg-gradient-to-br from-amber-950 via-red-900 to-gold-600" />
               <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-black/20" />
-              {/* Shimmer sweep */}
+              {/* Mystical diagonal glow sweep */}
               <div
-                className="absolute inset-0 opacity-40"
+                className="absolute inset-0 opacity-30"
                 style={{
-                  width: "200%",
-                  left: "-100%",
+                  width: "250%",
+                  left: "-125%",
+                  top: "-50%",
                   background:
-                    "linear-gradient(115deg, transparent 30%, rgba(255,240,200,0.35) 50%, transparent 70%)",
-                  animation: "shimmerTranslate 4s linear infinite",
+                    "linear-gradient(135deg, transparent 40%, rgba(255,220,140,0.25) 48%, rgba(255,180,60,0.4) 50%, rgba(255,220,140,0.25) 52%, transparent 60%)",
+                  animation: "mysticSweep 5s ease-in-out infinite",
                   willChange: "transform",
                 }}
               />
-              {/* Ember dots */}
+              {/* Floating particles */}
               <div className="absolute inset-0 pointer-events-none">
-                <span className="absolute top-[18%] left-[22%] w-1 h-1 rounded-full bg-amber-200/70 animate-gentle-pulse" />
-                <span className="absolute top-[30%] right-[28%] w-1.5 h-1.5 rounded-full bg-gold-400/60 animate-gentle-pulse" style={{ animationDelay: "0.8s" }} />
-                <span className="absolute bottom-[34%] left-[30%] w-1 h-1 rounded-full bg-amber-100/60 animate-gentle-pulse" style={{ animationDelay: "1.4s" }} />
+                <span className="absolute top-[15%] left-[20%] w-1.5 h-1.5 rounded-full bg-amber-300/80 animate-float" style={{ animationDelay: "0s" }} />
+                <span className="absolute top-[40%] right-[25%] w-1 h-1 rounded-full bg-gold-400/60 animate-float" style={{ animationDelay: "0.8s" }} />
+                <span className="absolute bottom-[25%] left-[35%] w-1 h-1 rounded-full bg-amber-200/70 animate-float" style={{ animationDelay: "1.5s" }} />
+                <span className="absolute bottom-[45%] right-[15%] w-1.5 h-1.5 rounded-full bg-gold-300/50 animate-float" style={{ animationDelay: "2.1s" }} />
               </div>
               {/* Cover content */}
               <div className="relative z-10 h-full flex flex-col items-center justify-center p-6 text-center">
                 <Flame className="w-9 h-9 text-amber-200 mb-3 animate-float drop-shadow-lg" />
                 <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-white/15 backdrop-blur-sm text-amber-50 text-[10px] font-arabic font-bold mb-4 border border-white/20">
-                  <PenLine className="w-3 h-3" />
+                  <Hourglass className="w-3 h-3" />
                   {t("comingSoon.writing", lang)}
                 </span>
                 <h3 className="font-arabic text-2xl font-bold text-white drop-shadow-lg leading-tight px-2">
@@ -186,7 +188,7 @@ export function NovelCard({ novel, index = 0 }: NovelCardProps) {
           {/* Meta line */}
           {isComingSoon ? (
             <div className="flex items-center gap-1.5 text-xs text-amber-600 dark:text-amber-400 -mt-1">
-              <PenLine className="w-3 h-3" />
+              <Hourglass className="w-3 h-3" />
               <span className="font-arabic">{t("card.inAuthorship", lang)}</span>
               {novel.lastUpdated && (
                 <>

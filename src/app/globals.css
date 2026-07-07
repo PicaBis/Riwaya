@@ -171,6 +171,14 @@ body {
   100% { transform: translateX(0%); }
 }
 
+@keyframes mysticSweep {
+  0%   { transform: translateX(-10%) translateY(0%); opacity: 0; }
+  25%  { opacity: 1; }
+  50%  { transform: translateX(10%) translateY(20%); opacity: 1; }
+  75%  { opacity: 0.5; }
+  100% { transform: translateX(-10%) translateY(0%); opacity: 0; }
+}
+
   .animate-shimmer {
     animation: shimmerTranslate 4s linear infinite;
   }
@@ -522,6 +530,18 @@ img {
 body.guard-blur > * {
   filter: blur(8px);
   transition: filter 0.3s ease;
+}
+
+/* ─── Light-theme card border enhancement ─── */
+html:not(.dark) .border-parchment-200 {
+  border-color: rgba(165, 145, 115, 0.45) !important;
+  border-width: 1.5px;
+}
+html:not(.dark) .border-parchment-300 {
+  border-color: rgba(150, 130, 100, 0.55) !important;
+}
+html:not(.dark) .bg-white {
+  box-shadow: 0 0 0 1px rgba(165, 145, 115, 0.18);
 }
 
 /* Site-wide: prevent text/image selection everywhere except inputs */

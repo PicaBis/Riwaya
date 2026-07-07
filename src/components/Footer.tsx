@@ -36,6 +36,14 @@ export function Footer() {
             <h4 className={`text-sm font-bold text-gray-800 dark:text-gray-200 mb-3 ${fontClass}`}>{t("footer.contactAuthor", lang)}</h4>
             <div className="flex flex-wrap gap-2">
               <a
+                href={`https://wa.me/${AUTHOR.whatsappNumber.replace(/\+/g, "")}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className={`px-3 py-1.5 rounded-lg bg-green-500/10 border border-green-500/20 text-xs text-green-600 dark:text-green-400 hover:text-gold-500 hover:border-gold-500/30 transition-colors ${fontClass}`}
+              >
+                WhatsApp
+              </a>
+              <a
                 href={`mailto:${AUTHOR.email}`}
                 className={`px-3 py-1.5 rounded-lg bg-parchment-100 dark:bg-white/5 border border-parchment-200 dark:border-white/10 text-xs text-gray-600 dark:text-gray-400 hover:text-gold-500 hover:border-gold-500/30 transition-colors ${fontClass}`}
               >

@@ -8,10 +8,9 @@ import { AUTHOR } from "@/lib/constants";
 export function BugReporter() {
   const { lang } = useApp();
   const handleReport = () => {
-    window.open(
-      `mailto:${AUTHOR.email}?subject=${encodeURIComponent(t("bug.subject", lang))}&body=${encodeURIComponent(t("bug.body", lang))}:%0D%0A%0D%0A%0D%0A`,
-      "_blank"
-    );
+    const subject = encodeURIComponent(t("bug.subject", lang));
+    const body = encodeURIComponent(t("bug.body", lang) + "\n\n\n");
+    window.location.href = `mailto:${AUTHOR.email}?subject=${subject}&body=${body}`;
   };
 
   return (

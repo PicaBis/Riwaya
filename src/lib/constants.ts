@@ -7,6 +7,7 @@ export const AUTHOR = {
   email: "Medjahed10abdelhadi@gmail.com",
   instagramHandle: "prof_pica",
   instagramUrl: "https://www.instagram.com/prof_pica/",
+  whatsappNumber: "+213557972459",
 } as const;
 
 export const BANK = {
