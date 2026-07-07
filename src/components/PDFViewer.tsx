@@ -763,7 +763,7 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, 
 
 function ToolBtn({ children, onClick, disabled, title, className, sound }: { children: React.ReactNode; onClick?: () => void; disabled?: boolean; title?: string; className?: string; sound?: string }) {
   return (
-    <button onClick={onClick} disabled={disabled} title={title} data-sound={sound}
+    <button onClick={onClick} disabled={disabled} title={title} aria-label={title} data-sound={sound}
       className={clsx("w-7 h-7 sm:w-8 sm:h-8 flex items-center justify-center rounded-lg text-gray-500 dark:text-gray-400 hover:bg-parchment-200 dark:hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed active:scale-90 transition-all duration-150", className)}>
       {children}
     </button>

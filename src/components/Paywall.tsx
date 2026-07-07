@@ -231,6 +231,9 @@ export function Paywall({ onUnlock, onBackToFree, price = 500, ripNumber = BANK.
                   {error}
                 </p>
               )}
+              <p className={`text-[11px] leading-relaxed text-gray-400 dark:text-gray-500 text-center px-2 ${fontClass}`}>
+                {t("paywall.noteManual", lang)}
+              </p>
             </div>
           ) : (
             /* ── Payment steps ────────────────────── */

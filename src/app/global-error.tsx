@@ -20,8 +20,9 @@ export default function GlobalError({
     try {
       const saved = localStorage.getItem("riwayati_lang") as Lang | null;
       if (saved === "en" || saved === "ar") setLang(saved);
+      import("@/lib/error-report").then((m) => m.reportError(error)).catch(() => {});
     } catch {}
-  }, []);
+  }, [error]);
 
   return (
     <html lang={lang} dir={dir}>

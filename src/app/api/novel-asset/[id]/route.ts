@@ -4,6 +4,7 @@ import path from "path";
 import { novels } from "@/data/novels";
 import { SESSION_COOKIE_NAME, verifySession } from "@/lib/session";
 import { verifyAssetToken } from "@/lib/asset-token";
+import { verifyEntitlementToken } from "@/lib/entitlement";
 import { refererMatchesHost } from "@/lib/origin-check";
 
 // Single source of truth for which files may ever be served — derived from
@@ -19,6 +20,11 @@ export async function GET(
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 
+  const novel = novels.find((n) => n.pdfFile === filename);
+  if (!novel) {
+    return NextResponse.json({ error: "Not found" }, { status: 404 });
+  }
+
   // Primary gate: a short-lived token, minted server-side via /api/asset-token,
   // scoped to this exact file and bound to the caller's own session id. This
   // replaces the old "empty Referer = allowed through" logic, which let anyone
@@ -30,9 +36,22 @@ export async function GET(
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
+  // Entitlement gate: a server-issued token scoped to THIS novel + the caller's
+  // session. The server is the source of truth for `entitled`; today the file
+  // is still served for free preview regardless, but requiring this token
+  // (1) binds every fetch to a fresh, novel+session-scoped credential and
+  // (2) lays the groundwork to refuse non-entitled requests outright.
+  const entitlementToken = request.headers.get("x-entitlement");
+  const entitlement = session
+    ? await verifyEntitlementToken(entitlementToken, novel.id, session.sid)
+    : { valid: false, entitled: false };
+  if (!entitlement.valid) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
   // Secondary, defense-in-depth signal — reject if Origin/Referer clearly
-  // points elsewhere (still permissive when both are absent; the token above
-  // is what actually carries the security weight).
+  // points elsewhere (still permissive when both are absent; the tokens above
+  // are what actually carry the security weight).
   if (!refererMatchesHost(request)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }

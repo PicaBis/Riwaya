@@ -16,16 +16,17 @@ export const metadata: Metadata = {
   keywords: ["رواية", "قراءة", "روايات عربية", "أدب", "روايتي", "Pica"],
   metadataBase: new URL("https://rewayati.vercel.app"),
   openGraph: {
-    title: "روايتي",
-    description: "مكتبة روايات شخصية — قراءة أنيقة وهادئة",
+    title: "روايتي — مكتبة الروايات الشخصية",
+    description: "اقرأ روايات Medjahed Abdelhadi (Pica) في تجربة قراءة أنيقة وهادئة",
     locale: "ar_DZ",
     type: "website",
     url: "https://rewayati.vercel.app",
+    siteName: "روايتي",
   },
   twitter: {
-    card: "summary",
-    title: "روايتي",
-    description: "مكتبة روايات شخصية — قراءة أنيقة وهادئة",
+    card: "summary_large_image",
+    title: "روايتي — مكتبة الروايات الشخصية",
+    description: "اقرأ روايات Medjahed Abdelhadi (Pica) في تجربة قراءة أنيقة وهادئة",
   },
   icons: {
     icon: [

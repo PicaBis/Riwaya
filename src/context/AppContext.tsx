@@ -415,6 +415,22 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     return () => document.removeEventListener("click", handler);
   }, [playSound]);
 
+  /* Forward uncaught client errors to the logging endpoint. */
+  useEffect(() => {
+    const onError = (e: ErrorEvent) => {
+      import("@/lib/error-report").then((m) => m.reportError(e.error || e.message, { source: e.filename, line: e.lineno }));
+    };
+    const onReject = (e: PromiseRejectionEvent) => {
+      import("@/lib/error-report").then((m) => m.reportError(e.reason, { kind: "unhandledrejection" }));
+    };
+    window.addEventListener("error", onError);
+    window.addEventListener("unhandledrejection", onReject);
+    return () => {
+      window.removeEventListener("error", onError);
+      window.removeEventListener("unhandledrejection", onReject);
+    };
+  }, []);
+
   const logout = useCallback(() => {
     setGuest(null);
     setIsAdmin(false);

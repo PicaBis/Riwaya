@@ -76,12 +76,13 @@ export function Header() {
               <Coins className="w-3.5 h-3.5" />
               {t("nav.subscriptions", lang)}
             </button>
-            <button
-              onClick={() => setShowDevCode(true)}
-              data-sound="open"
-              className={`flex items-center gap-1 px-2 py-1 rounded-lg text-sm text-gray-400 dark:text-gray-500 hover:text-rose-500 dark:hover:text-rose-400 hover:bg-parchment-100 dark:hover:bg-white/8 transition-colors ${lang === "ar" ? "font-arabic" : "font-sans"}`}
-              title={t("nav.devShield", lang)}
-            >
+              <button
+                onClick={() => setShowDevCode(true)}
+                data-sound="open"
+                title={t("nav.devShield", lang)}
+                aria-label={t("nav.devShield", lang)}
+                className={`flex items-center gap-1 px-2 py-1 rounded-lg text-sm text-gray-400 dark:text-gray-500 hover:text-rose-500 dark:hover:text-rose-400 hover:bg-parchment-100 dark:hover:bg-white/8 transition-colors ${lang === "ar" ? "font-arabic" : "font-sans"}`}
+              >
               <Shield className="w-3.5 h-3.5" />
             </button>
             {isAdmin && (
@@ -102,6 +103,7 @@ export function Header() {
               <button
                 onClick={toggleSound}
                 title={soundEnabled ? t("sound.on", lang) : t("sound.off", lang)}
+                aria-label={soundEnabled ? t("sound.on", lang) : t("sound.off", lang)}
                 data-sound={soundEnabled ? "toggle" : undefined}
                 className="relative w-9 h-9 flex items-center justify-center rounded-lg text-gray-500 dark:text-gray-400 hover:bg-parchment-200 dark:hover:bg-white/10 transition-all duration-200"
               >
@@ -112,6 +114,7 @@ export function Header() {
               <button
                 onClick={toggleTheme}
                 title={isDark ? t("theme.toDay", lang) : t("theme.toNight", lang)}
+                aria-label={isDark ? t("theme.toDay", lang) : t("theme.toNight", lang)}
                 className="relative w-9 h-9 flex items-center justify-center rounded-lg text-gray-500 dark:text-gray-400 hover:bg-parchment-200 dark:hover:bg-white/10 transition-all duration-200"
             >
               <Sun className={`w-5 h-5 absolute transition-all duration-300 ${isDark ? "opacity-100 rotate-0" : "opacity-0 rotate-90"}`} />
@@ -130,6 +133,7 @@ export function Header() {
                 <button
                   onClick={logout}
                   title={t("nav.logout", lang)}
+                  aria-label={t("nav.logout", lang)}
                   data-sound="logout"
                   className="w-9 h-9 flex items-center justify-center rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors"
                 >

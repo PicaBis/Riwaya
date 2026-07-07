@@ -19,6 +19,7 @@ export default function Error({
 
   useEffect(() => {
     console.error(error);
+    import("@/lib/error-report").then((m) => m.reportError(error)).catch(() => {});
   }, [error]);
 
   return (
