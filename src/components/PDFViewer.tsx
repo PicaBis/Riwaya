@@ -137,6 +137,7 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, 
   /* ── Fast Swipe Navigation (Left/Right Slide) ──────────────────────────── */
   const swipeThreshold = 50;
   const swipeTimeThreshold = 300;
+  const navRef = useRef({ goNext: () => {}, goPrev: () => {} });
 
   const onSwipeStart = useCallback((x: number, y: number) => {
     swipeRef.current = { x, y, time: Date.now() };
@@ -150,14 +151,14 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, 
 
     if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > swipeThreshold && deltaTime < swipeTimeThreshold) {
       if (deltaX < 0) {
-        goToNext();
+        navRef.current.goNext();
       } else {
-        goToPrev();
+        navRef.current.goPrev();
       }
       if (navigator.vibrate) navigator.vibrate(15);
     }
     swipeRef.current = null;
-  }, [goToNext, goToPrev, isLocked]);
+  }, [isLocked]);
 
   useEffect(() => {
     const el = scrollRef.current;
@@ -325,6 +326,8 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, 
       return next;
     });
   }, [totalPages, isLocked]);
+
+  navRef.current = { goNext: goToNext, goPrev: goToPrev };
 
   useEffect(() => {
     if (!chapters || chapters.length === 0) {
