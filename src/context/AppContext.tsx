@@ -660,11 +660,29 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const setLang = useCallback((l: Lang) => {
-    setLangState(l);
-    localStorage.setItem("riwayati_lang", l);
-    document.documentElement.lang = l;
-    document.documentElement.dir = l === "ar" ? "rtl" : "ltr";
-  }, []);
+    if (l === lang) return;
+    const main = document.querySelector("main");
+    if (main && !window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) {
+      main.style.transition = "opacity 0.22s ease, transform 0.22s ease";
+      main.style.opacity = "0";
+      main.style.transform = "translateY(10px)";
+      setTimeout(() => {
+        setLangState(l);
+        localStorage.setItem("riwayati_lang", l);
+        document.documentElement.lang = l;
+        document.documentElement.dir = l === "ar" ? "rtl" : "ltr";
+        requestAnimationFrame(() => {
+          main.style.opacity = "1";
+          main.style.transform = "translateY(0)";
+        });
+      }, 220);
+    } else {
+      setLangState(l);
+      localStorage.setItem("riwayati_lang", l);
+      document.documentElement.lang = l;
+      document.documentElement.dir = l === "ar" ? "rtl" : "ltr";
+    }
+  }, [lang]);
 
   const setReaderPrefsPersist = useCallback((prefs: ReaderPreferences) => {
     setReaderPrefs(prefs);

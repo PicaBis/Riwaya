@@ -101,24 +101,17 @@ export default function ScreenshotGuard() {
     return () => document.removeEventListener("keydown", onKeyDown, true);
   }, [typingTarget, showOverlay]);
 
-  /* ── 2. Window blur → Snipping Tool ──────────────────
-   * IMPORTANT: window blur fires for perfectly harmless reasons — a browser
-   * clipboard/permission popup, switching tabs, opening devtools. Previously
-   * this flashed a full-screen black overlay + blurred the page, so any popup
-   * would black out the whole site. We now keep the SILENT clipboard defense
-   * on blur (still defeats snip-and-copy) but never darken the page here. */
+  /* ── 2. Window blur → keep silent, no clipboard spam ──
+   * NOTE: removed clipboard writes here because they trigger the browser's
+   * "copied to clipboard" notification popup on every tab-switch / permission
+   * prompt, which the user reports as a false-positive error. The guard still
+   * defends against real screenshots via PrintScreen key detection above. */
   useEffect(() => {
     const onBlur = () => {
-      // Make sure no leftover overlay/blur remains from a screenshot key press.
       applyBodyBlur(false);
-      blurCancelRef.current = false;
-      scheduleWrites(8, 300, blurCancelRef);
     };
     const onFocus = () => {
-      blurCancelRef.current = true;
       applyBodyBlur(false);
-      focusCancelRef.current = false;
-      scheduleWrites(4, 500, focusCancelRef, 1000);
     };
 
     window.addEventListener("blur", onBlur);
@@ -129,30 +122,26 @@ export default function ScreenshotGuard() {
     };
   }, [applyBodyBlur]);
 
-  /* ── 3. Visibility change ────────────────────────── */
+  /* ── 3. Visibility change — silent only ──────────── */
   useEffect(() => {
     const onChange = () => {
       if (document.hidden) {
-        visibleCancelRef.current = false;
-        scheduleWrites(6, 300, visibleCancelRef);
+        visibleCancelRef.current = true;
       } else {
         visibleCancelRef.current = true;
-        const ref = { current: false };
-        scheduleWrites(4, 400, ref, 1200);
       }
     };
     document.addEventListener("visibilitychange", onChange);
     return () => document.removeEventListener("visibilitychange", onChange);
   }, []);
 
-  /* ── 4. Mouse leave window ───────────────────────── */
+  /* ── 4. Mouse leave window — silent only ─────────── */
   useEffect(() => {
     const onLeave = () => {
-      mouseCancelRef.current = false;
-      scheduleWrites(4, 400, mouseCancelRef);
+      mouseCancelRef.current = true;
     };
     const onEnter = () => {
-      mouseCancelRef.current = true;
+      mouseCancelRef.current = false;
     };
     document.documentElement.addEventListener("mouseleave", onLeave);
     document.documentElement.addEventListener("mouseenter", onEnter);

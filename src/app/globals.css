@@ -677,20 +677,28 @@ body input, body textarea, body [contenteditable="true"] {
 }
 
 /* ─── Smooth theme switch (View Transitions API) ─────────── */
-/* The new theme is revealed with a soft cross-fade expanding from the
-   toggle. Browsers without the API just flip instantly (graceful). */
-::view-transition-old(root),
-::view-transition-new(root) {
-  animation: none;
-  mix-blend-mode: normal;
+/* A light, fast cross-fade expanding from the toggle button. */
+::view-transition-old(root) {
+  animation: themeFadeOut 0.3s cubic-bezier(0.4, 0, 0.2, 1) both;
 }
 ::view-transition-new(root) {
-  animation: themeReveal 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  animation: themeFadeIn 0.35s cubic-bezier(0.4, 0, 0.2, 1) both;
 }
-@keyframes themeReveal {
-  from { clip-path: circle(0% at var(--theme-x, 50%) var(--theme-y, 0%)); }
-  to   { clip-path: circle(150% at var(--theme-x, 50%) var(--theme-y, 0%)); }
+@keyframes themeFadeIn {
+  from {
+    opacity: 0;
+    clip-path: circle(0% at var(--theme-x, 50%) var(--theme-y, 0%));
+  }
+  to {
+    opacity: 1;
+    clip-path: circle(150% at var(--theme-x, 50%) var(--theme-y, 0%));
+  }
+}
+@keyframes themeFadeOut {
+  from { opacity: 1; }
+  to   { opacity: 0; }
 }
 @media (prefers-reduced-motion: reduce) {
-  ::view-transition-new(root) { animation: none; }
+  ::view-transition-old(root),
+  ::view-transition-new(root) { animation-duration: 0.01ms !important; }
 }

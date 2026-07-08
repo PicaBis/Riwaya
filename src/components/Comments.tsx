@@ -51,6 +51,7 @@ export function Comments({ novelId }: { novelId: string }) {
   const hideTimerRef = useRef<number | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const nameTouchedRef = useRef(false);
+  const pendingCommentIds = useRef<Set<string>>(new Set());
 
   // Keep the default "Guest" name in sync with the active language until the
   // reader types their own name (avoids an Arabic default lingering in an
@@ -112,7 +113,12 @@ export function Comments({ novelId }: { novelId: string }) {
         filter: `novel_id=eq.${novelId}`,
       }, (payload) => {
         const newComment = payload.new as any;
-        if (newComment) {
+        if (newComment && newComment.id) {
+          // Skip if we already added this comment optimistically.
+          if (pendingCommentIds.current.has(newComment.id)) {
+            pendingCommentIds.current.delete(newComment.id);
+            return;
+          }
           setComments((prev) => [
             {
               id: newComment.id,
@@ -178,7 +184,7 @@ export function Comments({ novelId }: { novelId: string }) {
       if (res.ok) {
         const data = await res.json().catch(() => null);
         setContent("");
-        if (data) {
+        if (data?.id) {
           const normalized: any = {
             id: data.id,
             novelId: data.novel_id || data.novelId || novelId,
@@ -188,8 +194,13 @@ export function Comments({ novelId }: { novelId: string }) {
             likes: data.likes || [],
             replies: [],
           };
-          setComments((prev) => [normalized, ...prev]);
-          // Remember our private token so we can delete this comment later.
+          // Track this ID so the realtime INSERT handler skips it.
+          pendingCommentIds.current.add(normalized.id);
+          setComments((prev) => {
+            // Dedup: if already present (from a fast realtime event), don't add again.
+            if (prev.some((c) => c.id === normalized.id)) return prev;
+            return [normalized, ...prev];
+          });
           if (data.id) {
             setMyTokens((prev) => {
               const next = { ...prev, [data.id]: ownerToken };
@@ -199,8 +210,12 @@ export function Comments({ novelId }: { novelId: string }) {
           }
         }
       } else {
-        const data = await res.json().catch(() => ({}));
-        setSubmitError(data.error || t("comments.sendFailed", lang));
+        let errorMsg = t("comments.sendFailed", lang);
+        try {
+          const err = await res.json();
+          if (err.error) errorMsg = err.error;
+        } catch {}
+        setSubmitError(errorMsg);
       }
     } catch {
       setSubmitError(t("comments.connectFailed", lang));
@@ -254,14 +269,32 @@ export function Comments({ novelId }: { novelId: string }) {
     const comment = comments.find((c) => c.id === commentId);
     if (!comment) return;
     const liked = comment.likes.includes(author);
+    const nextLikes = liked
+      ? comment.likes.filter((n: string) => n !== author)
+      : [...comment.likes, author];
+
+    // Optimistic update
+    setComments((prev) =>
+      prev.map((c) => (c.id === commentId ? { ...c, likes: nextLikes } : c))
+    );
     try {
       const res = await fetch("/api/comments", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ commentId, author, liked }),
       });
-      if (res.ok) fetchComments();
-    } catch {}
+      if (!res.ok) {
+        // Rollback on failure
+        setComments((prev) =>
+          prev.map((c) => (c.id === commentId ? { ...c, likes: comment.likes } : c))
+        );
+      }
+    } catch {
+      // Rollback on network error
+      setComments((prev) =>
+        prev.map((c) => (c.id === commentId ? { ...c, likes: comment.likes } : c))
+      );
+    }
   };
 
   const timeAgo = (ts: number) => {
