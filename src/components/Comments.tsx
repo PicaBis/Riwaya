@@ -4,11 +4,33 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { Heart, MessageSquare, Send, Trash2, Ban, Shield, Type, AlignLeft, FileText, EyeOff } from "lucide-react";
 import { useApp } from "@/context/AppContext";
 import { getSupabase } from "@/lib/supabase";
+import { OnlineGuests } from "./OnlineGuests";
 import type { Comment } from "@/lib/comments-types";
 import { t } from "@/lib/i18n";
 import clsx from "clsx";
 
 const COMMENTS_PER_PAGE = 20;
+const TOKENS_KEY = "riwayati_comment_tokens";
+
+/* ── Owner-token helpers: let a guest delete only their own comment ──────── */
+function loadTokens(): Record<string, string> {
+  try {
+    return JSON.parse(localStorage.getItem(TOKENS_KEY) || "{}");
+  } catch {
+    return {};
+  }
+}
+function persistTokens(map: Record<string, string>) {
+  try {
+    localStorage.setItem(TOKENS_KEY, JSON.stringify(map));
+  } catch {}
+}
+function genToken(): string {
+  try {
+    if (typeof crypto !== "undefined" && crypto.randomUUID) return crypto.randomUUID();
+  } catch {}
+  return `${Math.random().toString(36).slice(2)}${Date.now().toString(36)}`;
+}
 
 export function Comments({ novelId }: { novelId: string }) {
   const { guest, isAdmin, isDark, lang } = useApp();
@@ -24,6 +46,7 @@ export function Comments({ novelId }: { novelId: string }) {
   const [fontSize, setFontSize] = useState(15);
   const [lineHeight, setLineHeight] = useState(1.8);
   const [fontFamily, setFontFamily] = useState<"ar" | "sans">("ar");
+  const [myTokens, setMyTokens] = useState<Record<string, string>>({});
   const [showToolbar, setShowToolbar] = useState(true);
   const hideTimerRef = useRef<number | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -48,6 +71,11 @@ export function Comments({ novelId }: { novelId: string }) {
       if (hideTimerRef.current) window.clearTimeout(hideTimerRef.current);
     };
   }, [resetToolbarTimer]);
+
+  // Load the map of comment-id → private owner token from this browser.
+  useEffect(() => {
+    setMyTokens(loadTokens());
+  }, []);
 
   const fetchComments = useCallback(async () => {
     try {
@@ -138,13 +166,14 @@ export function Comments({ novelId }: { novelId: string }) {
     e.preventDefault();
     if (!content.trim()) return;
     const author = guest?.name || guestName.trim() || t("comments.guest", lang);
+    const ownerToken = genToken();
     setLoading(true);
     setSubmitError("");
     try {
       const res = await fetch("/api/comments", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ novelId, author, content: content.trim() }),
+        body: JSON.stringify({ novelId, author, content: content.trim(), ownerToken }),
       });
       if (res.ok) {
         const data = await res.json().catch(() => null);
@@ -160,6 +189,14 @@ export function Comments({ novelId }: { novelId: string }) {
             replies: [],
           };
           setComments((prev) => [normalized, ...prev]);
+          // Remember our private token so we can delete this comment later.
+          if (data.id) {
+            setMyTokens((prev) => {
+              const next = { ...prev, [data.id]: ownerToken };
+              persistTokens(next);
+              return next;
+            });
+          }
         }
       } else {
         const data = await res.json().catch(() => ({}));
@@ -183,6 +220,29 @@ export function Comments({ novelId }: { novelId: string }) {
       if (res.ok) {
         fetchComments();
         alert(t("comments.deletedAlert", lang, { name: author }));
+      } else {
+        alert(t("comments.deleteFailed", lang));
+      }
+    } catch {}
+  };
+
+  const deleteOwnComment = async (commentId: string) => {
+    const token = myTokens[commentId];
+    if (!token) return;
+    if (!confirm(t("comments.confirmDeleteOwn", lang))) return;
+    try {
+      const res = await fetch(`/api/comments/${commentId}`, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json", "x-owner-token": token },
+      });
+      if (res.ok) {
+        setComments((prev) => prev.filter((c) => c.id !== commentId));
+        setMyTokens((prev) => {
+          const next = { ...prev };
+          delete next[commentId];
+          persistTokens(next);
+          return next;
+        });
       } else {
         alert(t("comments.deleteFailed", lang));
       }
@@ -225,9 +285,10 @@ export function Comments({ novelId }: { novelId: string }) {
       onTouchStart={resetToolbarTimer}
     >
       <div className={clsx("flex items-center justify-between flex-wrap gap-3 mb-6 transition-all duration-300", showToolbar ? "opacity-100 max-h-40" : "opacity-0 max-h-0 overflow-hidden")}>
-        <h3 className={`text-lg font-bold text-gray-900 dark:text-gray-100 flex items-center gap-2 ${fontClass}`}>
+        <h3 className={`text-lg font-bold text-gray-900 dark:text-gray-100 flex items-center gap-2 flex-wrap ${fontClass}`}>
           <MessageSquare className="w-5 h-5 text-gold-500" />
           {t("comments.title", lang)}
+          <OnlineGuests className="ms-1" />
         </h3>
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400">
@@ -336,7 +397,7 @@ export function Comments({ novelId }: { novelId: string }) {
                   <span className={`text-sm font-bold text-gray-900 dark:text-gray-100 ${textClass}`}>{c.author}</span>
                   <span className={`text-xs text-gray-400 dark:text-gray-500 ${textClass}`}>{timeAgo(c.createdAt)}</span>
                 </div>
-                {isAdmin && (
+                {isAdmin ? (
                   <div className="flex items-center gap-1">
                     <button
                       onClick={() => { if (confirm(t("comments.confirmDelete", lang, { name: c.author }))) deleteComment(c.id, c.author); }}
@@ -353,7 +414,16 @@ export function Comments({ novelId }: { novelId: string }) {
                       <Ban className="w-4 h-4" />
                     </button>
                   </div>
-                )}
+                ) : myTokens[c.id] ? (
+                  <button
+                    onClick={() => deleteOwnComment(c.id)}
+                    title={t("comments.deleteOwn", lang)}
+                    className="flex items-center gap-1 px-2 py-1 rounded-lg text-xs text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                    <span className={fontClass}>{t("comments.deleteOwn", lang)}</span>
+                  </button>
+                ) : null}
               </div>
               <p
                 className={`${textClass} text-gray-700 dark:text-gray-300 leading-relaxed mb-3`}

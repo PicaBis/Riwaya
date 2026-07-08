@@ -1,11 +1,20 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getSupabase } from "@/lib/supabase";
+import { createHash } from "crypto";
+import { getServiceSupabase } from "@/lib/supabase";
 import { rateLimit, getClientIp } from "@/lib/rate-limit";
 import { moderateComment } from "@/lib/profanity";
 
 function sanitize(str: string): string {
   return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#x27;").replace(/\//g, "&#x2F;").substring(0, 2000);
 }
+
+/** Hash a browser-held owner token so it can be stored without exposing it. */
+function hashToken(token: string): string {
+  return createHash("sha256").update(String(token)).digest("hex");
+}
+
+/** Columns returned to clients — never expose owner_hash. */
+const PUBLIC_COLUMNS = "id, novel_id, username, content, likes, created_at";
 
 function isValidNovelId(id: string): boolean {
   return /^[a-z0-9-]+$/.test(id) && id.length <= 100;
@@ -17,7 +26,9 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "novelId required" }, { status: 400 });
   }
 
-  const supabase = getSupabase();
+  // Read via the service client so comments load even if only the server-side
+  // key is configured (the public anon key is optional, used for realtime).
+  const supabase = getServiceSupabase();
 
   if (!supabase) {
     return NextResponse.json({ error: "التعليقات غير متاحة حالياً" }, { status: 503 });
@@ -25,7 +36,7 @@ export async function GET(request: NextRequest) {
 
   const { data, error } = await supabase
     .from("comments")
-    .select("*")
+    .select(PUBLIC_COLUMNS)
     .eq("novel_id", novelId)
     .order("created_at", { ascending: false });
 
@@ -55,7 +66,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { novelId, author, content } = body;
+    const { novelId, author, content, ownerToken } = body;
 
     if (!novelId || !author || !content || !isValidNovelId(novelId)) {
       return NextResponse.json({ error: "Invalid input" }, { status: 400 });
@@ -73,20 +84,27 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Empty input" }, { status: 400 });
     }
 
-    const supabase = getSupabase();
+    const supabase = getServiceSupabase();
 
     if (!supabase) {
       return NextResponse.json({ error: "التعليقات غير متاحة حالياً" }, { status: 503 });
     }
 
+    const insertRow: Record<string, unknown> = {
+      novel_id: novelId,
+      username: sanitizedAuthor,
+      content: sanitizedContent,
+    };
+    // Store a hash of the poster's private token so they can delete their own
+    // comment later without an account (raw token stays only in their browser).
+    if (ownerToken && typeof ownerToken === "string") {
+      insertRow.owner_hash = hashToken(ownerToken);
+    }
+
     const { data, error } = await supabase
       .from("comments")
-      .insert({
-        novel_id: novelId,
-        username: sanitizedAuthor,
-        content: sanitizedContent,
-      })
-      .select()
+      .insert(insertRow)
+      .select(PUBLIC_COLUMNS)
       .single();
 
     if (error || !data) {
@@ -101,7 +119,7 @@ export async function POST(request: NextRequest) {
 
 export async function PATCH(request: NextRequest) {
   try {
-    const supabase = getSupabase();
+    const supabase = getServiceSupabase();
     if (!supabase) {
       return NextResponse.json({ error: "التعليقات غير متاحة حالياً" }, { status: 503 });
     }

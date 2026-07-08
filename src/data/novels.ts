@@ -73,19 +73,6 @@ export const novels: Novel[] = [
     status: "coming-soon",
     mystery: true,
   },
-  {
-    id: "mystery-2",
-    title: "؟؟؟",
-    subtitle: "قريباً",
-    description: "عملٌ جديد قيد الكتابة… ستُكشف تفاصيله في وقتٍ قادم.",
-    author: "Medjahed Abdelhadi — Pica",
-    genre: "غير معلوم",
-    year: 2026,
-    language: "ar",
-    freeUntilPage: 0,
-    status: "coming-soon",
-    mystery: true,
-  },
 ];
 
 export function getNovelById(id: string): Novel | undefined {
