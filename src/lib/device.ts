@@ -17,7 +17,35 @@ export function getDeviceId(): string {
   return id;
 }
 
+const ACCOUNT_KEY = "riwayati_account_key";
+
+/** Persisted account identity (account:<uid>) once the visitor signs in. */
+export function setAccountKey(uid: string | null) {
+  if (typeof window === "undefined") return;
+  try {
+    if (uid) localStorage.setItem(ACCOUNT_KEY, `account:${uid}`);
+    else localStorage.removeItem(ACCOUNT_KEY);
+  } catch {}
+}
+
+export function getAccountKey(): string | null {
+  if (typeof window === "undefined") return null;
+  try {
+    return localStorage.getItem(ACCOUNT_KEY);
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Durable identity used for server-side progress / ratings / entitlement.
+ * Precedence: real account > chosen guest name > per-device UUID. A signed-in
+ * account key takes over everywhere automatically, so a reader keeps their
+ * data across devices once they log in.
+ */
 export function getUserKey(guestName?: string | null): string {
+  const account = getAccountKey();
+  if (account) return account;
   if (guestName && guestName.trim()) {
     return `user:${guestName.trim().toLowerCase()}`;
   }

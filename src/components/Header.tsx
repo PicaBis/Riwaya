@@ -3,9 +3,10 @@
 import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { Moon, Sun, User, LogOut, Menu, X, Shield, Coins, LayoutDashboard, Volume2, VolumeX } from "lucide-react";
+import { Moon, Sun, User, LogOut, Menu, X, Shield, Coins, LayoutDashboard, Volume2, VolumeX, UserCircle } from "lucide-react";
 import { useApp } from "@/context/AppContext";
 import { GuestLoginModal } from "./GuestLoginModal";
+import { AuthModal } from "./AuthModal";
 import { AboutModal } from "./AboutModal";
 import { DevCodeModal } from "./DevCodeModal";
 import { SubscriptionModal } from "./SubscriptionModal";
@@ -17,8 +18,9 @@ import { t } from "@/lib/i18n";
 import { AUTHOR } from "@/lib/constants";
 
 export function Header() {
-  const { isDark, toggleTheme, guest, logout, lang, isAdmin, soundEnabled, toggleSound } = useApp();
+  const { isDark, toggleTheme, guest, logout, lang, isAdmin, soundEnabled, toggleSound, authUser, authAvailable, signOutAccount } = useApp();
   const [showLogin, setShowLogin] = useState(false);
+  const [showAuth, setShowAuth] = useState(false);
   const [showAbout, setShowAbout] = useState(false);
   const [showDevCode, setShowDevCode] = useState(false);
   const [showSubs, setShowSubs] = useState(false);
@@ -121,8 +123,26 @@ export function Header() {
               <Moon className={`w-5 h-5 absolute transition-all duration-300 ${isDark ? "opacity-0 -rotate-90" : "opacity-100 rotate-0"}`} />
             </button>
 
-            {/* Guest auth */}
-            {guest ? (
+            {/* Account (real auth) takes precedence over guest */}
+            {authUser ? (
+              <div className="flex items-center gap-1.5">
+                <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-green-500/10 border border-green-500/20 max-w-[180px]">
+                  <div className="w-5 h-5 rounded-full bg-green-500 flex items-center justify-center flex-shrink-0">
+                    <span className="text-white text-xs font-bold">{(authUser.email || "?").charAt(0).toUpperCase()}</span>
+                  </div>
+                  <span className="text-sm font-sans text-green-700 dark:text-green-400 font-medium truncate" dir="ltr">{authUser.email}</span>
+                </div>
+                <button
+                  onClick={signOutAccount}
+                  title={t("auth.signOut", lang)}
+                  aria-label={t("auth.signOut", lang)}
+                  data-sound="logout"
+                  className="w-9 h-9 flex items-center justify-center rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors"
+                >
+                  <LogOut className="w-4 h-4" />
+                </button>
+              </div>
+            ) : guest ? (
               <div className="flex items-center gap-1.5">
                 <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-gold-500/10 border border-gold-500/20">
                   <div className="w-5 h-5 rounded-full bg-gold-500 flex items-center justify-center flex-shrink-0">
@@ -130,6 +150,17 @@ export function Header() {
                   </div>
                   <span className="text-sm font-arabic text-gold-600 dark:text-gold-400 font-medium">{guest.name}</span>
                 </div>
+                {authAvailable && (
+                  <button
+                    onClick={() => setShowAuth(true)}
+                    title={t("auth.title", lang)}
+                    aria-label={t("auth.title", lang)}
+                    data-sound="open"
+                    className="w-9 h-9 flex items-center justify-center rounded-lg text-gray-400 hover:text-green-600 hover:bg-green-50 dark:hover:bg-green-500/10 transition-colors"
+                  >
+                    <UserCircle className="w-5 h-5" />
+                  </button>
+                )}
                 <button
                   onClick={logout}
                   title={t("nav.logout", lang)}
@@ -141,14 +172,26 @@ export function Header() {
                 </button>
               </div>
             ) : (
-              <button
-              onClick={() => setShowLogin(true)}
-              data-sound="login"
-              className={`flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-gold-500 hover:bg-gold-600 active:scale-95 text-white text-sm font-medium transition-all duration-150 shadow-sm ${lang === "ar" ? "font-arabic" : "font-sans"}`}
-              >
-                <User className="w-4 h-4" />
-                <span>{t("nav.login", lang)}</span>
-              </button>
+              <div className="flex items-center gap-1.5">
+                {authAvailable && (
+                  <button
+                    onClick={() => setShowAuth(true)}
+                    data-sound="open"
+                    className={`flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-gold-500 hover:bg-gold-600 active:scale-95 text-white text-sm font-medium transition-all duration-150 shadow-sm ${lang === "ar" ? "font-arabic" : "font-sans"}`}
+                  >
+                    <UserCircle className="w-4 h-4" />
+                    <span>{t("auth.title", lang)}</span>
+                  </button>
+                )}
+                <button
+                  onClick={() => setShowLogin(true)}
+                  data-sound="login"
+                  className={`flex items-center gap-1.5 px-3 py-2 rounded-lg border border-parchment-300 dark:border-white/10 text-gray-600 dark:text-gray-300 hover:border-gold-500/40 active:scale-95 text-sm font-medium transition-all duration-150 ${lang === "ar" ? "font-arabic" : "font-sans"}`}
+                >
+                  <User className="w-4 h-4" />
+                  <span>{t("nav.login", lang)}</span>
+                </button>
+              </div>
             )}
           </div>
 
@@ -263,9 +306,36 @@ export function Header() {
                 </div>
               </div>
 
+              {/* Account (real auth) in mobile menu */}
+              {authAvailable && !authUser && (
+                <button
+                  onClick={() => { setShowAuth(true); setMobileMenuOpen(false); }}
+                  className="mt-3 w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-gold-500 hover:bg-gold-600 text-white text-sm font-medium transition-all duration-150 active:scale-95"
+                >
+                  <UserCircle className="w-4 h-4" />
+                  {t("auth.title", lang)}
+                </button>
+              )}
+
               {/* Guest auth in mobile menu */}
               <div className="mt-3">
-                {guest ? (
+                {authUser ? (
+                  <div className="flex items-center justify-between px-3 py-2.5 rounded-xl bg-green-500/10 border border-green-500/20">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <div className="w-6 h-6 rounded-full bg-green-500 flex items-center justify-center flex-shrink-0">
+                        <span className="text-white text-xs font-bold">{(authUser.email || "?").charAt(0).toUpperCase()}</span>
+                      </div>
+                      <span className="text-sm text-green-700 dark:text-green-400 font-medium truncate" dir="ltr">{authUser.email}</span>
+                    </div>
+                    <button
+                      onClick={() => { signOutAccount(); setMobileMenuOpen(false); }}
+                      data-sound="logout"
+                      className="text-xs text-gray-400 hover:text-red-500 transition-colors flex-shrink-0 ms-2"
+                    >
+                      {t("auth.signOut", lang)}
+                    </button>
+                  </div>
+                ) : guest ? (
                   <div className="flex items-center justify-between px-3 py-2.5 rounded-xl bg-gold-500/10 border border-gold-500/20">
                     <div className="flex items-center gap-2">
                       <div className="w-6 h-6 rounded-full bg-gold-500 flex items-center justify-center">
@@ -298,6 +368,7 @@ export function Header() {
       </header>
 
       {showLogin && <GuestLoginModal onClose={() => setShowLogin(false)} />}
+      {showAuth && <AuthModal onClose={() => setShowAuth(false)} />}
       {showAbout && <AboutModal onClose={() => setShowAbout(false)} />}
       {showContact && <ContactModal onClose={() => setShowContact(false)} />}
       {showDevCode && <DevCodeModal onClose={() => setShowDevCode(false)} />}

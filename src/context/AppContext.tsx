@@ -9,7 +9,13 @@ import React, {
   useRef,
 } from "react";
 import type { Lang } from "@/lib/i18n";
-import { getUserKey } from "@/lib/device";
+import { getUserKey, setAccountKey } from "@/lib/device";
+import { getSupabase } from "@/lib/supabase";
+
+interface AuthUser {
+  id: string;
+  email: string | null;
+}
 
 /* ─── UI sound presets (synthesized, no asset files) ─────── */
 export type SoundType =
@@ -93,6 +99,17 @@ interface AppContextValue {
   guest: GuestUser | null;
   loginAsGuest: (name: string) => void;
   logout: () => void;
+  /* ── Real accounts (Supabase Auth, email OTP) ─────────── */
+  authUser: AuthUser | null;
+  authReady: boolean;
+  /** Whether Supabase Auth is configured/available in this deployment. */
+  authAvailable: boolean;
+  /** Send a 6-digit login code to the email. */
+  signInWithEmail: (email: string) => Promise<{ ok: boolean; error?: string }>;
+  /** Verify the code and sign in; migrates guest data into the account. */
+  verifyEmailOtp: (email: string, code: string) => Promise<{ ok: boolean; error?: string }>;
+  /** Sign out of the account (guest mode remains usable). */
+  signOutAccount: () => Promise<void>;
   isAdmin: boolean;
   setAdmin: (v: boolean) => void;
   ratings: Record<string, number>;
@@ -171,6 +188,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [mounted, setMounted] = useState(false);
   const lastSyncRef = useRef<Record<string, number>>({});
   const guestRef = useRef<GuestUser | null>(null);
+
+  /* ── Auth ─────────────────────────────────────────────── */
+  const [authUser, setAuthUser] = useState<AuthUser | null>(null);
+  const [authReady, setAuthReady] = useState(false);
+  const authAvailable = !!getSupabase();
 
   /* ── Subscription / unlock (reactive, persisted) ──────── */
   const [unlocked, setUnlocked] = useState(false);
@@ -289,9 +311,89 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       } catch {}
     })();
     return () => { cancelled = true; };
-  }, [mounted, guest?.name]);
+  }, [mounted, guest?.name, authUser?.id]);
 
   useEffect(() => { guestRef.current = guest; }, [guest]);
+
+  /* Initialise auth: restore any existing session + subscribe to changes so
+     the account identity (account:<uid>) stays in sync across reloads/tabs. */
+  useEffect(() => {
+    const supabase = getSupabase();
+    if (!supabase) { setAuthReady(true); return; }
+    let active = true;
+
+    supabase.auth.getSession().then(({ data }) => {
+      if (!active) return;
+      const u = data.session?.user;
+      if (u) {
+        setAccountKey(u.id);
+        setAuthUser({ id: u.id, email: u.email ?? null });
+      }
+      setAuthReady(true);
+    });
+
+    const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
+      const u = session?.user;
+      if (u) {
+        setAccountKey(u.id);
+        setAuthUser({ id: u.id, email: u.email ?? null });
+      } else {
+        setAccountKey(null);
+        setAuthUser(null);
+      }
+    });
+
+    return () => { active = false; sub.subscription.unsubscribe(); };
+  }, []);
+
+  const signInWithEmail = useCallback(async (email: string) => {
+    const supabase = getSupabase();
+    if (!supabase) return { ok: false, error: "auth unavailable" };
+    const clean = email.trim().toLowerCase();
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(clean)) return { ok: false, error: "invalid email" };
+    const { error } = await supabase.auth.signInWithOtp({
+      email: clean,
+      options: { shouldCreateUser: true },
+    });
+    if (error) return { ok: false, error: error.message };
+    return { ok: true };
+  }, []);
+
+  const verifyEmailOtp = useCallback(async (email: string, code: string) => {
+    const supabase = getSupabase();
+    if (!supabase) return { ok: false, error: "auth unavailable" };
+    const clean = email.trim().toLowerCase();
+    // Guest/device identity captured BEFORE the account key takes over.
+    const previousKey = getUserKey(guestRef.current?.name);
+    const { data, error } = await supabase.auth.verifyOtp({
+      email: clean,
+      token: code.trim(),
+      type: "email",
+    });
+    if (error) return { ok: false, error: error.message };
+    const u = data.user;
+    const accessToken = data.session?.access_token;
+    if (u) {
+      setAccountKey(u.id);
+      setAuthUser({ id: u.id, email: u.email ?? null });
+      // Merge guest purchases/ratings/progress into the account (best-effort).
+      if (accessToken && previousKey && !previousKey.startsWith("account:")) {
+        fetch("/api/account/migrate", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${accessToken}` },
+          body: JSON.stringify({ fromKey: previousKey }),
+        }).catch(() => {});
+      }
+    }
+    return { ok: true };
+  }, []);
+
+  const signOutAccount = useCallback(async () => {
+    const supabase = getSupabase();
+    setAccountKey(null);
+    setAuthUser(null);
+    if (supabase) { try { await supabase.auth.signOut(); } catch {} }
+  }, []);
 
   const toggleTheme = useCallback((e?: React.MouseEvent) => {
     // Anchor the reveal at the click point (falls back to top-center).
@@ -607,6 +709,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         guest,
         loginAsGuest,
         logout,
+        authUser,
+        authReady,
+        authAvailable,
+        signInWithEmail,
+        verifyEmailOtp,
+        signOutAccount,
         isAdmin,
         setAdmin,
         ratings,
