@@ -42,4 +42,24 @@ begin
   end if;
 end $$;
 
+-- 4) Ratings table -----------------------------------------------------------
+--    One row per (user, novel). Lets a reader's rating persist across devices
+--    and enables a community average. Writes go through the server.
+create table if not exists public.ratings (
+  user_key   text        not null,
+  novel_id   text        not null,
+  stars      int         not null check (stars between 1 and 5),
+  updated_at timestamptz not null default now(),
+  primary key (user_key, novel_id)
+);
+
+create index if not exists ratings_novel_idx on public.ratings (novel_id);
+
+alter table public.ratings enable row level security;
+
+drop policy if exists "ratings_public_read" on public.ratings;
+create policy "ratings_public_read"
+  on public.ratings for select
+  using (true);
+
 -- Done. The site reads with the anon key and writes with the service-role key.

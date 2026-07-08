@@ -28,6 +28,9 @@ export function Footer() {
               <li><a href="/" className={`text-sm text-gray-500 dark:text-gray-400 hover:text-gold-500 transition-colors ${fontClass}`}>{t("nav.home", lang)}</a></li>
               <li><a href="/library" className={`text-sm text-gray-500 dark:text-gray-400 hover:text-gold-500 transition-colors ${fontClass}`}>{t("footer.libraryLink", lang)}</a></li>
               <li><a href="/about" className={`text-sm text-gray-500 dark:text-gray-400 hover:text-gold-500 transition-colors ${fontClass}`}>{t("nav.about", lang)}</a></li>
+              <li><a href="/privacy" className={`text-sm text-gray-500 dark:text-gray-400 hover:text-gold-500 transition-colors ${fontClass}`}>{t("footer.privacy", lang)}</a></li>
+              <li><a href="/terms" className={`text-sm text-gray-500 dark:text-gray-400 hover:text-gold-500 transition-colors ${fontClass}`}>{t("footer.terms", lang)}</a></li>
+              <li><a href="/refund" className={`text-sm text-gray-500 dark:text-gray-400 hover:text-gold-500 transition-colors ${fontClass}`}>{t("footer.refund", lang)}</a></li>
             </ul>
           </div>
 

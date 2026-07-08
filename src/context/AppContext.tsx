@@ -244,6 +244,20 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     if (!mounted) return;
     const userKey = getUserKey(guest?.name);
     let cancelled = false;
+    // Restore this user's saved ratings from the server (survives device swaps).
+    (async () => {
+      try {
+        const res = await fetch(`/api/ratings?userKey=${encodeURIComponent(userKey)}`);
+        if (!res.ok) return;
+        const serverRatings: Record<string, number> = await res.json();
+        if (cancelled || !serverRatings || typeof serverRatings !== "object") return;
+        setRatings((prev) => {
+          const next = { ...prev, ...serverRatings };
+          localStorage.setItem("riwayati_ratings", JSON.stringify(next));
+          return next;
+        });
+      } catch {}
+    })();
     (async () => {
       try {
         const res = await fetch(`/api/progress?userKey=${encodeURIComponent(userKey)}`);
@@ -466,6 +480,15 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       localStorage.setItem("riwayati_ratings", JSON.stringify(next));
       return next;
     });
+    // Persist to the server so the rating survives device/browser changes.
+    try {
+      const userKey = getUserKey(guestRef.current?.name);
+      fetch("/api/ratings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ novelId, userKey, stars }),
+      }).catch(() => {});
+    } catch {}
   }, []);
 
   const unlockAchievement = useCallback((id: string) => {
