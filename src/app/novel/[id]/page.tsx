@@ -1,7 +1,10 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import Link from "next/link";
+import { BookOpen, ArrowRight } from "lucide-react";
 import { getNovelById, novels } from "@/data/novels";
 import { NovelReadingClient } from "./NovelReadingClient";
+import { NovelErrorBoundary } from "@/components/NovelErrorBoundary";
 
 const BASE = "https://rewayati.vercel.app";
 
@@ -70,7 +73,9 @@ export default function NovelPage({
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
-      <NovelReadingClient novel={novel} startPage={startPage} />
+      <NovelErrorBoundary novel={novel}>
+        <NovelReadingClient novel={novel} startPage={startPage} />
+      </NovelErrorBoundary>
     </>
   );
 }

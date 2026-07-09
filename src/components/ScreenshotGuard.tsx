@@ -106,32 +106,15 @@ export default function ScreenshotGuard() {
     return () => document.removeEventListener("keydown", onKeyDown, true);
   }, [typingTarget, showOverlay, applyBodyBlur]);
 
-  /* ── 2. Window blur → defensively blur the page body so an attempted
-   *      screen capture (e.g. Windows Snipping Tool, macOS Screenshot UI,
-   *      third-party grabber) sees a blurred page. We deliberately do NOT
-   *      write to the clipboard on plain tab-switches / permission prompts
-   *      anymore — that triggered a false-positive "copied to clipboard"
-   *      popup the user complained about. The clipboard white-image
-   *      replacement only fires on real PrintScreen / Shift+S below, where
-   *      it can't be mistaken for normal app behaviour. */
-  useEffect(() => {
-    const onBlur = () => {
-      applyBodyBlur(true);
-    };
-    const onFocus = () => {
-      applyBodyBlur(false);
-    };
-
-    window.addEventListener("blur", onBlur);
-    window.addEventListener("focus", onFocus);
-    return () => {
-      window.removeEventListener("blur", onBlur);
-      window.removeEventListener("focus", onFocus);
-    };
-  }, [applyBodyBlur]);
-
-  /* ── 3. Visibility change — also defensively blur so screenshots
-   *      triggered by tabbing away to a grabber can't capture clean text. */
+  /* ── 2. Visibility change — defensively blur the page body so an
+   *      attempted screen capture (Windows Snipping Tool, macOS Screenshot
+   *      UI, third-party grabber) sees a blurred page when the tab is
+   *      hidden. The plain `window.blur` event is intentionally NOT
+   *      handled here — that fires on every tab-switch / permission prompt
+   *      and triggered a false "copied to clipboard" notification the user
+   *      complained about. The clipboard white-image replacement only
+   *      fires on real PrintScreen / Shift+S, where it can't be mistaken
+   *      for normal app behaviour. */
   useEffect(() => {
     const onChange = () => {
       if (document.hidden) {
@@ -146,7 +129,7 @@ export default function ScreenshotGuard() {
     return () => document.removeEventListener("visibilitychange", onChange);
   }, [applyBodyBlur]);
 
-  /* ── 4. Mouse leave window — silent only ─────────── */
+  /* ── 3. Mouse leave window — silent only ─────────── */
   useEffect(() => {
     const onLeave = () => {
       mouseCancelRef.current = true;

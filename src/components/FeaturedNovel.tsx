@@ -4,6 +4,7 @@ import Link from "next/link";
 import { BookOpen, ArrowLeft, Star, Tag, Sparkles } from "lucide-react";
 import { novels } from "@/data/novels";
 import { PDFCover } from "./PDFCover";
+import { SafeBoundary } from "./SafeBoundary";
 import { useApp } from "@/context/AppContext";
 import { t } from "@/lib/i18n";
 
@@ -41,12 +42,14 @@ export function FeaturedNovel() {
             className="relative sm:w-64 md:w-72 flex-shrink-0 overflow-hidden"
           >
             <div className="relative w-full aspect-[16/9] sm:aspect-[3/4] overflow-hidden">
-              <PDFCover
-                pdfUrl={`/api/novel-asset/${novel.pdfFile}`}
-                novelId={novel.id}
-                title={novel.title}
-                className="w-full h-full object-cover transition-transform duration-[700ms] ease-out group-hover:scale-105"
-              />
+              <SafeBoundary name="featured-cover" silent>
+                <PDFCover
+                  pdfUrl={`/api/novel-asset/${novel.pdfFile}`}
+                  novelId={novel.id}
+                  title={novel.title}
+                  className="w-full h-full object-cover transition-transform duration-[700ms] ease-out group-hover:scale-105"
+                />
+              </SafeBoundary>
               <div className="novel-shine" />
               <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent sm:bg-gradient-to-l" />
             </div>
