@@ -20,6 +20,9 @@ export default function AboutContent() {
             {t("about.platform", lang)}
           </span>
         </span>
+        <div className="text-4xl mb-3" aria-label="علم الجزائر">
+          🇩🇿
+        </div>
         <h1 className={`text-4xl sm:text-5xl font-bold text-gray-900 dark:text-gray-100 mb-4 ${fontClass}`}>
           {t("nav.about", lang)}
         </h1>

@@ -16,7 +16,7 @@ export function Breadcrumb({
   const Chevron = dir === "ltr" ? ChevronRight : ChevronLeft;
 
   return (
-    <nav className="flex items-center gap-1.5 text-xs text-gray-400 dark:text-gray-500 mb-4 flex-wrap" dir={dir}>
+    <nav className="flex items-center gap-1.5 text-xs text-gray-400 dark:text-gray-500 mb-4 flex-wrap me-4 sm:me-6" dir={dir}>
       <Link href="/" className={`hover:text-gold-500 transition-colors ${fontClass}`}>
         {t("nav.home", lang)}
       </Link>

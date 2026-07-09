@@ -7,6 +7,7 @@ import dynamic from "next/dynamic";
 import { Novel } from "@/data/novels";
 import { StarRating } from "@/components/StarRating";
 import { CCPModal } from "@/components/CCPModal";
+import { SubscriptionModal } from "@/components/SubscriptionModal";
 import { Comments } from "@/components/Comments";
 import { Breadcrumb } from "@/components/Breadcrumb";
 import { SkeletonReader } from "@/components/Skeleton";
@@ -34,6 +35,7 @@ interface NovelReadingClientProps {
 export function NovelReadingClient({ novel, startPage }: NovelReadingClientProps) {
   const { bookmarks, ratings, setRating, guest, saveBookmark, trackNovelView, readerPrefs, lang, unlocked, devUnlocked, showToast, hydrated } = useApp();
   const [showCCP, setShowCCP] = useState(false);
+  const [showSubs, setShowSubs] = useState(false);
   const [pageCurl, setPageCurl] = useState(false);
   // Deep links (e.g. "Continue Reading" cards) pass an explicit startPage and
   // should drop straight into the reader; a fresh visit from the library grid
@@ -55,13 +57,21 @@ export function NovelReadingClient({ novel, startPage }: NovelReadingClientProps
   const canRead = hydrated && (guest !== null || devUnlocked);
 
   const beginReading = (page?: number) => {
-    // Requirement 4: no reading before logging in as guest or activating dev code.
     if (!canRead) {
       showToast(t("gate.loginRequired", lang));
       return;
     }
-    setEntryPage(page || bookmarks[novel.id] || 1);
+    const targetPage = page || bookmarks[novel.id] || 1;
+    const isChapterLocked = page ? !unlocked && !devUnlocked && page > novel.freeUntilPage && novel.freeUntilPage > 0 : false;
+    
+    if (isChapterLocked) {
+      setShowSubs(true);
+      return;
+    }
+    
+    setEntryPage(targetPage);
     setShowOverview(false);
+    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   /* Deep links (e.g. "Continue Reading" / chapter links) that target a page
@@ -358,6 +368,9 @@ export function NovelReadingClient({ novel, startPage }: NovelReadingClientProps
 
       {showCCP && (
         <CCPModal novelTitle={novel.title} onClose={() => setShowCCP(false)} />
+      )}
+      {showSubs && (
+        <SubscriptionModal onClose={() => setShowSubs(false)} />
       )}
     </>
   );

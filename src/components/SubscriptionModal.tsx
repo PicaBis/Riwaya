@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { X, BookOpen, Lock, Coins, ChevronLeft, ArrowLeft } from "lucide-react";
 import clsx from "clsx";
@@ -15,15 +15,25 @@ export function SubscriptionModal({ onClose }: { onClose: () => void }) {
   const [selectedNovelId, setSelectedNovelId] = useState<string | null>(null);
   const selectedNovel = novels.find((n) => n.id === selectedNovelId);
 
+  useEffect(() => {
+    const original = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => { document.body.style.overflow = original; };
+  }, []);
+
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fade-in"
+      className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-md animate-fade-in"
       onClick={(e) => e.target === e.currentTarget && onClose()}
     >
-      <div className="relative w-full max-w-lg bg-white dark:bg-onyx-800 rounded-2xl shadow-2xl p-6 animate-scale-in max-h-[85vh] overflow-y-auto">
+      <div
+        className="relative w-full max-w-md bg-white dark:bg-onyx-800 rounded-3xl shadow-2xl border border-parchment-200 dark:border-white/10 p-6 sm:p-8 animate-scale-in max-h-[85vh] overflow-y-auto"
+        onClick={(e) => e.stopPropagation()}
+        dir={dir}
+      >
         <button
           onClick={onClose}
-          className="absolute top-4 left-4 p-1.5 rounded-lg text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-white/10 transition-colors z-10"
+          className="absolute top-4 left-4 w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-white/10 transition-colors z-10"
         >
           <X className="w-5 h-5" />
         </button>
@@ -42,7 +52,6 @@ export function SubscriptionModal({ onClose }: { onClose: () => void }) {
         </div>
 
         {selectedNovel ? (
-          /* ── Chapters list ───────────────────────────── */
           <div dir={dir}>
             <button
               onClick={() => setSelectedNovelId(null)}
@@ -112,7 +121,6 @@ export function SubscriptionModal({ onClose }: { onClose: () => void }) {
                   );
                 })
               ) : (
-                /* Fallback: no chapters defined, just show read button */
                 <Link
                   href={`/novel/${selectedNovel.id}`}
                   onClick={onClose}
@@ -129,7 +137,6 @@ export function SubscriptionModal({ onClose }: { onClose: () => void }) {
               )}
             </div>
 
-            {/* Legend */}
             <div className={`flex items-center gap-4 mt-5 pt-4 border-t border-parchment-200 dark:border-white/8 text-xs text-gray-400 justify-center ${fontClass}`}>
               <span className="flex items-center gap-1">
                 <BookOpen className="w-3 h-3 text-gold-500" /> {t("subs.legendFree", lang)}
@@ -140,7 +147,6 @@ export function SubscriptionModal({ onClose }: { onClose: () => void }) {
             </div>
           </div>
         ) : (
-          /* ── Novels list ─────────────────────────────── */
           <div className="space-y-3" dir={dir}>
             {novels.map((novel) => (
               <button
