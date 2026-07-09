@@ -54,6 +54,7 @@ export default function ScreenshotGuard() {
   const blurCancelRef = useRef(false);
   const focusCancelRef = useRef(false);
   const visibleCancelRef = useRef(false);
+  const hiddenCancelRef = useRef(false);
   const mouseCancelRef = useRef(false);
   const typingTarget = useCallback(
     (t: EventTarget | null): boolean => {
@@ -80,7 +81,7 @@ export default function ScreenshotGuard() {
     }
   }, []);
 
-  /* ── 1. PrintScreen ──────────────────────────────── */
+  /* ── 1. PrintScreen / Shift+S ──────────────────── */
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
       if (typingTarget(e.target)) return;
@@ -92,9 +93,6 @@ export default function ScreenshotGuard() {
       }
       if (key === "printscreen" || (e.shiftKey && key === "s")) {
         e.preventDefault();
-        // Black overlay for 3s + clipboard white-image spam + body blur,
-        // so any in-flight screen-grab (or the user's own screenshot) ends
-        // up with a black/white frame instead of the real content.
         showOverlay(3000);
         applyBodyBlur(true);
         setTimeout(() => applyBodyBlur(false), 3000);
@@ -106,30 +104,47 @@ export default function ScreenshotGuard() {
     return () => document.removeEventListener("keydown", onKeyDown, true);
   }, [typingTarget, showOverlay, applyBodyBlur]);
 
-  /* ── 2. Visibility change — defensively blur the page body so an
-   *      attempted screen capture (Windows Snipping Tool, macOS Screenshot
-   *      UI, third-party grabber) sees a blurred page when the tab is
-   *      hidden. The plain `window.blur` event is intentionally NOT
-   *      handled here — that fires on every tab-switch / permission prompt
-   *      and triggered a false "copied to clipboard" notification the user
-   *      complained about. The clipboard white-image replacement only
-   *      fires on real PrintScreen / Shift+S, where it can't be mistaken
-   *      for normal app behaviour. */
+  /* ── 2. Window blur — Snipping Tool / tab switch loses focus ── */
+  useEffect(() => {
+    const onBlur = () => {
+      showOverlay(4000);
+      applyBodyBlur(true);
+      blurCancelRef.current = false;
+      scheduleWrites(8, 300, blurCancelRef);
+    };
+    window.addEventListener("blur", onBlur);
+    return () => window.removeEventListener("blur", onBlur);
+  }, [showOverlay, applyBodyBlur]);
+
+  /* ── 3. Window focus — returning from Snipping Tool / tab switch ── */
+  useEffect(() => {
+    const onFocus = () => {
+      applyBodyBlur(false);
+      focusCancelRef.current = false;
+      scheduleWrites(4, 500, focusCancelRef, 1000);
+    };
+    window.addEventListener("focus", onFocus);
+    return () => window.removeEventListener("focus", onFocus);
+  }, [applyBodyBlur]);
+
+  /* ── 4. Visibility change — page hidden / visible ── */
   useEffect(() => {
     const onChange = () => {
       if (document.hidden) {
         applyBodyBlur(true);
-        visibleCancelRef.current = true;
+        hiddenCancelRef.current = false;
+        scheduleWrites(6, 300, hiddenCancelRef);
       } else {
         applyBodyBlur(false);
         visibleCancelRef.current = false;
+        scheduleWrites(4, 400, visibleCancelRef, 1200);
       }
     };
     document.addEventListener("visibilitychange", onChange);
     return () => document.removeEventListener("visibilitychange", onChange);
   }, [applyBodyBlur]);
 
-  /* ── 3. Mouse leave window — silent only ─────────── */
+  /* ── 5. Mouse leave window — silent only ─────────── */
   useEffect(() => {
     const onLeave = () => {
       mouseCancelRef.current = true;
@@ -145,7 +160,7 @@ export default function ScreenshotGuard() {
     };
   }, []);
 
-  /* ── 5. Block copy (site-wide, outside inputs) ───── */
+  /* ── 6. Block copy (site-wide, outside inputs) ───── */
   useEffect(() => {
     const onCopy = (e: ClipboardEvent) => {
       if (!typingTarget(e.target)) {
