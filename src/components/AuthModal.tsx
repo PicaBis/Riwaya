@@ -21,7 +21,13 @@ export function AuthModal({ onClose }: { onClose: () => void }) {
     e.preventDefault();
     setLoading(true);
     setError("");
-    const res = await signInWithEmail(email);
+    const trimmed = email.trim();
+    if (!trimmed || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed)) {
+      setError(t("auth.invalidEmail", lang));
+      setLoading(false);
+      return;
+    }
+    const res = await signInWithEmail(trimmed);
     setLoading(false);
     if (res.ok) setStep("code");
     else setError(res.error === "invalid email" ? t("auth.invalidEmail", lang) : t("auth.sendFailed", lang));

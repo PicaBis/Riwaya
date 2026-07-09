@@ -24,15 +24,16 @@ export function ShareButtons({ title, url }: { title: string; url: string }) {
   const share = (platform: string) => {
     const encoded = encodeURIComponent(shareUrl);
     const encodedText = encodeURIComponent(shareText);
+    const features = "noopener,noreferrer";
     switch (platform) {
       case "whatsapp":
-        window.open(`https://wa.me/?text=${encodedText}%20${encoded}`, "_blank");
+        window.open(`https://wa.me/?text=${encodedText}%20${encoded}`, "_blank", features);
         break;
       case "facebook":
-        window.open(`https://www.facebook.com/sharer/sharer.php?u=${encoded}`, "_blank");
+        window.open(`https://www.facebook.com/sharer/sharer.php?u=${encoded}`, "_blank", features);
         break;
       case "twitter":
-        window.open(`https://twitter.com/intent/tweet?text=${encodedText}&url=${encoded}`, "_blank");
+        window.open(`https://twitter.com/intent/tweet?text=${encodedText}&url=${encoded}`, "_blank", features);
         break;
     }
     setOpen(false);

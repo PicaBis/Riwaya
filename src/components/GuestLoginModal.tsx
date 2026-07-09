@@ -20,7 +20,11 @@ export function GuestLoginModal({ onClose }: GuestLoginModalProps) {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const trimmed = name.trim();
-    if (!trimmed) {
+    if (!trimmed || trimmed.length < 2) {
+      setError(t("guest.error", lang));
+      return;
+    }
+    if (trimmed.length > 50) {
       setError(t("guest.error", lang));
       return;
     }

@@ -34,7 +34,11 @@ export function Paywall({ onUnlock, onBackToFree, price = 500, ripNumber = BANK.
 
   const handleCodeSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!code.trim()) return;
+    const trimmed = code.trim();
+    if (!trimmed || trimmed.length < 4) {
+      setError(t("paywall.wrongCode", lang));
+      return;
+    }
     setChecking(true);
     setError("");
 

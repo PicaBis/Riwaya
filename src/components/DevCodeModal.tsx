@@ -17,15 +17,16 @@ export function DevCodeModal({ onClose }: { onClose: () => void }) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!code.trim()) {
+    const trimmed = code.trim();
+    if (!trimmed || trimmed.length < 4 || trimmed.length > 100) {
       setError(t("dev.empty", lang));
       return;
     }
-    const ok = await verifyDevCode(code.trim());
+    const ok = await verifyDevCode(trimmed);
      if (ok) {
       setAdmin(true);
       setDevUnlocked(true);
-      try { sessionStorage.setItem("riwayati_devcode", code.trim()); } catch {}
+      try { sessionStorage.setItem("riwayati_devcode", trimmed); } catch {}
       setSuccess(t("dev.success", lang));
       setError("");
       setTimeout(() => onClose(), 1000);
