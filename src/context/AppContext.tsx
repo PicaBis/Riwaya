@@ -220,9 +220,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [toast, setToast] = useState<{ id: number; message: string; type: string } | null>(null);
   const toastTimer = useRef<number | null>(null);
 
-  /* ── UI sounds (opt-in: off until the user turns them on) ── */
-  const [soundEnabled, setSoundEnabled] = useState(false);
-  const soundEnabledRef = useRef(false);
+  /* ── UI sounds (on by default; the user can still mute via the header toggle) ── */
+  const [soundEnabled, setSoundEnabled] = useState(true);
+  const soundEnabledRef = useRef(true);
   const audioCtxRef = useRef<AudioContext | null>(null);
 
   /* Hydrate from localStorage on client.
@@ -294,10 +294,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       setDevUnlockedState(
         getSessionItem("riwayati_dev_token") === "1" || getSessionItem("riwayati_devcode") != null
       );
-      /* Sounds are opt-in: only enable if the user explicitly turned them on. */
-      if (getItem("riwayati_sound") === "1") {
-        setSoundEnabled(true);
-        soundEnabledRef.current = true;
+      /* Sounds default to on; only respect an explicit prior mute. */
+      if (getItem("riwayati_sound") === "0") {
+        setSoundEnabled(false);
+        soundEnabledRef.current = false;
       }
     } catch (err) {
       // Should be unreachable given the guards above, but this hydration
@@ -607,12 +607,37 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     return () => document.removeEventListener("click", handler);
   }, [playSound]);
 
-  /* Forward uncaught client errors to the logging endpoint. */
+  /* Forward uncaught client errors to the logging endpoint. Also self-heal
+     from a stale-asset-reference class of crash: if a browser tab has an
+     older HTML shell open (or an old service worker cache) referencing a JS
+     chunk that a newer deployment no longer serves, the resulting
+     "Loading chunk X failed" / ChunkLoadError would otherwise take down the
+     whole app. A single hard reload picks up the current deployment's
+     shell/chunks; the session-scoped guard prevents a reload loop if the
+     network is genuinely down. */
   useEffect(() => {
+    const isChunkLoadError = (msg: unknown): boolean => {
+      const text = msg instanceof Error ? `${msg.name} ${msg.message}` : String(msg ?? "");
+      return /ChunkLoadError|Loading chunk [\w-]+ failed|Importing a module script failed/i.test(text);
+    };
+    const recoverFromStaleChunk = (source: unknown) => {
+      if (!isChunkLoadError(source)) return false;
+      try {
+        if (sessionStorage.getItem("riwayati_chunk_reload")) return true;
+        sessionStorage.setItem("riwayati_chunk_reload", "1");
+      } catch {
+        /* if we can't set the guard, still avoid an uncontrolled loop */
+        return true;
+      }
+      window.location.reload();
+      return true;
+    };
     const onError = (e: ErrorEvent) => {
+      if (recoverFromStaleChunk(e.error || e.message)) return;
       import("@/lib/error-report").then((m) => m.reportError(e.error || e.message, { source: e.filename, line: e.lineno }));
     };
     const onReject = (e: PromiseRejectionEvent) => {
+      if (recoverFromStaleChunk(e.reason)) return;
       import("@/lib/error-report").then((m) => m.reportError(e.reason, { kind: "unhandledrejection" }));
     };
     window.addEventListener("error", onError);

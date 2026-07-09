@@ -9,7 +9,6 @@ import { AutoFullscreen } from "@/components/AutoFullscreen";
 import { ScrollToTop } from "@/components/ScrollToTop";
 import { ScrollProgress } from "@/components/ScrollProgress";
 import { Footer } from "@/components/Footer";
-import ScreenshotGuard from "@/components/ScreenshotGuard";
 
 export const metadata: Metadata = {
   title: "روايتي — مكتبة الروايات الشخصية",
@@ -119,7 +118,6 @@ export default function RootLayout({
         />
       </head>
       <body className="min-h-screen flex flex-col">
-        <ScreenshotGuard />
         <AppProvider>
           <ScrollProgress />
           <SplashScreen />

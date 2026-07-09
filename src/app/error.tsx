@@ -22,6 +22,24 @@ export default function Error({
     import("@/lib/error-report").then((m) => m.reportError(error)).catch(() => {});
   }, [error]);
 
+  // Last-resort self-heal: if something we didn't anticipate left a corrupted
+  // value in this site's own storage keys, wipe just those (never anything
+  // belonging to another site) and reload from a clean slate.
+  const clearLocalDataAndRetry = () => {
+    try {
+      const prefixes = ["riwayati_"];
+      for (const store of [localStorage, sessionStorage]) {
+        const toRemove: string[] = [];
+        for (let i = 0; i < store.length; i++) {
+          const key = store.key(i);
+          if (key && prefixes.some((p) => key.startsWith(p))) toRemove.push(key);
+        }
+        toRemove.forEach((k) => store.removeItem(k));
+      }
+    } catch {}
+    window.location.href = "/";
+  };
+
   return (
     <div className="min-h-[80vh] flex flex-col items-center justify-center px-4 text-center" dir={dir}>
       <BookOpen className="w-20 h-20 text-gold-500/20 mb-6" />
@@ -45,6 +63,12 @@ export default function Error({
           {t("error.home", lang)}
         </Link>
       </div>
+      <button
+        onClick={clearLocalDataAndRetry}
+        className={`mt-5 text-xs text-gray-400 dark:text-gray-600 hover:text-gold-500 dark:hover:text-gold-400 underline underline-offset-4 transition-colors ${fontClass}`}
+      >
+        {t("error.clearData", lang)}
+      </button>
     </div>
   );
 }
