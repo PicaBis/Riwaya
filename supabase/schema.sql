@@ -62,4 +62,40 @@ create policy "ratings_public_read"
   on public.ratings for select
   using (true);
 
--- Done. The site reads with the anon key and writes with the service-role key.
+-- 5) Activation codes table ---------------------------------------------------
+--    Subscription/redeem codes. RLS enabled with NO policies at all: the
+--    anon key (public, ships in the client bundle) must never be able to
+--    list unredeemed codes or redeem one directly against Supabase — only
+--    the server (service-role key, via /api/activate and /api/admin/codes)
+--    may read or write this table.
+create table if not exists public.activation_codes (
+  id         uuid primary key default gen_random_uuid(),
+  code       text unique not null,
+  label      text,
+  used       boolean     not null default false,
+  used_by    text,
+  used_at    timestamptz,
+  created_at timestamptz not null default now()
+);
+
+create index if not exists activation_codes_used_by_idx on public.activation_codes (used_by);
+
+alter table public.activation_codes enable row level security;
+
+-- 6) Reading progress table ---------------------------------------------------
+--    One row per (user, novel); lets a bookmark persist across devices once
+--    signed in. Same no-anon-access reasoning as activation_codes above —
+--    only the server (service-role key) reads/writes this table.
+create table if not exists public.reading_progress (
+  user_key   text        not null,
+  novel_id   text        not null,
+  last_page  int         not null,
+  updated_at timestamptz not null default now(),
+  primary key (user_key, novel_id)
+);
+
+alter table public.reading_progress enable row level security;
+
+-- Done. The site reads public data (comments, ratings) with the anon key;
+-- everything else (activation codes, reading progress, and all writes) goes
+-- through the server's service-role key, which bypasses RLS.

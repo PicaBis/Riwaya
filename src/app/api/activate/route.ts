@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getSupabase } from "@/lib/supabase";
+import { getServiceSupabase } from "@/lib/supabase";
 import { rateLimit, getClientIp } from "@/lib/rate-limit";
 
 function normalizeCode(raw: string): string {
@@ -27,18 +27,23 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "رمز غير صالح" }, { status: 400 });
     }
 
-    const supabase = getSupabase();
+    // Writes must go through the service-role client: activation_codes has
+    // RLS enabled with no anon policies, so the site's public anon key
+    // (visible in the client bundle) can never read or redeem codes directly
+    // against Supabase — only this server route, after its own rate-limit
+    // check above, can.
+    const supabase = getServiceSupabase();
     if (!supabase) {
       return NextResponse.json({ error: "الخدمة غير متوفرة حالياً" }, { status: 503 });
     }
 
-    const { data: row, error } = await supabase
+    const { data: row } = await supabase
       .from("activation_codes")
-      .select("*")
+      .select("used")
       .eq("code", code)
       .single();
 
-    if (error || !row) {
+    if (!row) {
       return NextResponse.json({ error: "الرمز غير صحيح" }, { status: 404 });
     }
 
@@ -49,10 +54,22 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    await supabase
+    // Atomic conditional update (only succeeds if still unused) instead of a
+    // separate check-then-update, so two concurrent requests for the same
+    // code can never both win the race and both report success.
+    const { data: updated } = await supabase
       .from("activation_codes")
       .update({ used: true, used_by: userKey, used_at: new Date().toISOString() })
-      .eq("code", code);
+      .eq("code", code)
+      .eq("used", false)
+      .select("code");
+
+    if (!updated || updated.length === 0) {
+      return NextResponse.json(
+        { error: "هذا الرمز مستخدم بالفعل" },
+        { status: 409 }
+      );
+    }
 
     return NextResponse.json({ ok: true, message: "تم التفعيل بنجاح" });
   } catch {

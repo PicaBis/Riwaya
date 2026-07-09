@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getSupabase } from "@/lib/supabase";
+import { getServiceSupabase } from "@/lib/supabase";
 import { verifyAdminRequest } from "@/lib/admin-auth";
 
 function genCode(): string {
@@ -16,7 +16,7 @@ export async function GET(request: NextRequest) {
   if (!(await verifyAdminRequest(request.headers))) {
     return NextResponse.json({ error: "غير مصرح" }, { status: 403 });
   }
-  const supabase = getSupabase();
+  const supabase = getServiceSupabase();
   if (!supabase) return NextResponse.json({ error: "الخدمة غير متوفرة" }, { status: 503 });
 
   const { data, error } = await supabase
@@ -33,7 +33,7 @@ export async function POST(request: NextRequest) {
   if (!(await verifyAdminRequest(request.headers))) {
     return NextResponse.json({ error: "غير مصرح" }, { status: 403 });
   }
-  const supabase = getSupabase();
+  const supabase = getServiceSupabase();
   if (!supabase) return NextResponse.json({ error: "الخدمة غير متوفرة" }, { status: 503 });
 
   const body = await request.json().catch(() => ({}));
@@ -55,7 +55,7 @@ export async function DELETE(request: NextRequest) {
   if (!(await verifyAdminRequest(request.headers))) {
     return NextResponse.json({ error: "غير مصرح" }, { status: 403 });
   }
-  const supabase = getSupabase();
+  const supabase = getServiceSupabase();
   if (!supabase) return NextResponse.json({ error: "الخدمة غير متوفرة" }, { status: 503 });
 
   const body = await request.json().catch(() => ({}));

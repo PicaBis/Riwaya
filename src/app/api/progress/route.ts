@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getSupabase } from "@/lib/supabase";
+import { getServiceSupabase } from "@/lib/supabase";
 
 function isValidNovelId(id: string): boolean {
   return /^[a-z0-9-]+$/.test(id) && id.length <= 100;
@@ -10,7 +10,7 @@ export async function GET(request: NextRequest) {
   const userKey = request.nextUrl.searchParams.get("userKey");
   if (!userKey) return NextResponse.json([], { status: 200 });
 
-  const supabase = getSupabase();
+  const supabase = getServiceSupabase();
   if (!supabase) return NextResponse.json([], { status: 200 });
 
   const { data, error } = await supabase
@@ -34,7 +34,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "بيانات غير صالحة" }, { status: 400 });
     }
 
-    const supabase = getSupabase();
+    const supabase = getServiceSupabase();
     if (!supabase) return NextResponse.json({ ok: false }, { status: 200 });
 
     await supabase
