@@ -12,6 +12,7 @@ import { Breadcrumb } from "@/components/Breadcrumb";
 import { SkeletonReader } from "@/components/Skeleton";
 import { PDFCover } from "@/components/PDFCover";
 import { PDFErrorBoundary } from "@/components/PDFErrorBoundary";
+import { SafeBoundary } from "@/components/SafeBoundary";
 import { estimateReadTime } from "@/components/NovelCard";
 import { useApp } from "@/context/AppContext";
 import { t } from "@/lib/i18n";
@@ -199,7 +200,9 @@ export function NovelReadingClient({ novel, startPage }: NovelReadingClientProps
               {/* Cover */}
               <div className="w-full max-w-[220px] mx-auto md:mx-0 flex-shrink-0">
                 <div className="rounded-2xl overflow-hidden shadow-book border border-parchment-200 dark:border-white/8">
-                  <PDFCover pdfUrl={pdfUrl} novelId={novel.id} title={novel.title} className="w-full aspect-[3/4]" />
+                  <SafeBoundary name="novel-cover" silent>
+                    <PDFCover pdfUrl={pdfUrl} novelId={novel.id} title={novel.title} className="w-full aspect-[3/4]" />
+                  </SafeBoundary>
                 </div>
               </div>
 
@@ -340,7 +343,16 @@ export function NovelReadingClient({ novel, startPage }: NovelReadingClientProps
 
         {/* ── Comments ───────────────────────────────── */}
         <div className="max-w-4xl mx-auto px-3 sm:px-6 py-4 sm:py-6 w-full" dir={dir}>
-          <Comments novelId={novel.id} />
+          <SafeBoundary
+            name="novel-comments"
+            fallback={
+              <p className={`text-center text-sm text-gray-400 dark:text-gray-500 py-8 ${fontClass}`}>
+                {t("comments.empty", lang)}
+              </p>
+            }
+          >
+            <Comments novelId={novel.id} />
+          </SafeBoundary>
         </div>
       </div>
 

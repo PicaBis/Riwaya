@@ -6,6 +6,8 @@ import { SplashScreen } from "@/components/SplashScreen";
 import { BugReporter } from "@/components/BugReporter";
 import { CookieConsent } from "@/components/CookieConsent";
 import { AutoFullscreen } from "@/components/AutoFullscreen";
+import ScreenshotGuard from "@/components/ScreenshotGuard";
+import { SafeBoundary } from "@/components/SafeBoundary";
 import { ScrollToTop } from "@/components/ScrollToTop";
 import { ScrollProgress } from "@/components/ScrollProgress";
 import { Footer } from "@/components/Footer";
@@ -118,6 +120,7 @@ export default function RootLayout({
         />
       </head>
       <body className="min-h-screen flex flex-col">
+        <ScreenshotGuard />
         <AppProvider>
           <ScrollProgress />
           <SplashScreen />

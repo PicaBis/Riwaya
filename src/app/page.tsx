@@ -11,6 +11,7 @@ import { Reveal } from "@/components/Reveal";
 import { CountUp } from "@/components/CountUp";
 import { FeaturedNovel } from "@/components/FeaturedNovel";
 import { MysteryCard } from "@/components/MysteryCard";
+import { SafeBoundary } from "@/components/SafeBoundary";
 import { useApp } from "@/context/AppContext";
 import { t } from "@/lib/i18n";
 
@@ -131,9 +132,9 @@ export default function HomePage() {
 
       <span id="novels" className="block -mt-4 pt-4" />
 
-      <Reveal><ContinueReading /></Reveal>
-      <Reveal><ReadingStats /></Reveal>
-      <Reveal><PopularSection /></Reveal>
+      <Reveal><SafeBoundary name="continue-reading" silent><ContinueReading /></SafeBoundary></Reveal>
+      <Reveal><SafeBoundary name="reading-stats" silent><ReadingStats /></SafeBoundary></Reveal>
+      <Reveal><SafeBoundary name="popular-section" silent><PopularSection /></SafeBoundary></Reveal>
 
       {/* ── Section header ────────────────────────────── */}
       <Reveal>
@@ -163,7 +164,9 @@ export default function HomePage() {
               className="animate-fade-up"
               style={{ animationDelay: `${i * 100}ms`, animationFillMode: "both" }}
             >
-              {novel.mystery ? <MysteryCard /> : <NovelCard novel={novel} index={i} />}
+              <SafeBoundary name={`novel-card-${novel.id}`} silent>
+                {novel.mystery ? <MysteryCard /> : <NovelCard novel={novel} index={i} />}
+              </SafeBoundary>
             </div>
           ))}
         </div>

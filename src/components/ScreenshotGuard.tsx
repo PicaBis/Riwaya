@@ -92,23 +92,31 @@ export default function ScreenshotGuard() {
       }
       if (key === "printscreen" || (e.shiftKey && key === "s")) {
         e.preventDefault();
+        // Black overlay for 3s + clipboard white-image spam + body blur,
+        // so any in-flight screen-grab (or the user's own screenshot) ends
+        // up with a black/white frame instead of the real content.
         showOverlay(3000);
+        applyBodyBlur(true);
+        setTimeout(() => applyBodyBlur(false), 3000);
         blurCancelRef.current = false;
         scheduleWrites(5, 200, blurCancelRef);
       }
     };
     document.addEventListener("keydown", onKeyDown, true);
     return () => document.removeEventListener("keydown", onKeyDown, true);
-  }, [typingTarget, showOverlay]);
+  }, [typingTarget, showOverlay, applyBodyBlur]);
 
-  /* ── 2. Window blur → keep silent, no clipboard spam ──
-   * NOTE: removed clipboard writes here because they trigger the browser's
-   * "copied to clipboard" notification popup on every tab-switch / permission
-   * prompt, which the user reports as a false-positive error. The guard still
-   * defends against real screenshots via PrintScreen key detection above. */
+  /* ── 2. Window blur → defensively blur the page body so an attempted
+   *      screen capture (e.g. Windows Snipping Tool, macOS Screenshot UI,
+   *      third-party grabber) sees a blurred page. We deliberately do NOT
+   *      write to the clipboard on plain tab-switches / permission prompts
+   *      anymore — that triggered a false-positive "copied to clipboard"
+   *      popup the user complained about. The clipboard white-image
+   *      replacement only fires on real PrintScreen / Shift+S below, where
+   *      it can't be mistaken for normal app behaviour. */
   useEffect(() => {
     const onBlur = () => {
-      applyBodyBlur(false);
+      applyBodyBlur(true);
     };
     const onFocus = () => {
       applyBodyBlur(false);
@@ -122,18 +130,21 @@ export default function ScreenshotGuard() {
     };
   }, [applyBodyBlur]);
 
-  /* ── 3. Visibility change — silent only ──────────── */
+  /* ── 3. Visibility change — also defensively blur so screenshots
+   *      triggered by tabbing away to a grabber can't capture clean text. */
   useEffect(() => {
     const onChange = () => {
       if (document.hidden) {
+        applyBodyBlur(true);
         visibleCancelRef.current = true;
       } else {
-        visibleCancelRef.current = true;
+        applyBodyBlur(false);
+        visibleCancelRef.current = false;
       }
     };
     document.addEventListener("visibilitychange", onChange);
     return () => document.removeEventListener("visibilitychange", onChange);
-  }, []);
+  }, [applyBodyBlur]);
 
   /* ── 4. Mouse leave window — silent only ─────────── */
   useEffect(() => {
