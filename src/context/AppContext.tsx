@@ -151,6 +151,26 @@ interface AppContextValue {
   toggleSound: () => void;
 }
 
+/**
+ * Parses a JSON value that may have been written by an older build, edited
+ * by hand in devtools, truncated by a storage-quota error, or otherwise be
+ * malformed. `JSON.parse` throwing here is NOT hypothetical — this hydration
+ * step runs on every full page load (including landing directly on a novel
+ * page via a bookmark/refresh), and an uncaught throw inside it took down
+ * the entire app to the generic error screen for any returning visitor with
+ * stale localStorage. Never let a single bad key break the whole session.
+ */
+function safeParse<T>(raw: string | null, validate?: (v: unknown) => v is T): T | null {
+  if (!raw) return null;
+  try {
+    const parsed = JSON.parse(raw);
+    if (validate && !validate(parsed)) return null;
+    return parsed as T;
+  } catch {
+    return null;
+  }
+}
+
 /* ─── Context ────────────────────────────────────────────── */
 const AppContext = createContext<AppContextValue | null>(null);
 
@@ -205,53 +225,87 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const soundEnabledRef = useRef(false);
   const audioCtxRef = useRef<AudioContext | null>(null);
 
-  /* Hydrate from localStorage on client */
+  /* Hydrate from localStorage on client.
+   *
+   * Defensive by construction: every read is independently guarded so a
+   * single corrupted/legacy/hand-edited key (or a browser that blocks
+   * storage access entirely — Safari ITP, private-mode quota errors,
+   * privacy extensions) can never throw past this effect and take down the
+   * whole app to the generic error screen. Each field simply keeps its
+   * default value when its stored form can't be trusted. */
   useEffect(() => {
-    const savedLang = localStorage.getItem("riwayati_lang") as Lang | null;
-    if (savedLang === "en" || savedLang === "ar") setLangState(savedLang);
-    const savedTheme = localStorage.getItem("riwayati_theme");
-    const savedGuest = localStorage.getItem("riwayati_guest");
-    const savedRatings = localStorage.getItem("riwayati_ratings");
-    const savedAdmin = localStorage.getItem("riwayati_admin");
-    const savedBookmarks = localStorage.getItem("riwayati_bookmarks");
-    const savedHistory = localStorage.getItem("riwayati_history");
-    const savedCookie = localStorage.getItem("riwayati_cookies");
+    const getItem = (key: string): string | null => {
+      try {
+        return localStorage.getItem(key);
+      } catch {
+        return null;
+      }
+    };
+    const getSessionItem = (key: string): string | null => {
+      try {
+        return sessionStorage.getItem(key);
+      } catch {
+        return null;
+      }
+    };
 
-    if (savedTheme === "dark") setIsDark(true);
-    if (savedGuest) setGuest(JSON.parse(savedGuest));
-    if (savedRatings) setRatings(JSON.parse(savedRatings));
-    if (savedAdmin === "1") setIsAdmin(true);
-    if (savedBookmarks) setBookmarks(JSON.parse(savedBookmarks));
-    if (savedHistory) setReadHistory(JSON.parse(savedHistory));
-    if (savedCookie) setCookieConsent(savedCookie === "1");
-    if (sessionStorage.getItem("riwayati_fs")) setIntroReady(true);
-    const savedTime = localStorage.getItem("riwayati_reading_time");
-    if (savedTime) setTotalReadingTime(parseInt(savedTime, 10) || 0);
-    const savedAchievements = localStorage.getItem("riwayati_achievements");
-    if (savedAchievements) setAchievements(JSON.parse(savedAchievements));
-    const savedPrefs = localStorage.getItem("riwayati_reader_prefs");
-    if (savedPrefs) setReaderPrefs(JSON.parse(savedPrefs));
-    const savedViews = localStorage.getItem("riwayati_views");
-    if (savedViews) setNovelViews(JSON.parse(savedViews));
-    const savedFavorites = localStorage.getItem("riwayati_favorites");
-    if (savedFavorites) setFavorites(JSON.parse(savedFavorites));
-
-    /* Hydrate subscription / unlock state */
     try {
-      setUnlocked(localStorage.getItem("riwayati_unlocked") === "1");
+      const savedLang = getItem("riwayati_lang") as Lang | null;
+      if (savedLang === "en" || savedLang === "ar") setLangState(savedLang);
+
+      if (getItem("riwayati_theme") === "dark") setIsDark(true);
+
+      const savedGuest = safeParse<GuestUser>(getItem("riwayati_guest"));
+      if (savedGuest && typeof savedGuest.name === "string") setGuest(savedGuest);
+
+      const savedRatings = safeParse<Record<string, number>>(getItem("riwayati_ratings"));
+      if (savedRatings && typeof savedRatings === "object") setRatings(savedRatings);
+
+      if (getItem("riwayati_admin") === "1") setIsAdmin(true);
+
+      const savedBookmarks = safeParse<Record<string, number>>(getItem("riwayati_bookmarks"));
+      if (savedBookmarks && typeof savedBookmarks === "object") setBookmarks(savedBookmarks);
+
+      const savedHistory = safeParse<ReadEntry[]>(getItem("riwayati_history"));
+      if (Array.isArray(savedHistory)) setReadHistory(savedHistory);
+
+      const savedCookie = getItem("riwayati_cookies");
+      if (savedCookie) setCookieConsent(savedCookie === "1");
+
+      if (getSessionItem("riwayati_fs")) setIntroReady(true);
+
+      const savedTime = getItem("riwayati_reading_time");
+      if (savedTime) setTotalReadingTime(parseInt(savedTime, 10) || 0);
+
+      const savedAchievements = safeParse<Achievement[]>(getItem("riwayati_achievements"));
+      if (Array.isArray(savedAchievements)) setAchievements(savedAchievements);
+
+      const savedPrefs = safeParse<ReaderPreferences>(getItem("riwayati_reader_prefs"));
+      if (savedPrefs && typeof savedPrefs === "object") setReaderPrefs(savedPrefs);
+
+      const savedViews = safeParse<Record<string, number>>(getItem("riwayati_views"));
+      if (savedViews && typeof savedViews === "object") setNovelViews(savedViews);
+
+      const savedFavorites = safeParse<string[]>(getItem("riwayati_favorites"));
+      if (Array.isArray(savedFavorites)) setFavorites(savedFavorites);
+
+      /* Hydrate subscription / unlock state */
+      setUnlocked(getItem("riwayati_unlocked") === "1");
       setDevUnlockedState(
-        sessionStorage.getItem("riwayati_dev_token") === "1" ||
-          sessionStorage.getItem("riwayati_devcode") != null
+        getSessionItem("riwayati_dev_token") === "1" || getSessionItem("riwayati_devcode") != null
       );
       /* Sounds are opt-in: only enable if the user explicitly turned them on. */
-      const savedSound = localStorage.getItem("riwayati_sound");
-      if (savedSound === "1") {
+      if (getItem("riwayati_sound") === "1") {
         setSoundEnabled(true);
         soundEnabledRef.current = true;
       }
-    } catch {}
-
-    setMounted(true);
+    } catch (err) {
+      // Should be unreachable given the guards above, but this hydration
+      // step must never be the reason the whole app fails to render.
+      console.error("[AppContext] hydration failed, continuing with defaults:", err);
+    } finally {
+      setMounted(true);
+    }
   }, []);
 
   /* Sync theme class to <html> */

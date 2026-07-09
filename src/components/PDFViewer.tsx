@@ -211,7 +211,10 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, 
   useEffect(() => {
     let cancelled = false;
     setStatus("loading");
-    (async () => {
+    setPdf(null);
+    setTotalPages(0);
+
+    const load = async (attempt: number) => {
       try {
         const pdfjsLib = await import("pdfjs-dist");
         pdfjsLib.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.js";
@@ -228,8 +231,18 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, 
         setPdf(loadedPdf);
         setTotalPages(loadedPdf.numPages);
         setStatus("ready");
-      } catch { if (!cancelled) setStatus("error"); }
-    })();
+      } catch (err) {
+        if (cancelled) return;
+        console.error(`[PDFViewer] load attempt ${attempt} failed:`, err);
+        if (attempt < 2) {
+          setTimeout(() => load(attempt + 1), 800 * attempt);
+        } else {
+          setStatus("error");
+        }
+      }
+    };
+
+    load(1);
     return () => { cancelled = true; };
   }, [pdfUrl, novelId, retryKey]);
 

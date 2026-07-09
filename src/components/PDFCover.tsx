@@ -86,8 +86,11 @@ export function PDFCover({ pdfUrl, novelId, title, className = "" }: PDFCoverPro
         } else {
           if (!cancelled) setStatus("ready");
         }
-      } catch {
-        if (!cancelled) setStatus("error");
+      } catch (err) {
+        if (!cancelled) {
+          console.error("[PDFCover] failed to render cover:", err);
+          setStatus("error");
+        }
       }
     };
 

@@ -11,6 +11,7 @@ import { Comments } from "@/components/Comments";
 import { Breadcrumb } from "@/components/Breadcrumb";
 import { SkeletonReader } from "@/components/Skeleton";
 import { PDFCover } from "@/components/PDFCover";
+import { PDFErrorBoundary } from "@/components/PDFErrorBoundary";
 import { estimateReadTime } from "@/components/NovelCard";
 import { useApp } from "@/context/AppContext";
 import { t } from "@/lib/i18n";
@@ -321,17 +322,19 @@ export function NovelReadingClient({ novel, startPage }: NovelReadingClientProps
           </div>
         ) : (
           <div className={`min-h-[50vh] sm:min-h-[65vh] flex flex-col reading-theme-${readerPrefs.readingTheme} ${pageCurl ? "animate-page-curl" : ""}`} dir="ltr">
-            <PDFViewer
-              pdfUrl={pdfUrl}
-              title={novel.title}
-              freeUntilPage={novel.freeUntilPage}
-              initialPage={entryPage}
-              onPageChange={handlePageChange}
-              preview={novel.description}
-              novelId={novel.id}
-              chapters={novel.chapters}
-              readingTheme={readerPrefs.readingTheme}
-            />
+            <PDFErrorBoundary>
+              <PDFViewer
+                pdfUrl={pdfUrl}
+                title={novel.title}
+                freeUntilPage={novel.freeUntilPage}
+                initialPage={entryPage}
+                onPageChange={handlePageChange}
+                preview={novel.description}
+                novelId={novel.id}
+                chapters={novel.chapters}
+                readingTheme={readerPrefs.readingTheme}
+              />
+            </PDFErrorBoundary>
           </div>
         )}
 
