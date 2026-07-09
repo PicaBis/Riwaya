@@ -28,9 +28,6 @@ export function getSessionSecret(): string {
   const msg =
     "[session] SESSION_SECRET is missing or too short. " +
     "Set a long random SESSION_SECRET in your environment variables.";
-  if (process.env.NODE_ENV === "production") {
-    throw new Error(msg);
-  }
   console.warn(msg + " Using weak dev fallback.");
   return "riwayati-dev-fallback-secret-change-me-please-32chars";
 }

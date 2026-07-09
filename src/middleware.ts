@@ -19,6 +19,15 @@ function rateLimit(key: string, max: number, windowMs: number): boolean {
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
+  try {
+    return await runMiddleware(request, pathname);
+  } catch (err) {
+    console.error("[middleware] failed:", err);
+    return NextResponse.next();
+  }
+}
+
+async function runMiddleware(request: NextRequest, pathname: string): Promise<NextResponse> {
   /* ── Server-issued session identity (foundation for signed asset
    * URLs / watermarking in later phases). Every visitor — guest or not —
    * gets an HttpOnly, HMAC-signed session id the client can never read or

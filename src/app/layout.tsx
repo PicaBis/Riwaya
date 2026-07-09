@@ -64,6 +64,8 @@ export default function RootLayout({
         <meta name="theme-color" content="#fdfcf8" media="(prefers-color-scheme: light)" />
         <meta name="theme-color" content="#1a1917" media="(prefers-color-scheme: dark)" />
         <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         {/* Prevent FOUC for dark mode */}
         <script
           dangerouslySetInnerHTML={{

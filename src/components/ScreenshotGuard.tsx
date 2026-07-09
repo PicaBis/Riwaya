@@ -48,15 +48,6 @@ export default function ScreenshotGuard() {
     setTimeout(() => el.classList.remove("guard-visible"), durationMs);
   }, []);
 
-  const applyBodyBlur = useCallback((enable: boolean) => {
-    const body = document.body;
-    if (enable) {
-      body.classList.add("guard-blur");
-    } else {
-      body.classList.remove("guard-blur");
-    }
-  }, []);
-
   /* ── 1. PrintScreen / Shift+S ──────────────────── */
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
@@ -70,8 +61,6 @@ export default function ScreenshotGuard() {
       if (key === "printscreen" || (e.shiftKey && key === "s")) {
         e.preventDefault();
         showOverlay(3000);
-        applyBodyBlur(true);
-        setTimeout(() => applyBodyBlur(false), 3000);
         overwriteClipboard();
         let remaining = 5;
         const id = window.setInterval(() => {
@@ -85,13 +74,12 @@ export default function ScreenshotGuard() {
     };
     document.addEventListener("keydown", onKeyDown, true);
     return () => document.removeEventListener("keydown", onKeyDown, true);
-  }, [typingTarget, showOverlay, applyBodyBlur]);
+  }, [typingTarget, showOverlay]);
 
   /* ── 2. Window blur — Snipping Tool / tab switch loses focus ── */
   useEffect(() => {
     const startBlurProtection = () => {
       showOverlay(4000);
-      applyBodyBlur(true);
       overwriteClipboard();
       blurIntervalRef.current = window.setInterval(() => {
         overwriteClipboard();
@@ -99,7 +87,6 @@ export default function ScreenshotGuard() {
     };
 
     const stopBlurProtection = () => {
-      applyBodyBlur(false);
       if (blurIntervalRef.current) {
         window.clearInterval(blurIntervalRef.current);
         blurIntervalRef.current = null;
@@ -118,19 +105,17 @@ export default function ScreenshotGuard() {
         blurIntervalRef.current = null;
       }
     };
-  }, [showOverlay, applyBodyBlur]);
+  }, [showOverlay]);
 
   /* ── 3. Visibility change — page hidden / visible ── */
   useEffect(() => {
     const onChange = () => {
       if (document.hidden) {
-        applyBodyBlur(true);
         overwriteClipboard();
         hiddenIntervalRef.current = window.setInterval(() => {
           overwriteClipboard();
         }, 300);
       } else {
-        applyBodyBlur(false);
         if (hiddenIntervalRef.current) {
           window.clearInterval(hiddenIntervalRef.current);
           hiddenIntervalRef.current = null;
@@ -148,13 +133,11 @@ export default function ScreenshotGuard() {
     };
     document.addEventListener("visibilitychange", onChange);
     return () => document.removeEventListener("visibilitychange", onChange);
-  }, [applyBodyBlur]);
+  }, []);
 
-  /* ── 4. Mouse leave window — trigger protection ── */
+  /* ── 4. Mouse leave window — clipboard only, no darkening ── */
   useEffect(() => {
     const onLeave = () => {
-      showOverlay(3000);
-      applyBodyBlur(true);
       overwriteClipboard();
       let remaining = 4;
       const id = window.setInterval(() => {
@@ -165,16 +148,9 @@ export default function ScreenshotGuard() {
         }
       }, 400);
     };
-    const onEnter = () => {
-      applyBodyBlur(false);
-    };
     document.documentElement.addEventListener("mouseleave", onLeave);
-    document.documentElement.addEventListener("mouseenter", onEnter);
-    return () => {
-      document.documentElement.removeEventListener("mouseleave", onLeave);
-      document.documentElement.removeEventListener("mouseenter", onEnter);
-    };
-  }, [showOverlay, applyBodyBlur]);
+    return () => document.documentElement.removeEventListener("mouseleave", onLeave);
+  }, []);
 
   /* ── 6. Block copy (site-wide, outside inputs) ───── */
   useEffect(() => {

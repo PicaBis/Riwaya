@@ -1,4 +1,5 @@
-@import url("https://fonts.googleapis.com/css2?family=Amiri:ital,wght@0,400;0,700;1,400&family=Noto+Serif+Arabic:wght@400;700&family=Playfair+Display:wght@600;700&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Amiri:ital,wght@0,400;0,700;1,400&display=block");
+@import url("https://fonts.googleapis.com/css2?family=Noto+Serif+Arabic:wght@400;700&family=Playfair+Display:wght@600;700&display=swap");
 
 @tailwind base;
 @tailwind components;
@@ -624,12 +625,6 @@ img {
 #screenshot-guard-overlay.guard-visible {
   display: flex !important;
   opacity: 0.97 !important;
-}
-
-/* Body blur while the snipping tool is active */
-body.guard-blur > * {
-  filter: blur(8px);
-  transition: filter 0.3s ease;
 }
 
 /* ─── Light-theme card border enhancement ─── */
