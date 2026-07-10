@@ -29,7 +29,6 @@ async function overwriteClipboard(): Promise<void> {
 }
 
 export default function ScreenshotGuard() {
-  const overlayRef = useRef<HTMLDivElement>(null);
   const blurIntervalRef = useRef<number | null>(null);
   const hiddenIntervalRef = useRef<number | null>(null);
   const typingTarget = useCallback(
@@ -39,14 +38,6 @@ export default function ScreenshotGuard() {
     },
     []
   );
-
-  /* ── Overlay helpers ─────────────────────────────── */
-  const showOverlay = useCallback((durationMs: number) => {
-    const el = overlayRef.current;
-    if (!el) return;
-    el.classList.add("guard-visible");
-    setTimeout(() => el.classList.remove("guard-visible"), durationMs);
-  }, []);
 
   /* ── 1. PrintScreen / Shift+S ──────────────────── */
   useEffect(() => {
@@ -60,7 +51,6 @@ export default function ScreenshotGuard() {
       }
       if (key === "printscreen" || (e.shiftKey && key === "s")) {
         e.preventDefault();
-        showOverlay(3000);
         overwriteClipboard();
         let remaining = 5;
         const id = window.setInterval(() => {
@@ -74,12 +64,14 @@ export default function ScreenshotGuard() {
     };
     document.addEventListener("keydown", onKeyDown, true);
     return () => document.removeEventListener("keydown", onKeyDown, true);
-  }, [typingTarget, showOverlay]);
+  }, [typingTarget]);
 
-  /* ── 2. Window blur — Snipping Tool / tab switch loses focus ── */
+  /* ── 2. Window blur — Snipping Tool / tab switch loses focus ──
+   * No screen darkening — we only keep overwriting the clipboard with a
+   * blank white image so any capture taken while the browser is unfocused
+   * pastes as pure white. */
   useEffect(() => {
     const startBlurProtection = () => {
-      showOverlay(4000);
       overwriteClipboard();
       blurIntervalRef.current = window.setInterval(() => {
         overwriteClipboard();
@@ -105,7 +97,7 @@ export default function ScreenshotGuard() {
         blurIntervalRef.current = null;
       }
     };
-  }, [showOverlay]);
+  }, []);
 
   /* ── 3. Visibility change — page hidden / visible ── */
   useEffect(() => {
@@ -192,19 +184,6 @@ export default function ScreenshotGuard() {
 
   return (
     <>
-      {/* ── Black overlay that flashes during screenshot attempts ── */}
-      <div
-        ref={overlayRef}
-        id="screenshot-guard-overlay"
-        className="
-          fixed inset-0 z-[999999] flex items-center justify-center
-          bg-black pointer-events-none select-none
-          opacity-0 transition-opacity duration-300
-        "
-        style={{ display: "none" }}
-        aria-hidden="true"
-      />
-
       {/* ── Floating watermarked identity ── */}
       <div
         className="pointer-events-none select-none fixed z-[9998] font-arabic font-bold text-gray-800 dark:text-gray-200 whitespace-nowrap"

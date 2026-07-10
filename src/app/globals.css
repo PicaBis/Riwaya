@@ -1,4 +1,6 @@
-@import url("https://fonts.googleapis.com/css2?family=Amiri:ital,wght@0,400;0,700;1,400&display=block");
+/* Amiri (the logo / Arabic display font) is loaded via an early <link> in the
+   document <head> (see layout.tsx) with display=block so the logo never
+   flashes a fallback font. The remaining fonts load here. */
 @import url("https://fonts.googleapis.com/css2?family=Noto+Serif+Arabic:wght@400;700&family=Playfair+Display:wght@600;700&display=swap");
 
 @tailwind base;

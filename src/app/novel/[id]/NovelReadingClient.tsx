@@ -346,6 +346,7 @@ export function NovelReadingClient({ novel, startPage }: NovelReadingClientProps
                 novelId={novel.id}
                 chapters={novel.chapters}
                 readingTheme={readerPrefs.readingTheme}
+                totalPagesOverride={novel.pageCount}
               />
             </PDFErrorBoundary>
           </div>

@@ -66,6 +66,18 @@ export default function RootLayout({
         <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        {/* Amiri = the logo / Arabic display font. Loaded here (not via CSS
+            @import) so it is discovered during head parsing and painted with the
+            correct font from the first frame — no FOUC glitch on "روايتي". */}
+        <link
+          rel="preload"
+          as="style"
+          href="https://fonts.googleapis.com/css2?family=Amiri:ital,wght@0,400;0,700;1,400&display=block"
+        />
+        <link
+          rel="stylesheet"
+          href="https://fonts.googleapis.com/css2?family=Amiri:ital,wght@0,400;0,700;1,400&display=block"
+        />
         {/* Prevent FOUC for dark mode */}
         <script
           dangerouslySetInnerHTML={{

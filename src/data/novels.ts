@@ -15,6 +15,10 @@ export interface Novel {
   language: "ar" | "fr" | "en";
   tags?: string[];
   freeUntilPage: number;
+  /** Total number of pages in the complete novel. Shown in the reader's page
+   *  counter even while only the free portion of the PDF is served, so readers
+   *  see the true length and the locked chapters that require a subscription. */
+  pageCount?: number;
   chapters?: NovelChapter[];
   lastUpdated?: string;
   status?: "published" | "coming-soon";
@@ -36,6 +40,7 @@ export const novels: Novel[] = [
     language: "ar",
     tags: ["أدب", "رواية", "عربي"],
     freeUntilPage: 129,
+    pageCount: 255,
     lastUpdated: "2024-12-15",
     chapters: [
       { title: "الفصل الأول: بداية الرحلة", startPage: 1 },

@@ -26,11 +26,15 @@ interface PDFViewerProps {
   novelId?: string;
   chapters?: Chapter[];
   readingTheme?: "light" | "dark" | "sepia";
+  /** Full length of the novel. When the served PDF only contains the free
+   *  portion, this is still the real total so the counter shows e.g. "129 / 255"
+   *  and locked chapters remain visible/gated behind the paywall. */
+  totalPagesOverride?: number;
 }
 
 type RenderStatus = "idle" | "loading" | "ready" | "error";
 
-export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, onPageChange, preview, novelId, chapters, readingTheme = "light" }: PDFViewerProps) {
+export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, onPageChange, preview, novelId, chapters, readingTheme = "light", totalPagesOverride }: PDFViewerProps) {
   const { lang, unlocked, devUnlocked, unlock } = useApp();
   const containerRef = useRef<HTMLDivElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -215,6 +219,15 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, 
   const isLocked = !isUnlocked && currentPage > freeUntilPage;
   lockedRef.current = isLocked;
 
+  /* Display the true novel length in the counter/progress bar even when the
+   * server only served the free portion of the PDF. Navigating past the loaded
+   * pages simply reveals the paywall overlay. */
+  const displayTotal = totalPagesOverride && totalPagesOverride > totalPages ? totalPagesOverride : totalPages;
+  /* Highest page a reader may actually move to. Free readers can step exactly
+   * one page past the free limit so the paywall overlay appears; subscribers
+   * (full PDF loaded) are bounded by the real page count. */
+  const navMax = isUnlocked ? totalPages : Math.min(displayTotal, freeUntilPage + 1);
+
   /* ── Load PDF ───────────────────────────────────────── */
   useEffect(() => {
     let cancelled = false;
@@ -270,6 +283,9 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, 
 
   useEffect(() => {
     if (!pdf || !canvasRef.current || status !== "ready" || totalPages === 0) return;
+    // The current page may point past the served (free) portion of the PDF —
+    // the paywall overlay covers that case, so skip rendering a missing page.
+    if (currentPage > totalPages) return;
     const renderId = ++pageRenderRef.current;
     let cancelled = false;
 
@@ -336,11 +352,11 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, 
   const goToNext = useCallback(() => {
     if (isLocked) return;
     setCurrentPage((p) => {
-      const next = Math.min(totalPages, p + 1);
+      const next = Math.min(navMax, p + 1);
       if (next !== p && navigator.vibrate) navigator.vibrate(10);
       return next;
     });
-  }, [totalPages, isLocked]);
+  }, [navMax, isLocked]);
 
   navRef.current = { goNext: goToNext, goPrev: goToPrev };
 
@@ -603,11 +619,11 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, 
             </h1>
             <div className="flex items-center gap-1.5 bg-gold-500/10 px-2 py-0.5 rounded-full border border-gold-500/20">
               <span className="text-[10px] sm:text-xs font-mono text-gold-600 dark:text-gold-400 font-bold">
-                {currentPage} <span className="opacity-40">/</span> {totalPages}
+                {currentPage} <span className="opacity-40">/</span> {displayTotal}
               </span>
             </div>
           </div>
-          <ToolBtn onClick={goToNext} disabled={isLocked || currentPage >= totalPages || totalPages === 0} title={t("pdf.nextPage", lang)} sound="navigate" className="bg-parchment-50 dark:bg-white/5 shadow-sm">
+          <ToolBtn onClick={goToNext} disabled={isLocked || currentPage >= displayTotal || totalPages === 0} title={t("pdf.nextPage", lang)} sound="navigate" className="bg-parchment-50 dark:bg-white/5 shadow-sm">
             <ChevronRight className="w-5 h-5 sm:w-6 sm:h-6" />
           </ToolBtn>
         </div>
@@ -642,8 +658,10 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, 
             return (
               <button key={i} onClick={() => {
                 setTocOpen(false);
+                // Jumping to a locked chapter is allowed — it simply lands the
+                // reader on the paywall overlay so they can subscribe.
                 setCurrentPage(ch.startPage);
-              }} disabled={isChapterLocked && !isUnlocked}
+              }}
                 className={`w-full flex items-center gap-3 px-4 py-3 text-right border-b border-parchment-100 dark:border-white/5 last:border-0 hover:bg-parchment-100 dark:hover:bg-white/5 ${isCurrent ? "bg-gold-500/5 border-r-2 border-r-gold-500" : ""}`}>
                 <span className={`w-7 h-7 rounded-lg flex items-center justify-center text-xs font-bold flex-shrink-0 ${isCurrent ? "bg-gold-500 text-white" : "bg-parchment-100 dark:bg-white/10 text-gray-500"}`}>{i + 1}</span>
                 <div className="flex-1 min-w-0">
@@ -672,12 +690,12 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, 
               if (isLocked) return;
               const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
               const ratio = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
-              const target = Math.max(1, Math.min(totalPages, Math.round(ratio * totalPages)));
+              const target = Math.max(1, Math.min(navMax, Math.round(ratio * displayTotal)));
               setCurrentPage(target);
               if (navigator.vibrate) navigator.vibrate(8);
             }}>
-            <div className="h-full bg-gradient-to-r from-gold-400 via-gold-500 to-gold-400 transition-all duration-500 ease-out relative shadow-[0_0_10px_rgba(212,175,55,0.3)]" 
-              style={{ width: `${Math.round((currentPage / totalPages) * 100)}%` }}>
+            <div className="h-full bg-gradient-to-r from-gold-400 via-gold-500 to-gold-400 transition-all duration-500 ease-out relative shadow-[0_0_10px_rgba(212,175,55,0.3)]"
+              style={{ width: `${Math.round((currentPage / displayTotal) * 100)}%` }}>
               <div className="absolute inset-0 bg-[length:20px_20px] bg-gradient-to-r from-white/20 to-transparent animate-[shimmer_2s_infinite]" />
             </div>
           </div>
