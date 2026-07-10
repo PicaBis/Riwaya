@@ -4,9 +4,10 @@ import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import {
   Shield, MessageSquare, KeyRound, Users, Trash2, Plus, Copy, CheckCircle2,
-  ArrowRight, RefreshCw, Ticket, Eye, LogOut,
+  ArrowRight, RefreshCw, Ticket, Eye, LogOut, Star, UserCheck,
 } from "lucide-react";
 import { verifyDevCode } from "@/lib/auth";
+import { getNovelById } from "@/data/novels";
 import { useApp } from "@/context/AppContext";
 import { t } from "@/lib/i18n";
 
@@ -26,10 +27,22 @@ interface RecentComment {
   created_at: string;
   likes?: string[];
 }
+interface RatingRow {
+  novel_id: string;
+  stars: number;
+  user_key: string;
+  updated_at: string;
+}
 interface Stats {
   comments: { total: number; recent: RecentComment[] };
   codes: { total: number; used: number; unused: number };
   readers: { total: number; sessions: number };
+  ratings?: {
+    total: number;
+    perNovel: { novelId: string; avg: number; count: number }[];
+    recent: RatingRow[];
+  };
+  guests?: { total: number; recent: { name: string; created_at: string }[] };
 }
 
 export default function AdminPage() {
@@ -179,12 +192,44 @@ export default function AdminPage() {
       </div>
 
       {/* Stat cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-8">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mb-8">
         <StatCard icon={<MessageSquare className="w-5 h-5" />} label={t("admin.comments", lang)} value={stats?.comments.total ?? "—"} lang={lang} />
+        <StatCard icon={<Star className="w-5 h-5" />} label={t("admin.ratings", lang)} value={stats?.ratings?.total ?? "—"} lang={lang} />
         <StatCard icon={<Users className="w-5 h-5" />} label={t("admin.readers", lang)} value={stats?.readers.total ?? "—"} lang={lang} />
+        <StatCard icon={<UserCheck className="w-5 h-5" />} label={t("admin.guests", lang)} value={stats?.guests?.total ?? "—"} lang={lang} />
         <StatCard icon={<Ticket className="w-5 h-5" />} label={t("admin.codesAvail", lang)} value={stats?.codes.unused ?? "—"} lang={lang} />
         <StatCard icon={<CheckCircle2 className="w-5 h-5" />} label={t("admin.codesUsed", lang)} value={stats?.codes.used ?? "—"} lang={lang} />
       </div>
+
+      {/* Ratings by novel */}
+      <section className="mb-10">
+        <h2 className={`flex items-center gap-2 text-lg font-bold text-gray-900 dark:text-gray-100 mb-3 ${fontClass}`}>
+          <Star className="w-5 h-5 text-gold-500" /> {t("admin.ratingsSection", lang)}
+        </h2>
+        {!stats?.ratings || stats.ratings.perNovel.length === 0 ? (
+          <p className={`text-sm text-gray-400 py-4 text-center ${fontClass}`}>{t("admin.noRatings", lang)}</p>
+        ) : (
+          <div className="grid sm:grid-cols-2 gap-2">
+            {stats.ratings.perNovel.map((r) => {
+              const novel = getNovelById(r.novelId);
+              return (
+                <div key={r.novelId} className="flex items-center justify-between gap-3 p-3 rounded-xl border border-parchment-200 dark:border-white/8 bg-white dark:bg-onyx-800/40">
+                  <div className="min-w-0">
+                    <p className={`text-sm font-bold text-gray-900 dark:text-gray-100 truncate ${fontClass}`}>
+                      {novel?.title || r.novelId}
+                    </p>
+                    <p className={`text-xs text-gray-400 ${fontClass}`}>{r.count} {t("admin.raters", lang)}</p>
+                  </div>
+                  <div className="flex items-center gap-1 flex-shrink-0">
+                    <Star className="w-4 h-4 text-gold-500 fill-gold-500" />
+                    <span className="text-lg font-bold text-gold-500">{r.avg}</span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </section>
 
       {/* Activation codes */}
       <section className="mb-10">

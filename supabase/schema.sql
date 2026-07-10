@@ -96,6 +96,20 @@ create table if not exists public.reading_progress (
 
 alter table public.reading_progress enable row level security;
 
+-- 7) Guest names table -------------------------------------------------------
+--    Reserves each guest display name so no two visitors can use the same one
+--    (the site expects 100+ concurrent guests). `name_key` is the normalised
+--    (trimmed + lowercased) name and is the primary key, so a duplicate insert
+--    fails on the unique constraint. Only the server (service-role) touches it.
+create table if not exists public.guest_names (
+  name_key   text        primary key,
+  name       text        not null,
+  device_id  text,
+  created_at timestamptz not null default now()
+);
+
+alter table public.guest_names enable row level security;
+
 -- Done. The site reads public data (comments, ratings) with the anon key;
--- everything else (activation codes, reading progress, and all writes) goes
--- through the server's service-role key, which bypasses RLS.
+-- everything else (activation codes, reading progress, guest names, and all
+-- writes) goes through the server's service-role key, which bypasses RLS.

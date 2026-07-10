@@ -1,8 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { X, User, ArrowLeft } from "lucide-react";
+import { X, User, ArrowLeft, Loader2 } from "lucide-react";
 import { useApp } from "@/context/AppContext";
+import { getDeviceId } from "@/lib/device";
 import { t } from "@/lib/i18n";
 
 interface GuestLoginModalProps {
@@ -16,18 +17,34 @@ export function GuestLoginModal({ onClose }: GuestLoginModalProps) {
   const [name, setName] = useState("");
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [checking, setChecking] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const trimmed = name.trim();
-    if (!trimmed || trimmed.length < 2) {
+    if (!trimmed || trimmed.length < 2 || trimmed.length > 50) {
       setError(t("guest.error", lang));
       return;
     }
-    if (trimmed.length > 50) {
-      setError(t("guest.error", lang));
-      return;
+    setError("");
+    setChecking(true);
+    // Reserve the name so no two guests share one (best-effort: if the backend
+    // is unreachable we let the login through rather than lock the user out).
+    try {
+      const res = await fetch("/api/guest-name", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: trimmed, deviceId: getDeviceId() }),
+      });
+      if (res.status === 409) {
+        setChecking(false);
+        setError(t("guest.taken", lang));
+        return;
+      }
+    } catch {
+      /* network error → proceed anyway */
     }
+    setChecking(false);
     loginAsGuest(trimmed);
     setTimeout(() => {
       onClose();
@@ -94,10 +111,20 @@ export function GuestLoginModal({ onClose }: GuestLoginModalProps) {
             <button
               type="submit"
               data-sound="login"
-              className={`w-full flex items-center justify-center gap-2 py-3 px-4 bg-gold-500 hover:bg-gold-600 active:scale-95 text-white rounded-xl text-sm font-medium transition-all duration-150 shadow-sm ${fontClass}`}
+              disabled={checking}
+              className={`w-full flex items-center justify-center gap-2 py-3 px-4 bg-gold-500 hover:bg-gold-600 active:scale-95 text-white rounded-xl text-sm font-medium transition-all duration-150 shadow-sm disabled:opacity-60 ${fontClass}`}
           >
-            <ArrowLeft className={`w-4 h-4 ${dir === "ltr" ? "rotate-180" : ""}`} />
-            {t("guest.submit", lang)}
+            {checking ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin" />
+                {t("guest.checking", lang)}
+              </>
+            ) : (
+              <>
+                <ArrowLeft className={`w-4 h-4 ${dir === "ltr" ? "rotate-180" : ""}`} />
+                {t("guest.submit", lang)}
+              </>
+            )}
           </button>
         </form>
       </div>
