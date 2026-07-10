@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Trophy, X } from "lucide-react";
 import { useApp } from "@/context/AppContext";
 import { t } from "@/lib/i18n";
@@ -10,6 +10,13 @@ export function Achievements() {
   const dir = lang === "ar" ? "rtl" : "ltr";
   const fontClass = lang === "ar" ? "font-arabic" : "font-sans";
   const [open, setOpen] = useState(false);
+
+  useEffect(() => {
+    if (!open) return;
+    const original = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => { document.body.style.overflow = original; };
+  }, [open]);
 
   const unlocked = achievements.filter((a) => a.unlockedAt);
   const locked = achievements.filter((a) => !a.unlockedAt);
@@ -31,10 +38,10 @@ export function Achievements() {
 
       {open && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-fade-in"
+          className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-md animate-fade-in"
           onClick={(e) => e.target === e.currentTarget && setOpen(false)}
         >
-          <div className="relative w-full max-w-sm bg-white dark:bg-onyx-800 rounded-2xl shadow-2xl p-5 animate-scale-in" dir={dir}>
+          <div className="relative w-full max-w-sm bg-white dark:bg-onyx-800 rounded-2xl shadow-2xl p-5 animate-scale-in max-h-[85vh] flex flex-col" onClick={(e) => e.stopPropagation()} dir={dir}>
             <div className="flex items-center justify-between mb-5">
               <h3 className={`font-bold text-gray-900 dark:text-gray-100 flex items-center gap-2 ${fontClass}`}>
                 <Trophy className="w-5 h-5 text-gold-500" />
@@ -45,7 +52,7 @@ export function Achievements() {
               </button>
             </div>
 
-            <div className="space-y-2 max-h-[60vh] overflow-y-auto">
+            <div className="space-y-2 overflow-y-auto flex-1">
               {[...unlocked, ...locked].map((a) => (
                 <div
                   key={a.id}

@@ -133,6 +133,14 @@ export default function AdminPage() {
     loadAll();
   };
 
+  const deleteGuest = async (name: string) => {
+    if (!confirm(t("admin.confirmDeleteGuest", lang, { name }))) return;
+    await fetch("/api/admin/guests", {
+      method: "DELETE", headers: headers(), body: JSON.stringify({ nameKey: name }),
+    });
+    loadAll();
+  };
+
   const copy = async (text: string) => {
     await navigator.clipboard.writeText(text).catch(() => {});
     setCopied(text);
@@ -281,7 +289,7 @@ export default function AdminPage() {
       </section>
 
       {/* Comments moderation */}
-      <section>
+      <section className="mb-10">
         <h2 className={`flex items-center gap-2 text-lg font-bold text-gray-900 dark:text-gray-100 mb-3 ${fontClass}`}>
           <MessageSquare className="w-5 h-5 text-gold-500" /> {t("admin.commentsSection", lang)}
         </h2>
@@ -302,6 +310,30 @@ export default function AdminPage() {
                   <p className={`text-sm text-gray-600 dark:text-gray-300 break-words ${fontClass}`}>{c.content}</p>
                 </div>
                 <button onClick={() => deleteComment(c.id)} title={t("admin.deleteComment", lang)} className="p-1.5 rounded-lg text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors flex-shrink-0">
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              </div>
+            ))
+          )}
+        </div>
+      </section>
+
+      {/* Registered guest names */}
+      <section>
+        <h2 className={`flex items-center gap-2 text-lg font-bold text-gray-900 dark:text-gray-100 mb-3 ${fontClass}`}>
+          <UserCheck className="w-5 h-5 text-gold-500" /> {t("admin.guestsSection", lang)}
+        </h2>
+        <div className="space-y-2">
+          {!stats?.guests || stats.guests.recent.length === 0 ? (
+            <p className={`text-sm text-gray-400 py-4 text-center ${fontClass}`}>{t("admin.noGuests", lang)}</p>
+          ) : (
+            stats.guests.recent.map((g) => (
+              <div key={g.name} className="flex items-center justify-between gap-3 p-3 rounded-xl border border-parchment-200 dark:border-white/8 bg-white dark:bg-onyx-800/40">
+                <div className="min-w-0 flex-1">
+                  <p className={`text-sm font-bold text-gray-900 dark:text-gray-100 ${fontClass}`}>{g.name}</p>
+                  <p className="text-[10px] text-gray-400 font-mono">{new Date(g.created_at).toLocaleDateString("ar-DZ")}</p>
+                </div>
+                <button onClick={() => deleteGuest(g.name)} title={t("admin.deleteGuest", lang)} className="p-1.5 rounded-lg text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors flex-shrink-0">
                   <Trash2 className="w-4 h-4" />
                 </button>
               </div>
