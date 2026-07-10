@@ -30,11 +30,14 @@ interface PDFViewerProps {
    *  portion, this is still the real total so the counter shows e.g. "129 / 255"
    *  and locked chapters remain visible/gated behind the paywall. */
   totalPagesOverride?: number;
+  /** Controlled subscription modal visibility. */
+  showSubscription?: boolean;
+  onSubscriptionClose?: () => void;
 }
 
 type RenderStatus = "idle" | "loading" | "ready" | "error";
 
-export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, onPageChange, preview, novelId, chapters, readingTheme = "light", totalPagesOverride }: PDFViewerProps) {
+export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, onPageChange, preview, novelId, chapters, readingTheme = "light", totalPagesOverride, showSubscription, onSubscriptionClose }: PDFViewerProps) {
   const { lang, unlocked, devUnlocked, unlock } = useApp();
   const containerRef = useRef<HTMLDivElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -216,17 +219,17 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, 
 
   /* ── Paywall ────────────────────────────────────────── */
   const isUnlocked = unlocked || devUnlocked;
-  const isLocked = !isUnlocked && currentPage > freeUntilPage;
+  const isLocked = !isUnlocked && currentPage >= freeUntilPage && freeUntilPage > 0;
   lockedRef.current = isLocked;
 
   /* Display the true novel length in the counter/progress bar even when the
    * server only served the free portion of the PDF. Navigating past the loaded
    * pages simply reveals the paywall overlay. */
   const displayTotal = totalPagesOverride && totalPagesOverride > totalPages ? totalPagesOverride : totalPages;
-  /* Highest page a reader may actually move to. Free readers can step exactly
-   * one page past the free limit so the paywall overlay appears; subscribers
-   * (full PDF loaded) are bounded by the real page count. */
-  const navMax = isUnlocked ? totalPages : Math.min(displayTotal, freeUntilPage + 1);
+  /* Highest page a reader may actually move to. Free readers are blocked at
+   * freeUntilPage; subscribers (full PDF loaded) are bounded by the real page
+   * count, or the override if provided (for locked-pdf display purposes). */
+  const navMax = isUnlocked ? (totalPagesOverride || totalPages) : freeUntilPage;
 
   /* ── Load PDF ───────────────────────────────────────── */
   useEffect(() => {
@@ -255,8 +258,8 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, 
       } catch (err) {
         if (cancelled) return;
         console.error(`[PDFViewer] load attempt ${attempt} failed:`, err);
-        if (attempt < 2) {
-          setTimeout(() => load(attempt + 1), 800 * attempt);
+        if (attempt < 3) {
+          setTimeout(() => load(attempt + 1), 600 * attempt);
         } else {
           setStatus("error");
         }
@@ -350,7 +353,12 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, 
   }, [isLocked]);
 
   const goToNext = useCallback(() => {
-    if (isLocked) return;
+    if (isLocked) {
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(new CustomEvent("riwayati:show-subscription"));
+      }
+      return;
+    }
     setCurrentPage((p) => {
       const next = Math.min(navMax, p + 1);
       if (next !== p && navigator.vibrate) navigator.vibrate(10);
@@ -623,7 +631,7 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, 
               </span>
             </div>
           </div>
-          <ToolBtn onClick={goToNext} disabled={isLocked || currentPage >= displayTotal || totalPages === 0} title={t("pdf.nextPage", lang)} sound="navigate" className="bg-parchment-50 dark:bg-white/5 shadow-sm">
+          <ToolBtn onClick={goToNext} disabled={isLocked || currentPage >= navMax || totalPages === 0} title={t("pdf.nextPage", lang)} sound="navigate" className="bg-parchment-50 dark:bg-white/5 shadow-sm">
             <ChevronRight className="w-5 h-5 sm:w-6 sm:h-6" />
           </ToolBtn>
         </div>
@@ -653,13 +661,15 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, 
         <div className="absolute top-11 right-0 z-50 w-64 bg-white dark:bg-onyx-800 rounded-b-2xl shadow-xl border border-parchment-200 dark:border-white/8 max-h-[60vh] overflow-y-auto animate-fade-in" dir={lang === "ar" ? "rtl" : "ltr"}>
           <div className="p-3 border-b border-parchment-200 dark:border-white/8"><h3 className={`text-sm font-bold text-gray-900 dark:text-gray-100 ${lang === "ar" ? "font-arabic" : "font-sans"}`}>{t("pdf.toc", lang)}</h3></div>
           {chapters.map((ch, i) => {
-            const isChapterLocked = !isUnlocked && ch.startPage > freeUntilPage;
+            const isChapterLocked = !isUnlocked && ch.startPage > freeUntilPage && freeUntilPage > 0;
             const isCurrent = currentPage >= ch.startPage && (i === chapters.length - 1 || currentPage < chapters[i + 1].startPage);
             return (
               <button key={i} onClick={() => {
                 setTocOpen(false);
-                // Jumping to a locked chapter is allowed — it simply lands the
-                // reader on the paywall overlay so they can subscribe.
+                if (isChapterLocked) {
+                  window.dispatchEvent(new CustomEvent("riwayati:show-subscription"));
+                  return;
+                }
                 setCurrentPage(ch.startPage);
               }}
                 className={`w-full flex items-center gap-3 px-4 py-3 text-right border-b border-parchment-100 dark:border-white/5 last:border-0 hover:bg-parchment-100 dark:hover:bg-white/5 ${isCurrent ? "bg-gold-500/5 border-r-2 border-r-gold-500" : ""}`}>

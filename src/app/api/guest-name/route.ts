@@ -5,13 +5,15 @@ import { rateLimit, getClientIp } from "@/lib/rate-limit";
 /**
  * POST /api/guest-name  { name, deviceId }
  *
- * Reserves a guest display name so no two visitors share one. Returns:
- *   { ok: true }                 → name reserved for this device (or already theirs)
- *   409 { ok: false, taken:true} → someone else already uses this name
- *   { ok: true, enforced:false } → backend not configured; uniqueness not enforced
+ * Returns 409 only when the name is ALREADY USED as an actual comment
+ * author on the site — that is the only condition that makes a name
+ * genuinely "taken".  A name registered in the guest_names table but
+ * never used in a comment is freely available to anyone else.
  *
- * Uniqueness is best-effort: if Supabase isn't connected we let the login
- * proceed rather than lock users out.
+ * Result codes:
+ *   { ok: true }                                → name available (reserved for this device)
+ *   { ok: false, taken: true }  (409)           → name already used in a comment by someone else
+ *   { ok: true, enforced: false }               → backend not configured; uniqueness not enforced
  */
 export async function POST(request: NextRequest) {
   const ip = getClientIp(request.headers);
@@ -31,8 +33,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ ok: false, error: "الاسم غير صالح" }, { status: 400 });
   }
 
-  const nameKey = name.toLowerCase().replace(/\s+/g, " ");
-
   const supabase = getServiceSupabase();
   // Backend not connected → cannot enforce, but don't block the visitor.
   if (!supabase) {
@@ -40,51 +40,26 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    // Check if this name was actually used in a comment (not just registered)
-    const { data: commentUsage } = await supabase
+    // The ONLY condition that makes a name genuinely "taken" is an existing
+    // comment by that exact display name.  Names in guest_names that were
+    // never used in a real comment are always available.
+    const { data: existingComments } = await supabase
       .from("comments")
-      .select("id")
-      .eq("username", name)
+      .select("id, username")
+      .ilike("username", name)
       .limit(1);
 
-    if (commentUsage && commentUsage.length > 0) {
-      // Name was used in a comment - check if it's this device
-      const { data: existing } = await supabase
-        .from("guest_names")
-        .select("name_key, device_id")
-        .eq("name_key", nameKey)
-        .maybeSingle();
-
-      if (existing) {
-        // Same device reclaiming its own name is fine
-        if (existing.device_id && deviceId && existing.device_id === deviceId) {
-          return NextResponse.json({ ok: true });
-        }
-      }
+    if (existingComments && existingComments.length > 0) {
       return NextResponse.json(
-        { ok: false, taken: true, error: "هذا الاسم مستخدم بالفعل، اختر اسماً آخر" },
+        { ok: false, taken: true, error: "هذا الاسم مستخدم بالفعل في تعليق، اختر اسماً آخر" },
         { status: 409 }
       );
     }
 
-    // Name not used in comments - allow it and reserve it
-    const { error: insertError } = await supabase
+    // Reserve the name in guest_names (best-effort informational only).
+    void supabase
       .from("guest_names")
-      .upsert({ name_key: nameKey, name, device_id: deviceId || null }, { onConflict: 'name_key' });
-
-    if (insertError) {
-      // If upsert failed, check if it's the same device
-      const { data: raced } = await supabase
-        .from("guest_names")
-        .select("device_id")
-        .eq("name_key", nameKey)
-        .maybeSingle();
-      if (raced && raced.device_id === deviceId && deviceId) {
-        return NextResponse.json({ ok: true });
-      }
-      // Otherwise allow anyway (best-effort)
-      return NextResponse.json({ ok: true, enforced: false });
-    }
+      .upsert({ name_key: name.toLowerCase().replace(/\s+/g, " "), name, device_id: deviceId || null }, { onConflict: "name_key" });
 
     return NextResponse.json({ ok: true });
   } catch {

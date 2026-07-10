@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
-import { Heart, MessageSquare, Send, Trash2, Ban, Shield, Type, AlignLeft, FileText, EyeOff } from "lucide-react";
+import { Heart, MessageSquare, Send, Trash2, Ban, Shield, Type, AlignLeft, FileText, EyeOff, Loader2 } from "lucide-react";
 import { useApp } from "@/context/AppContext";
 import { getSupabase } from "@/lib/supabase";
 import { OnlineGuests } from "./OnlineGuests";
@@ -364,17 +364,18 @@ export function Comments({ novelId }: { novelId: string }) {
         </button>
       )}
 
+      {/* ── Comment form — ALWAYS visible (top of section so it never gets pushed below) ── */}
       <form onSubmit={handleSubmit} className="mb-6 space-y-2">
-        <div className="flex items-start gap-2">
+        <div className="flex flex-col sm:flex-row items-start gap-2">
           <input
             type="text"
             value={guestName}
             onChange={(e) => { nameTouchedRef.current = true; setGuestName(e.target.value); }}
             placeholder={t("contact.name", lang)}
             maxLength={50}
-            className={`px-3 py-2 rounded-xl border border-parchment-300 dark:border-white/10 bg-white dark:bg-white/5 text-gray-900 dark:text-gray-100 text-sm placeholder-gray-400 dark:placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-gold-500/40 transition-all w-32 sm:w-40 ${fontClass}`}
+            className={`px-3 py-2 rounded-xl border border-parchment-300 dark:border-white/10 bg-white dark:bg-white/5 text-gray-900 dark:text-gray-100 text-sm placeholder-gray-400 dark:placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-gold-500/40 transition-all w-full sm:w-40 flex-shrink-0 ${fontClass}`}
           />
-          <div className="flex-1">
+          <div className="flex-1 w-full">
             <textarea
               value={content}
               onChange={(e) => setContent(e.target.value)}
@@ -390,15 +391,32 @@ export function Comments({ novelId }: { novelId: string }) {
           <button
             type="submit"
             disabled={loading || !content.trim()}
-            className="mt-1 px-4 py-2.5 bg-gold-500 hover:bg-gold-600 active:scale-95 text-white rounded-xl text-sm font-medium transition-all disabled:opacity-40"
+            className="w-full sm:w-auto mt-2 sm:mt-0 px-4 py-2.5 bg-gold-500 hover:bg-gold-600 active:scale-95 text-white rounded-xl text-sm font-medium transition-all disabled:opacity-40 flex-shrink-0"
           >
-            <Send className="w-4 h-4" />
+            {loading ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <Send className="w-4 h-4" />
+            )}
           </button>
         </div>
         {submitError && (
           <p className={`text-xs text-red-500 px-1 ${fontClass}`}>{submitError}</p>
         )}
       </form>
+
+      {/* Backend error notice (below form so form is always reachable) */}
+      {fetchError && (
+        <div className="mb-6 flex items-center justify-between p-4 rounded-2xl border border-amber-200 dark:border-amber-900/30 bg-amber-50 dark:bg-amber-900/10">
+          <p className={`text-sm text-amber-700 dark:text-amber-400 ${fontClass}`}>
+            {fetchError}
+            <span className={`block text-xs mt-0.5 text-amber-600 dark:text-amber-500 ${fontClass}`}>
+              يمكنك كتابة تعليقك وسيُرسل عند توفر الاتصال
+            </span>
+          </p>
+          <button onClick={fetchComments} className="text-xs px-3 py-1.5 rounded-lg bg-amber-500 text-white hover:bg-amber-600 transition-colors flex-shrink-0">{t("comments.retry", lang)}</button>
+        </div>
+      )}
 
       <div className="space-y-4">
         {fetchError && (

@@ -1,10 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import Link from "next/link";
-import { BookOpen, ArrowRight } from "lucide-react";
 import { getNovelById, novels } from "@/data/novels";
-import { NovelReadingClient } from "./NovelReadingClient";
-import { NovelErrorBoundary } from "@/components/NovelErrorBoundary";
+import { NovelPageClient } from "./NovelPageClient";
 
 const BASE = "https://rewayati.vercel.app";
 
@@ -53,7 +50,6 @@ export default function NovelPage({
 
   const startPage = searchParams.page ? parseInt(searchParams.page, 10) || 1 : undefined;
 
-  // Book structured data — richer Google results for each novel.
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "Book",
@@ -73,9 +69,7 @@ export default function NovelPage({
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
-      <NovelErrorBoundary novel={novel}>
-        <NovelReadingClient novel={novel} startPage={startPage} />
-      </NovelErrorBoundary>
+      <NovelPageClient novel={novel} startPage={startPage} />
     </>
   );
 }

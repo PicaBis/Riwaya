@@ -8,7 +8,7 @@ import { novels } from "@/data/novels";
 import { useApp } from "@/context/AppContext";
 import { t } from "@/lib/i18n";
 
-export function SubscriptionModal({ onClose }: { onClose: () => void }) {
+export function SubscriptionModal({ onClose, open = true }: { onClose: () => void; open?: boolean }) {
   const { lang, unlocked, devUnlocked } = useApp();
   const dir = lang === "ar" ? "rtl" : "ltr";
   const fontClass = lang === "ar" ? "font-arabic" : "font-sans";
@@ -17,9 +17,11 @@ export function SubscriptionModal({ onClose }: { onClose: () => void }) {
 
   useEffect(() => {
     const original = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
+    if (open) document.body.style.overflow = "hidden";
     return () => { document.body.style.overflow = original; };
-  }, []);
+  }, [open]);
+
+  if (!open) return null;
 
   return (
     <div

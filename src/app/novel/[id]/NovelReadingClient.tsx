@@ -7,7 +7,6 @@ import dynamic from "next/dynamic";
 import { Novel } from "@/data/novels";
 import { StarRating } from "@/components/StarRating";
 import { CCPModal } from "@/components/CCPModal";
-import { SubscriptionModal } from "@/components/SubscriptionModal";
 import { Comments } from "@/components/Comments";
 import { Breadcrumb } from "@/components/Breadcrumb";
 import { SkeletonReader } from "@/components/Skeleton";
@@ -31,18 +30,22 @@ const PDFViewer = dynamic(
 interface NovelReadingClientProps {
   novel: Novel;
   startPage?: number;
+  showSubs?: boolean;
+  onShowSubsChange?: (show: boolean) => void;
 }
 
-export function NovelReadingClient({ novel, startPage }: NovelReadingClientProps) {
+export function NovelReadingClient({ novel, startPage, showSubs: showSubsExternal, onShowSubsChange }: NovelReadingClientProps) {
   const { bookmarks, ratings, setRating, guest, saveBookmark, trackNovelView, readerPrefs, lang, unlocked, devUnlocked, showToast, hydrated } = useApp();
   const [showCCP, setShowCCP] = useState(false);
   const [showSubs, setShowSubs] = useState(false);
   const [pageCurl, setPageCurl] = useState(false);
-  // Deep links (e.g. "Continue Reading" cards) pass an explicit startPage and
-  // should drop straight into the reader; a fresh visit from the library grid
-  // shows an overview first so readers know what they're about to start.
   const [showOverview, setShowOverview] = useState(!startPage);
   const [entryPage, setEntryPage] = useState(startPage || bookmarks[novel.id] || 1);
+
+  const setShowSubsSafe = useCallback((v: boolean) => {
+    setShowSubs(v);
+    onShowSubsChange?.(v);
+  }, [onShowSubsChange]);
 
   const track = useCallback(() => {
     void trackNovelView(novel.id);
@@ -51,6 +54,12 @@ export function NovelReadingClient({ novel, startPage }: NovelReadingClientProps
   useEffect(() => {
     track();
   }, [track]);
+
+  useEffect(() => {
+    const handler = () => setShowSubsSafe(true);
+    window.addEventListener("riwayati:show-subscription", handler);
+    return () => window.removeEventListener("riwayati:show-subscription", handler);
+  }, [setShowSubsSafe]);
 
   const pdfUrl = `/api/novel-asset/${novel.pdfFile}`;
   const hasProgress = (bookmarks[novel.id] || 0) > 1;
@@ -62,17 +71,18 @@ export function NovelReadingClient({ novel, startPage }: NovelReadingClientProps
       showToast(t("gate.loginRequired", lang));
       return;
     }
+    setShowSubs(false);
     const targetPage = page || bookmarks[novel.id] || 1;
     const isChapterLocked = page ? !unlocked && !devUnlocked && page > novel.freeUntilPage && novel.freeUntilPage > 0 : false;
-    
+
     if (isChapterLocked) {
       setShowSubs(true);
       return;
     }
-    
+
     setEntryPage(targetPage);
     setShowOverview(false);
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    window.scrollTo({ top: 0, behavior: "instant" });
   };
 
   /* Deep links (e.g. "Continue Reading" / chapter links) that target a page
@@ -339,20 +349,22 @@ export function NovelReadingClient({ novel, startPage }: NovelReadingClientProps
           </div>
         ) : (
           <div className={`min-h-[50vh] sm:min-h-[65vh] flex flex-col reading-theme-${readerPrefs.readingTheme} ${pageCurl ? "animate-page-curl" : ""}`} dir="ltr">
-            <PDFErrorBoundary>
-              <PDFViewer
-                pdfUrl={pdfUrl}
-                title={novel.title}
-                freeUntilPage={novel.freeUntilPage}
-                initialPage={entryPage}
-                onPageChange={handlePageChange}
-                preview={novel.description}
-                novelId={novel.id}
-                chapters={novel.chapters}
-                readingTheme={readerPrefs.readingTheme}
-                totalPagesOverride={novel.pageCount}
-              />
-            </PDFErrorBoundary>
+              <PDFErrorBoundary>
+                <PDFViewer
+                  pdfUrl={pdfUrl}
+                  title={novel.title}
+                  freeUntilPage={novel.freeUntilPage}
+                  initialPage={entryPage}
+                  onPageChange={handlePageChange}
+                  preview={novel.description}
+                  novelId={novel.id}
+                  chapters={novel.chapters}
+                  readingTheme={readerPrefs.readingTheme}
+                  totalPagesOverride={novel.pageCount}
+                  showSubscription={showSubs}
+                  onSubscriptionClose={() => setShowSubsSafe(false)}
+                />
+              </PDFErrorBoundary>
           </div>
         )}
 
@@ -373,9 +385,6 @@ export function NovelReadingClient({ novel, startPage }: NovelReadingClientProps
 
       {showCCP && (
         <CCPModal novelTitle={novel.title} onClose={() => setShowCCP(false)} />
-      )}
-      {showSubs && (
-        <SubscriptionModal onClose={() => setShowSubs(false)} />
       )}
     </>
   );
