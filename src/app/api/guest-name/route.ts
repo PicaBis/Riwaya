@@ -40,17 +40,26 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    // Is the name already reserved?
-    const { data: existing } = await supabase
-      .from("guest_names")
-      .select("name_key, device_id")
-      .eq("name_key", nameKey)
-      .maybeSingle();
+    // Check if this name was actually used in a comment (not just registered)
+    const { data: commentUsage } = await supabase
+      .from("comments")
+      .select("id")
+      .eq("username", name)
+      .limit(1);
 
-    if (existing) {
-      // Same device reclaiming its own name is fine.
-      if (existing.device_id && deviceId && existing.device_id === deviceId) {
-        return NextResponse.json({ ok: true });
+    if (commentUsage && commentUsage.length > 0) {
+      // Name was used in a comment - check if it's this device
+      const { data: existing } = await supabase
+        .from("guest_names")
+        .select("name_key, device_id")
+        .eq("name_key", nameKey)
+        .maybeSingle();
+
+      if (existing) {
+        // Same device reclaiming its own name is fine
+        if (existing.device_id && deviceId && existing.device_id === deviceId) {
+          return NextResponse.json({ ok: true });
+        }
       }
       return NextResponse.json(
         { ok: false, taken: true, error: "هذا الاسم مستخدم بالفعل، اختر اسماً آخر" },
@@ -58,13 +67,13 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Reserve it. If a race just inserted the same key, the unique primary key
-    // makes this fail → treat as taken (unless it's this same device).
+    // Name not used in comments - allow it and reserve it
     const { error: insertError } = await supabase
       .from("guest_names")
-      .insert({ name_key: nameKey, name, device_id: deviceId || null });
+      .upsert({ name_key: nameKey, name, device_id: deviceId || null }, { onConflict: 'name_key' });
 
     if (insertError) {
+      // If upsert failed, check if it's the same device
       const { data: raced } = await supabase
         .from("guest_names")
         .select("device_id")
@@ -73,10 +82,8 @@ export async function POST(request: NextRequest) {
       if (raced && raced.device_id === deviceId && deviceId) {
         return NextResponse.json({ ok: true });
       }
-      return NextResponse.json(
-        { ok: false, taken: true, error: "هذا الاسم مستخدم بالفعل، اختر اسماً آخر" },
-        { status: 409 }
-      );
+      // Otherwise allow anyway (best-effort)
+      return NextResponse.json({ ok: true, enforced: false });
     }
 
     return NextResponse.json({ ok: true });

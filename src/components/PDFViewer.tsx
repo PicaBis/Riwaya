@@ -265,7 +265,7 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, 
 
     load(1);
     return () => { cancelled = true; };
-  }, [pdfUrl, novelId, retryKey]);
+  }, [pdfUrl, novelId, retryKey, isUnlocked]);
 
   /* ── Measure scroll container ───────────────────────── */
   useEffect(() => {
