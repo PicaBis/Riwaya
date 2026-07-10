@@ -272,7 +272,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       const savedCookie = getItem("riwayati_cookies");
       if (savedCookie) setCookieConsent(savedCookie === "1");
 
-      if (getSessionItem("riwayati_fs")) setIntroReady(true);
+      // The old splash screen used to flip this on; it's disabled now, so
+      // enable the intro layer straight away so the cookie prompt appears on
+      // entry. `void getSessionItem` keeps the import referenced.
+      void getSessionItem;
+      setIntroReady(true);
 
       const savedTime = getItem("riwayati_reading_time");
       if (savedTime) setTotalReadingTime(parseInt(savedTime, 10) || 0);
@@ -585,23 +589,51 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     });
   }, [playSound]);
 
-  /* Global click → subtle UI sounds for buttons / links / menus. */
+  /* Mobile browsers keep the AudioContext suspended until the very first user
+   * gesture. Unlock it on the first touch/pointer so button taps make sound on
+   * phones from then on (the `click` that follows can be too late on iOS). */
+  useEffect(() => {
+    const unlock = () => {
+      try {
+        const AC: typeof AudioContext | undefined =
+          window.AudioContext ||
+          (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+        if (AC && !audioCtxRef.current) audioCtxRef.current = new AC();
+        void audioCtxRef.current?.resume();
+      } catch {}
+    };
+    window.addEventListener("pointerdown", unlock, { once: true, passive: true });
+    window.addEventListener("touchstart", unlock, { once: true, passive: true });
+    return () => {
+      window.removeEventListener("pointerdown", unlock);
+      window.removeEventListener("touchstart", unlock);
+    };
+  }, []);
+
+  /* Global tap → subtle UI sounds + light haptic buzz for buttons / links /
+   * cards. Works on both desktop clicks and mobile taps. */
   useEffect(() => {
     const handler = (e: MouseEvent) => {
       const target = e.target as HTMLElement | null;
       if (!target) return;
       if (target.closest("input, textarea, select, [contenteditable='true']")) return;
-      const tagged = target.closest("[data-sound]") as HTMLElement | null;
-      if (tagged) {
-        const s = tagged.getAttribute("data-sound");
-        if (s && (SOUND_PRESETS as Record<string, Note[]>)[s]) {
-          playSound(s as SoundType);
-          return;
+      const interactive = target.closest(
+        "button, a, [role='button'], [data-sound], [data-tappable]"
+      ) as HTMLElement | null;
+      if (!interactive) return;
+      // Light haptic feedback on supporting phones.
+      try {
+        if (soundEnabledRef.current && typeof navigator !== "undefined" && navigator.vibrate) {
+          navigator.vibrate(8);
         }
+      } catch {}
+      const tagged = target.closest("[data-sound]") as HTMLElement | null;
+      const s = tagged?.getAttribute("data-sound");
+      if (s && (SOUND_PRESETS as Record<string, Note[]>)[s]) {
+        playSound(s as SoundType);
+        return;
       }
-      if (target.closest("button, a, [role='button']")) {
-        playSound("click");
-      }
+      playSound("click");
     };
     document.addEventListener("click", handler);
     return () => document.removeEventListener("click", handler);

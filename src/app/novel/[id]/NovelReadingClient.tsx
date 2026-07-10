@@ -14,6 +14,7 @@ import { SkeletonReader } from "@/components/Skeleton";
 import { PDFCover } from "@/components/PDFCover";
 import { PDFErrorBoundary } from "@/components/PDFErrorBoundary";
 import { SafeBoundary } from "@/components/SafeBoundary";
+import { ShareButtons } from "@/components/ShareButtons";
 import { estimateReadTime } from "@/components/NovelCard";
 import { useApp } from "@/context/AppContext";
 import { t } from "@/lib/i18n";
@@ -302,6 +303,9 @@ export function NovelReadingClient({ novel, startPage }: NovelReadingClientProps
                     <Wallet className="w-4 h-4" />
                     {t("card.supportCCP", lang)}
                   </button>
+                  <SafeBoundary name="share" silent>
+                    <ShareButtons title={novel.title} url={`/novel/${novel.id}`} />
+                  </SafeBoundary>
                 </div>
               </div>
             </div>

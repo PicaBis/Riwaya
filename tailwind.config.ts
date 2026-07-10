@@ -31,7 +31,7 @@ const config: Config = {
         },
       },
       fontFamily: {
-        arabic: ["'Amiri'", "'Noto Serif Arabic'", "serif"],
+        arabic: ["var(--font-amiri)", "'Amiri'", "'Noto Serif Arabic'", "serif"],
         display: ["'Playfair Display'", "Georgia", "serif"],
         sans: [
           "system-ui",

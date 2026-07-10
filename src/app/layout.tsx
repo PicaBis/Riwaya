@@ -1,6 +1,19 @@
 import type { Metadata } from "next";
+import { Amiri } from "next/font/google";
 import "./globals.css";
 import { AppProvider } from "@/context/AppContext";
+
+/* Self-hosted Amiri (the logo + Arabic display font). next/font inlines the
+   font files at build time and auto-injects a <link rel="preload">, so the
+   correct font paints on the first frame — no FOUC glitch and no render-blocking
+   request to Google, and it silences the google-font-display / no-page-custom-font
+   lint warnings. */
+const amiri = Amiri({
+  subsets: ["arabic"],
+  weight: ["400", "700"],
+  display: "swap",
+  variable: "--font-amiri",
+});
 import { Header } from "@/components/Header";
 import { SplashScreen } from "@/components/SplashScreen";
 import { BugReporter } from "@/components/BugReporter";
@@ -57,7 +70,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="ar" dir="rtl" suppressHydrationWarning>
+    <html lang="ar" dir="rtl" className={amiri.variable} suppressHydrationWarning>
       <head>
         <meta charSet="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -66,18 +79,6 @@ export default function RootLayout({
         <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        {/* Amiri = the logo / Arabic display font. Loaded here (not via CSS
-            @import) so it is discovered during head parsing and painted with the
-            correct font from the first frame — no FOUC glitch on "روايتي". */}
-        <link
-          rel="preload"
-          as="style"
-          href="https://fonts.googleapis.com/css2?family=Amiri:ital,wght@0,400;0,700;1,400&display=block"
-        />
-        <link
-          rel="stylesheet"
-          href="https://fonts.googleapis.com/css2?family=Amiri:ital,wght@0,400;0,700;1,400&display=block"
-        />
         {/* Prevent FOUC for dark mode */}
         <script
           dangerouslySetInnerHTML={{
@@ -133,13 +134,14 @@ export default function RootLayout({
         />
       </head>
       <body className="min-h-screen flex flex-col">
+        <a href="#main-content" className="skip-link">تخطّي إلى المحتوى</a>
         <ScreenshotGuard />
         <AppProvider>
           <ScrollProgress />
           <SplashScreen />
           <AutoFullscreen />
           <Header />
-          <main className="flex-1 premium-bg">{children}</main>
+          <main id="main-content" className="flex-1 premium-bg">{children}</main>
           <CookieConsent />
           <BugReporter />
           <ScrollToTop />

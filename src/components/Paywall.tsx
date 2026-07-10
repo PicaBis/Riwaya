@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import { Lock, Wallet, Eye, EyeOff, CheckCircle2, AlertCircle, Copy, Mail, ShieldCheck, QrCode, RefreshCw, ArrowLeft } from "lucide-react";
 import { verifyDevCode } from "@/lib/auth";
 import { getUserKey } from "@/lib/device";
@@ -310,9 +311,11 @@ export function Paywall({ onUnlock, onBackToFree, price = 500, ripNumber = BANK.
                 {/* QR Code */}
                 <div className="flex justify-center">
                   <div className="rounded-2xl bg-white p-3 border border-parchment-200 dark:border-white/10 shadow-sm">
-                    <img
+                    <Image
                       src="/qr-payment.jpg"
                       alt={lang === "ar" ? "رمز QR للدفع" : "Payment QR Code"}
+                      width={320}
+                      height={320}
                       className="w-64 h-64 sm:w-80 sm:h-80 object-contain rounded-lg"
                       loading="lazy"
                     />

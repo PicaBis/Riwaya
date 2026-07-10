@@ -81,7 +81,11 @@ export function NovelCard({ novel, index = 0 }: NovelCardProps) {
         <Link
           href={`/novel/${novel.id}`}
           className="block relative"
+          data-sound="open"
           onMouseEnter={() => {
+            if (novel.pdfFile) prefetchPdf(novel.id, novel.pdfFile);
+          }}
+          onTouchStart={() => {
             if (novel.pdfFile) prefetchPdf(novel.id, novel.pdfFile);
           }}
         >
