@@ -246,6 +246,10 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, 
           ? await resolveProtectedPdfSource(novelId, pdfUrl)
           : { url: pdfUrl };
         if (cancelled) return;
+        if (source.url && isUnlocked) {
+          const separator = source.url.includes("?") ? "&" : "?";
+          source.url = `${source.url}${separator}unlocked=1`;
+        }
         const loadedPdf = await pdfjsLib.getDocument({
           url: source.url,
           httpHeaders: source.httpHeaders,
@@ -799,7 +803,7 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, 
         <div className="absolute inset-0 z-50 flex items-center justify-center bg-parchment-50/95 dark:bg-onyx-950/97 backdrop-blur-md p-2 sm:p-4">
           <Paywall
             onUnlock={() => unlock()}
-            onBackToFree={() => setCurrentPage(Math.max(1, freeUntilPage))}
+            onBackToFree={() => setCurrentPage(Math.max(1, (freeUntilPage || 1) - 1))}
             price={500}
             title={title}
             preview={preview}

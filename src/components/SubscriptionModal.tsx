@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { X, BookOpen, Lock, Coins, ChevronLeft, ArrowLeft } from "lucide-react";
+import { createPortal } from "react-dom";
 import clsx from "clsx";
 import { novels } from "@/data/novels";
 import { useApp } from "@/context/AppContext";
@@ -23,7 +24,7 @@ export function SubscriptionModal({ onClose, open = true }: { onClose: () => voi
 
   if (!open) return null;
 
-  return (
+  const modal = (
     <div
       className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-md animate-fade-in"
       onClick={(e) => e.target === e.currentTarget && onClose()}
@@ -187,4 +188,6 @@ export function SubscriptionModal({ onClose, open = true }: { onClose: () => voi
       </div>
     </div>
   );
+
+  return typeof document !== "undefined" ? createPortal(modal, document.body) : null;
 }

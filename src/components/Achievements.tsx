@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { Trophy, X } from "lucide-react";
+import { createPortal } from "react-dom";
 import { useApp } from "@/context/AppContext";
 import { t } from "@/lib/i18n";
 
@@ -36,9 +37,9 @@ export function Achievements() {
         )}
       </button>
 
-      {open && (
+      {open && typeof document !== "undefined" && createPortal(
         <div
-          className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fade-in"
+          className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-md animate-fade-in"
           onClick={(e) => e.target === e.currentTarget && setOpen(false)}
         >
           <div className="relative w-full max-w-sm bg-white dark:bg-onyx-800 rounded-2xl shadow-2xl p-5 animate-scale-in max-h-[85vh] flex flex-col" onClick={(e) => e.stopPropagation()} dir={dir}>
@@ -86,7 +87,8 @@ export function Achievements() {
               {unlocked.length} / {achievements.length} {t("achievements.count", lang)}
             </p>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </>
   );
