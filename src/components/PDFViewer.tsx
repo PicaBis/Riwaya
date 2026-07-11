@@ -49,6 +49,7 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, 
   const [displayScale, setDisplayScale] = useState(typeof window !== "undefined" && window.innerWidth < 768 ? 1.0 : 0.75);
   const [status, setStatus] = useState<RenderStatus>("idle");
   const [retryKey, setRetryKey] = useState(0);
+  const unlockReloadAttemptsRef = useRef(0);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const watermarkRef = useRef<HTMLDivElement | null>(null);
   const [tocOpen, setTocOpen] = useState(false);
@@ -226,14 +227,18 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, 
    * server only served the free portion of the PDF. Navigating past the loaded
    * pages simply reveals the paywall overlay. */
   const displayTotal = totalPagesOverride && totalPagesOverride > totalPages ? totalPagesOverride : totalPages;
-  /* Highest page a reader may actually move to. Free readers are blocked at
-   * freeUntilPage; subscribers (full PDF loaded) are bounded by the real page
-   * count, or the override if provided (for locked-pdf display purposes). */
-  const navMax = isUnlocked ? (totalPagesOverride || totalPages) : (totalPagesOverride || totalPages);
-  
-  // Real lock check for rendering and navigation
-  const isActuallyLocked = !isUnlocked && currentPage >= freeUntilPage && freeUntilPage > 0;
-  lockedRef.current = isActuallyLocked;
+  /* Highest page a reader may actually move to. The freeUntilPage cap itself
+   * is enforced by `isLocked` (which blocks goToNext / disables the nav
+   * button once the free preview boundary is reached) — navMax only needs to
+   * track how many pages are actually available to render, which is the
+   * override (true novel length once entitled) or whatever was loaded. */
+  const navMax = totalPagesOverride || totalPages;
+
+  /* Reset the unlock-triggered auto-reload budget whenever a different novel
+   * is opened, so a stale counter from a previous session never lingers. */
+  useEffect(() => {
+    unlockReloadAttemptsRef.current = 0;
+  }, [pdfUrl, novelId]);
 
   /* ── Load PDF ───────────────────────────────────────── */
   useEffect(() => {
@@ -297,8 +302,12 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, 
     // The current page may point past the served (free) portion of the PDF —
     // the paywall overlay covers that case, so skip rendering a missing page.
     if (currentPage > totalPages) {
-      // If we are unlocked but the PDF is still the truncated one, we need to reload
-      if (isUnlocked && totalPages < (totalPagesOverride || 0)) {
+      // If we are unlocked but the PDF is still the truncated one, we need to
+      // reload it to fetch the full version. Cap the number of auto-reloads so
+      // a client/server entitlement mismatch can never spin this into an
+      // infinite reload loop.
+      if (isUnlocked && totalPages < (totalPagesOverride || 0) && unlockReloadAttemptsRef.current < 3) {
+        unlockReloadAttemptsRef.current += 1;
         setRetryKey(k => k + 1);
       }
       return;
@@ -354,7 +363,7 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, 
 
     render();
     return () => { cancelled = true; };
-  }, [pdf, currentPage, status, totalPages, containerWidth, displayScale, onPageChange, isMobile]);
+  }, [pdf, currentPage, status, totalPages, containerWidth, displayScale, onPageChange, isMobile, isUnlocked, totalPagesOverride]);
 
   /* ── Navigation ─────────────────────────────────────── */
   const goToPrev = useCallback(() => {
@@ -367,7 +376,7 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, 
   }, [isLocked]);
 
   const goToNext = useCallback(() => {
-    if (isActuallyLocked) {
+    if (isLocked) {
       if (typeof window !== "undefined") {
         window.dispatchEvent(new CustomEvent("riwayati:show-subscription"));
       }
@@ -378,7 +387,7 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, 
       if (next !== p && navigator.vibrate) navigator.vibrate(10);
       return next;
     });
-  }, [navMax, isActuallyLocked]);
+  }, [navMax, isLocked]);
 
   navRef.current = { goNext: goToNext, goPrev: goToPrev };
 
