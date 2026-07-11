@@ -283,6 +283,17 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, 
           url: source.url,
           httpHeaders: source.httpHeaders,
           withCredentials: true,
+          // Our API route always returns the entire (truncated-or-full)
+          // buffer in a single response and never handles a `Range` request
+          // — it doesn't send `Accept-Ranges`/a stable `Content-Length`
+          // either. Left at their defaults, pdf.js may still try to fetch
+          // later pages via byte-range/streaming requests for larger files,
+          // which silently fail against this endpoint: the page counter
+          // keeps advancing but the canvas stops updating past whatever byte
+          // offset the first "chunk" covered. Forcing a single plain fetch
+          // guarantees every page is available as soon as the document loads.
+          disableRange: true,
+          disableStream: true,
         }).promise;
         if (cancelled) return;
         setPdf(loadedPdf);

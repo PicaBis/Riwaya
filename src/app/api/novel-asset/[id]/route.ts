@@ -84,6 +84,13 @@ export async function GET(
         "Cache-Control": "private, max-age=3600, stale-while-revalidate=86400",
         "X-Content-Type-Options": "nosniff",
         "X-Entitled": isEntitled ? "true" : "false",
+        // This route always serves the whole (truncated-or-full) buffer in
+        // one shot — it never parses/honors a `Range` request. Advertising
+        // an explicit Content-Length and no Accept-Ranges keeps clients
+        // (notably pdf.js) from assuming partial-content support that isn't
+        // actually there.
+        "Content-Length": String(buffer.length),
+        "Accept-Ranges": "none",
       },
     });
   } catch {

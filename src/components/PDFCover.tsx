@@ -56,6 +56,10 @@ export function PDFCover({ pdfUrl, novelId, title, className = "" }: PDFCoverPro
           url: source.url,
           httpHeaders: source.httpHeaders,
           withCredentials: true,
+          // Same rationale as PDFViewer: /api/novel-asset always returns the
+          // full body in one response and never handles Range requests.
+          disableRange: true,
+          disableStream: true,
         });
         const pdf = await loadingTask.promise;
         if (cancelled) return;
