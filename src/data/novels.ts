@@ -43,11 +43,12 @@ export const novels: Novel[] = [
     pageCount: 255,
     lastUpdated: "2024-12-15",
     chapters: [
-      { title: "الفصل الأول: بداية الرحلة", startPage: 1 },
-      { title: "الفصل الثاني: أسرار الصحراء", startPage: 44 },
-      { title: "الفصل الثالث: الحرب الكبرى 🔒", startPage: 129 },
-      { title: "الفصل الرابع: ما بعد العاصفة 🔒", startPage: 175 },
-      { title: "الفصل الخامس: النهاية 🔒", startPage: 220 },
+      { title: "البداية", startPage: 1 },
+      { title: "الفصل الأول: قلادة القمر", startPage: 7 },
+      { title: "الفصل الثاني: تجربة الحب السوداء", startPage: 47 },
+      { title: "الفصل الثالث: الحرب الكبرى", startPage: 129 },
+      { title: "الفصل الرابع: أسرار العالم", startPage: 162 },
+      { title: "الفصل الأخير: شجرة سينا", startPage: 203 },
     ],
   },
   {

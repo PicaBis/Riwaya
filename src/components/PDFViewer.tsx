@@ -50,6 +50,13 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, 
   const [status, setStatus] = useState<RenderStatus>("idle");
   const [retryKey, setRetryKey] = useState(0);
   const unlockReloadAttemptsRef = useRef(0);
+  /** True once the reader has successfully shown at least one page. Guards
+   *  the full-screen "loading" replacement so a background reload (e.g. the
+   *  silent re-fetch of the full PDF right after unlock) never blanks the
+   *  page the reader is already looking at — it keeps rendering the last
+   *  page while the fuller document loads behind it. */
+  const initialLoadDoneRef = useRef(false);
+  const [isSyncing, setIsSyncing] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const watermarkRef = useRef<HTMLDivElement | null>(null);
   const [tocOpen, setTocOpen] = useState(false);
@@ -234,18 +241,31 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, 
    * override (true novel length once entitled) or whatever was loaded. */
   const navMax = totalPagesOverride || totalPages;
 
-  /* Reset the unlock-triggered auto-reload budget whenever a different novel
-   * is opened, so a stale counter from a previous session never lingers. */
+  /* Reset the unlock-triggered auto-reload budget and the "have we ever
+   * shown a page" flag whenever a different novel is opened, so state from
+   * a previous session never lingers. */
   useEffect(() => {
     unlockReloadAttemptsRef.current = 0;
+    initialLoadDoneRef.current = false;
+    setIsSyncing(false);
   }, [pdfUrl, novelId]);
 
   /* ── Load PDF ───────────────────────────────────────── */
   useEffect(() => {
     let cancelled = false;
-    setStatus("loading");
-    setPdf(null);
-    setTotalPages(0);
+    // A "silent" reload (triggered by retryKey bumping or isUnlocked flipping
+    // once we've already shown a page) must NOT blank the reader — it keeps
+    // rendering whatever page is already on screen while the fuller PDF loads
+    // in the background, then swaps in transparently once ready. Only the
+    // very first load for this novel shows the full-screen spinner.
+    const isSilentReload = initialLoadDoneRef.current;
+    if (isSilentReload) {
+      setIsSyncing(true);
+    } else {
+      setStatus("loading");
+      setPdf(null);
+      setTotalPages(0);
+    }
 
     const load = async (attempt: number) => {
       try {
@@ -268,11 +288,18 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, 
         setPdf(loadedPdf);
         setTotalPages(loadedPdf.numPages);
         setStatus("ready");
+        setIsSyncing(false);
+        initialLoadDoneRef.current = true;
       } catch (err) {
         if (cancelled) return;
         console.error(`[PDFViewer] load attempt ${attempt} failed:`, err);
         if (attempt < 3) {
           setTimeout(() => load(attempt + 1), 600 * attempt);
+        } else if (isSilentReload) {
+          // Keep showing the page that's already rendered instead of
+          // replacing it with an error screen — the reader can simply try
+          // navigating again, which re-triggers the normal paywall/reload path.
+          setIsSyncing(false);
         } else {
           setStatus("error");
         }
@@ -652,6 +679,13 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, 
               <span className="text-[10px] sm:text-xs font-mono text-gold-600 dark:text-gold-400 font-bold">
                 {currentPage} <span className="opacity-40">/</span> {displayTotal}
               </span>
+              {isSyncing && (
+                <span
+                  className="w-2.5 h-2.5 rounded-full border-[1.5px] border-gold-500/30 border-t-gold-500 animate-spin flex-shrink-0"
+                  title={t("pdf.loading", lang)}
+                  aria-label={t("pdf.loading", lang)}
+                />
+              )}
             </div>
           </div>
           <ToolBtn onClick={goToNext} disabled={isLocked || currentPage >= navMax || totalPages === 0} title={t("pdf.nextPage", lang)} sound="navigate" className="bg-parchment-50 dark:bg-white/5 shadow-sm">
