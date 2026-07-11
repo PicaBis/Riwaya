@@ -4,7 +4,14 @@
 // strategy below, which is what actually prevents serving a stale HTML shell
 // that points at JS chunk files a newer deployment no longer serves.
 const CACHE = "riwayati-v2";
-const PDF_CACHE = "riwayati-pdfs-v1";
+// Bumped v1 -> v2: this store used to also hold /api/novel-asset/* (the
+// multi-MB PDF binary) opportunistically. That entry is entitlement/session
+// scoped and served nothing but risk (stale bytes sitting in Cache Storage
+// across a subscribe/unlock event) for zero real benefit, since the fetch
+// handler below is already network-first and never reads it back. It's now
+// excluded from caching entirely; bumping the name here forces `activate`
+// to drop any old cached PDF bytes a returning visitor's browser is holding.
+const PDF_CACHE = "riwayati-pdfs-v2";
 
 self.addEventListener("install", (e) => {
   e.waitUntil(
@@ -39,6 +46,18 @@ self.addEventListener("fetch", (e) => {
     return;
   }
   if (url.pathname.startsWith("/api/")) {
+    // The novel PDF itself is entitlement/session scoped (a locked reader
+    // and an unlocked one hit the exact same-shaped endpoint) and can be
+    // several MB — there's no upside to shadowing it in Cache Storage since
+    // this handler is already always network-first, and every byte cached
+    // here is a byte that could theoretically get served to the wrong
+    // entitlement state by some other path later. Skip it entirely.
+    if (url.pathname.startsWith("/api/novel-asset/")) {
+      e.respondWith(
+        fetch(e.request, { credentials: "same-origin" }).catch(() => new Response("Offline", { status: 503 }))
+      );
+      return;
+    }
     e.respondWith(
       fetch(e.request, { credentials: "same-origin" }).then((response) => {
         if (response && response.status === 200) {
