@@ -46,7 +46,7 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, 
   const [pdf, setPdf] = useState<import("pdfjs-dist").PDFDocumentProxy | null>(null);
   const [totalPages, setTotalPages] = useState(0);
   const [currentPage, setCurrentPage] = useState(initialPage);
-  const [displayScale, setDisplayScale] = useState(0.75);
+  const [displayScale, setDisplayScale] = useState(typeof window !== "undefined" && window.innerWidth < 768 ? 1.0 : 0.75);
   const [status, setStatus] = useState<RenderStatus>("idle");
   const [retryKey, setRetryKey] = useState(0);
   const [isFullscreen, setIsFullscreen] = useState(false);
@@ -229,7 +229,11 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, 
   /* Highest page a reader may actually move to. Free readers are blocked at
    * freeUntilPage; subscribers (full PDF loaded) are bounded by the real page
    * count, or the override if provided (for locked-pdf display purposes). */
-  const navMax = isUnlocked ? (totalPagesOverride || totalPages) : freeUntilPage;
+  const navMax = isUnlocked ? (totalPagesOverride || totalPages) : (totalPagesOverride || totalPages);
+  
+  // Real lock check for rendering and navigation
+  const isActuallyLocked = !isUnlocked && currentPage >= freeUntilPage && freeUntilPage > 0;
+  lockedRef.current = isActuallyLocked;
 
   /* ── Load PDF ───────────────────────────────────────── */
   useEffect(() => {
@@ -292,7 +296,13 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, 
     if (!pdf || !canvasRef.current || status !== "ready" || totalPages === 0) return;
     // The current page may point past the served (free) portion of the PDF —
     // the paywall overlay covers that case, so skip rendering a missing page.
-    if (currentPage > totalPages) return;
+    if (currentPage > totalPages) {
+      // If we are unlocked but the PDF is still the truncated one, we need to reload
+      if (isUnlocked && totalPages < (totalPagesOverride || 0)) {
+        setRetryKey(k => k + 1);
+      }
+      return;
+    }
     const renderId = ++pageRenderRef.current;
     let cancelled = false;
 
@@ -357,7 +367,7 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, 
   }, [isLocked]);
 
   const goToNext = useCallback(() => {
-    if (isLocked) {
+    if (isActuallyLocked) {
       if (typeof window !== "undefined") {
         window.dispatchEvent(new CustomEvent("riwayati:show-subscription"));
       }
@@ -368,7 +378,7 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, 
       if (next !== p && navigator.vibrate) navigator.vibrate(10);
       return next;
     });
-  }, [navMax, isLocked]);
+  }, [navMax, isActuallyLocked]);
 
   navRef.current = { goNext: goToNext, goPrev: goToPrev };
 
@@ -763,11 +773,14 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, 
 
           {status === "ready" && totalPages > 0 && (
             <div
-              className="relative flex-shrink-0 mx-auto overflow-hidden flex items-center justify-center transition-all duration-200 bg-white"
+              className={clsx(
+                "relative flex-shrink-0 mx-auto overflow-hidden flex items-center justify-center transition-all duration-200 bg-white",
+                isMobile && "w-full"
+              )}
               style={{
-                width: containerWidth > 0 ? `${containerWidth * displayScale}px` : `${displayScale * 100}%`,
+                width: !isMobile ? (containerWidth > 0 ? `${containerWidth * displayScale}px` : `${displayScale * 100}%`) : undefined,
                 minHeight: containerWidth > 0 && pageSize.width > 0
-                  ? `${(containerWidth * pageSize.height / pageSize.width) * displayScale}px`
+                  ? `${(containerWidth * pageSize.height / pageSize.width) * (isMobile ? 1.0 : displayScale)}px`
                   : undefined,
               }}
             >

@@ -194,10 +194,10 @@ export function NovelReadingClient({ novel, startPage, showSubs: showSubsExterna
             </div>
           </div>
 
-          {/* ── Comments Section ───────────────────────── */}
-          <div className="max-w-4xl mx-auto px-4 sm:px-6 py-8 w-full" dir={dir}>
-            <Comments novelId={novel.id} />
-          </div>
+        {/* ── Comments Section (Moved for mobile) ───────────────────────── */}
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 py-8 w-full order-first sm:order-last" dir={dir}>
+          <Comments novelId={novel.id} />
+        </div>
         </div>
 
         {showCCP && (
