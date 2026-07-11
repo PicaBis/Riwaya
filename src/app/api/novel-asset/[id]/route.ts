@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { readFile } from "fs/promises";
 import path from "path";
-import { PDFDocument } from "pdf-lib";
 import { novels } from "@/data/novels";
 import { SESSION_COOKIE_NAME, verifySession } from "@/lib/session";
 import { verifyAssetToken } from "@/lib/asset-token";
@@ -9,19 +8,6 @@ import { verifyEntitlementToken } from "@/lib/entitlement";
 import { refererMatchesHost } from "@/lib/origin-check";
 
 const ALLOWED = new Set(novels.map((n) => n.pdfFile).filter((f): f is string => !!f));
-
-const truncatedCache = new Map<string, Buffer>();
-
-async function truncatePdf(fullBuffer: Buffer, maxPage: number): Promise<Buffer> {
-  const src = await PDFDocument.load(fullBuffer, { ignoreEncryption: true });
-  const total = src.getPageCount();
-  if (maxPage >= total) return fullBuffer;
-  const dst = await PDFDocument.create();
-  const pages = await dst.copyPages(src, Array.from({ length: maxPage }, (_, i) => i));
-  for (const p of pages) dst.addPage(p);
-  const bytes = await dst.save();
-  return Buffer.from(bytes);
-}
 
 export async function GET(
   request: NextRequest,
@@ -58,24 +44,7 @@ export async function GET(
 
   try {
     const filePath = path.join(process.cwd(), "private", "novels", filename);
-    const fullBuffer = await readFile(filePath);
-
-    const isEntitled = entitlement.entitled;
-    const freePage = novel.freeUntilPage || 0;
-
-    let buffer: Buffer;
-    if (!isEntitled && freePage > 0) {
-      const cacheKey = `${filename}:${freePage}`;
-      const cached = truncatedCache.get(cacheKey);
-      if (cached) {
-        buffer = cached;
-      } else {
-        buffer = await truncatePdf(fullBuffer, freePage);
-        truncatedCache.set(cacheKey, buffer);
-      }
-    } else {
-      buffer = fullBuffer;
-    }
+    const buffer = await readFile(filePath);
 
     return new NextResponse(new Uint8Array(buffer), {
       headers: {
@@ -83,12 +52,7 @@ export async function GET(
         "Content-Disposition": `inline; filename="${filename}"`,
         "Cache-Control": "private, max-age=3600, stale-while-revalidate=86400",
         "X-Content-Type-Options": "nosniff",
-        "X-Entitled": isEntitled ? "true" : "false",
-        // This route always serves the whole (truncated-or-full) buffer in
-        // one shot — it never parses/honors a `Range` request. Advertising
-        // an explicit Content-Length and no Accept-Ranges keeps clients
-        // (notably pdf.js) from assuming partial-content support that isn't
-        // actually there.
+        "X-Entitled": entitlement.entitled ? "true" : "false",
         "Content-Length": String(buffer.length),
         "Accept-Ranges": "none",
       },

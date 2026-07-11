@@ -360,7 +360,6 @@ export function NovelReadingClient({ novel, startPage, showSubs: showSubsExterna
                   novelId={novel.id}
                   chapters={novel.chapters}
                   readingTheme={readerPrefs.readingTheme}
-                  totalPagesOverride={novel.pageCount}
                   showSubscription={showSubs}
                   onSubscriptionClose={() => setShowSubsSafe(false)}
                 />

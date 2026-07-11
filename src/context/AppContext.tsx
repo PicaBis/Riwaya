@@ -296,7 +296,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       /* Hydrate subscription / unlock state */
       setUnlocked(getItem("riwayati_unlocked") === "1");
       setDevUnlockedState(
-        getSessionItem("riwayati_dev_token") === "1" || getSessionItem("riwayati_devcode") != null
+        getSessionItem("riwayati_dev_unlocked") === "1" ||
+        // Back-compat: older sessions stored the literal "1" here before the
+        // signed token took its place. The real token is always >>1 char.
+        getSessionItem("riwayati_dev_token") === "1" ||
+        getSessionItem("riwayati_devcode") != null
       );
       /* Sounds default to on; only respect an explicit prior mute. */
       if (getItem("riwayati_sound") === "0") {
@@ -517,11 +521,15 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setDevUnlockedState(v);
     try {
       if (v) {
-        sessionStorage.setItem("riwayati_dev_token", "1");
+        // Use a dedicated sentinel for the dev-unlock boolean so the real
+        // signed token (written by Paywall after /api/admin/dev-verify) under
+        // `riwayati_dev_token` is never clobbered — the server still needs it
+        // to mint an `entitled` entitlement token and for admin routes.
+        sessionStorage.setItem("riwayati_dev_unlocked", "1");
         localStorage.setItem("riwayati_unlocked", "1");
         setUnlocked(true);
       } else {
-        sessionStorage.removeItem("riwayati_dev_token");
+        sessionStorage.removeItem("riwayati_dev_unlocked");
       }
     } catch {}
   }, []);

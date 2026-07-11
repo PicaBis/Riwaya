@@ -26,10 +26,6 @@ interface PDFViewerProps {
   novelId?: string;
   chapters?: Chapter[];
   readingTheme?: "light" | "dark" | "sepia";
-  /** Full length of the novel. When the served PDF only contains the free
-   *  portion, this is still the real total so the counter shows e.g. "129 / 255"
-   *  and locked chapters remain visible/gated behind the paywall. */
-  totalPagesOverride?: number;
   /** Controlled subscription modal visibility. */
   showSubscription?: boolean;
   onSubscriptionClose?: () => void;
@@ -37,7 +33,7 @@ interface PDFViewerProps {
 
 type RenderStatus = "idle" | "loading" | "ready" | "error";
 
-export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, onPageChange, preview, novelId, chapters, readingTheme = "light", totalPagesOverride, showSubscription, onSubscriptionClose }: PDFViewerProps) {
+export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, onPageChange, preview, novelId, chapters, readingTheme = "light", showSubscription, onSubscriptionClose }: PDFViewerProps) {
   const { lang, unlocked, devUnlocked, unlock } = useApp();
   const containerRef = useRef<HTMLDivElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -49,14 +45,6 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, 
   const [displayScale, setDisplayScale] = useState(typeof window !== "undefined" && window.innerWidth < 768 ? 1.0 : 0.75);
   const [status, setStatus] = useState<RenderStatus>("idle");
   const [retryKey, setRetryKey] = useState(0);
-  const unlockReloadAttemptsRef = useRef(0);
-  /** True once the reader has successfully shown at least one page. Guards
-   *  the full-screen "loading" replacement so a background reload (e.g. the
-   *  silent re-fetch of the full PDF right after unlock) never blanks the
-   *  page the reader is already looking at — it keeps rendering the last
-   *  page while the fuller document loads behind it. */
-  const initialLoadDoneRef = useRef(false);
-  const [isSyncing, setIsSyncing] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const watermarkRef = useRef<HTMLDivElement | null>(null);
   const [tocOpen, setTocOpen] = useState(false);
@@ -225,49 +213,23 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, 
     return () => window.clearTimeout(raf);
   }, []);
 
-  /* ── Paywall ────────────────────────────────────────── */
+  /* ── Paywall (client-side CSS overlay protection) ────
+   * The full PDF (all 255 pages) is always loaded into the document proxy.
+   * `isUnlocked` is a purely client-side state flag — the server sends every
+   * page regardless. `isLocked` only decides whether the blurred paywall
+   * overlay should cover the currently-shown page. Lifting it (after a dev
+   * code or a redeemed subscription code is verified client-side) instantly
+   * hides the overlay — every page is already in the DOM proxy, so
+   * navigation from 129 → 130 → 255 is immediate with zero re-fetching. */
   const isUnlocked = unlocked || devUnlocked;
   const isLocked = !isUnlocked && currentPage >= freeUntilPage && freeUntilPage > 0;
   lockedRef.current = isLocked;
 
-  /* Display the true novel length in the counter/progress bar even when the
-   * server only served the free portion of the PDF. Navigating past the loaded
-   * pages simply reveals the paywall overlay. */
-  const displayTotal = totalPagesOverride && totalPagesOverride > totalPages ? totalPagesOverride : totalPages;
-  /* Highest page a reader may actually move to. The freeUntilPage cap itself
-   * is enforced by `isLocked` (which blocks goToNext / disables the nav
-   * button once the free preview boundary is reached) — navMax only needs to
-   * track how many pages are actually available to render, which is the
-   * override (true novel length once entitled) or whatever was loaded. */
-  const navMax = totalPagesOverride || totalPages;
-
-  /* Reset the unlock-triggered auto-reload budget and the "have we ever
-   * shown a page" flag whenever a different novel is opened, so state from
-   * a previous session never lingers. */
-  useEffect(() => {
-    unlockReloadAttemptsRef.current = 0;
-    initialLoadDoneRef.current = false;
-    setIsSyncing(false);
-  }, [pdfUrl, novelId]);
-
-  /* ── Load PDF ───────────────────────────────────────── */
+  /* ── Load PDF (full document, once) ─────────────────── */
   useEffect(() => {
     let cancelled = false;
-    // A "silent" reload (triggered by retryKey bumping or isUnlocked flipping
-    // once we've already shown a page) must NOT blank the reader — it keeps
-    // rendering whatever page is already on screen while the fuller PDF loads
-    // in the background, then swaps in transparently once ready. Only the
-    // very first load for this novel shows the full-screen spinner.
-    const isSilentReload = initialLoadDoneRef.current;
-    if (isSilentReload) {
-      setIsSyncing(true);
-    } else {
-      setStatus("loading");
-      setPdf(null);
-      setTotalPages(0);
-    }
-
-    const load = async (attempt: number) => {
+    setStatus("loading");
+    (async () => {
       try {
         const pdfjsLib = await import("pdfjs-dist");
         pdfjsLib.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.js";
@@ -275,23 +237,10 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, 
           ? await resolveProtectedPdfSource(novelId, pdfUrl)
           : { url: pdfUrl };
         if (cancelled) return;
-        if (source.url && isUnlocked) {
-          const separator = source.url.includes("?") ? "&" : "?";
-          source.url = `${source.url}${separator}unlocked=1`;
-        }
         const loadedPdf = await pdfjsLib.getDocument({
           url: source.url,
           httpHeaders: source.httpHeaders,
           withCredentials: true,
-          // Our API route always returns the entire (truncated-or-full)
-          // buffer in a single response and never handles a `Range` request
-          // — it doesn't send `Accept-Ranges`/a stable `Content-Length`
-          // either. Left at their defaults, pdf.js may still try to fetch
-          // later pages via byte-range/streaming requests for larger files,
-          // which silently fail against this endpoint: the page counter
-          // keeps advancing but the canvas stops updating past whatever byte
-          // offset the first "chunk" covered. Forcing a single plain fetch
-          // guarantees every page is available as soon as the document loads.
           disableRange: true,
           disableStream: true,
         }).promise;
@@ -299,27 +248,10 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, 
         setPdf(loadedPdf);
         setTotalPages(loadedPdf.numPages);
         setStatus("ready");
-        setIsSyncing(false);
-        initialLoadDoneRef.current = true;
-      } catch (err) {
-        if (cancelled) return;
-        console.error(`[PDFViewer] load attempt ${attempt} failed:`, err);
-        if (attempt < 3) {
-          setTimeout(() => load(attempt + 1), 600 * attempt);
-        } else if (isSilentReload) {
-          // Keep showing the page that's already rendered instead of
-          // replacing it with an error screen — the reader can simply try
-          // navigating again, which re-triggers the normal paywall/reload path.
-          setIsSyncing(false);
-        } else {
-          setStatus("error");
-        }
-      }
-    };
-
-    load(1);
+      } catch { if (!cancelled) setStatus("error"); }
+    })();
     return () => { cancelled = true; };
-  }, [pdfUrl, novelId, retryKey, isUnlocked]);
+  }, [pdfUrl, novelId, retryKey]);
 
   /* ── Measure scroll container ───────────────────────── */
   useEffect(() => {
@@ -337,19 +269,6 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, 
 
   useEffect(() => {
     if (!pdf || !canvasRef.current || status !== "ready" || totalPages === 0) return;
-    // The current page may point past the served (free) portion of the PDF —
-    // the paywall overlay covers that case, so skip rendering a missing page.
-    if (currentPage > totalPages) {
-      // If we are unlocked but the PDF is still the truncated one, we need to
-      // reload it to fetch the full version. Cap the number of auto-reloads so
-      // a client/server entitlement mismatch can never spin this into an
-      // infinite reload loop.
-      if (isUnlocked && totalPages < (totalPagesOverride || 0) && unlockReloadAttemptsRef.current < 3) {
-        unlockReloadAttemptsRef.current += 1;
-        setRetryKey(k => k + 1);
-      }
-      return;
-    }
     const renderId = ++pageRenderRef.current;
     let cancelled = false;
 
@@ -401,31 +320,33 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, 
 
     render();
     return () => { cancelled = true; };
-  }, [pdf, currentPage, status, totalPages, containerWidth, displayScale, onPageChange, isMobile, isUnlocked, totalPagesOverride]);
+  }, [pdf, currentPage, status, totalPages, containerWidth, displayScale, onPageChange, isMobile]);
 
   /* ── Navigation ─────────────────────────────────────── */
   const goToPrev = useCallback(() => {
-    if (isLocked) return;
     setCurrentPage((p) => {
       const next = Math.max(1, p - 1);
       if (next !== p && navigator.vibrate) navigator.vibrate(10);
       return next;
     });
-  }, [isLocked]);
+  }, []);
 
   const goToNext = useCallback(() => {
-    if (isLocked) {
-      if (typeof window !== "undefined") {
-        window.dispatchEvent(new CustomEvent("riwayati:show-subscription"));
+    if (!isUnlocked && freeUntilPage > 0) {
+      const next = currentPage + 1;
+      if (next > freeUntilPage) {
+        if (typeof window !== "undefined") {
+          window.dispatchEvent(new CustomEvent("riwayati:show-subscription"));
+        }
+        return;
       }
-      return;
     }
     setCurrentPage((p) => {
-      const next = Math.min(navMax, p + 1);
+      const next = Math.min(totalPages, p + 1);
       if (next !== p && navigator.vibrate) navigator.vibrate(10);
       return next;
     });
-  }, [navMax, isLocked]);
+  }, [isUnlocked, freeUntilPage, currentPage, totalPages]);
 
   navRef.current = { goNext: goToNext, goPrev: goToPrev };
 
@@ -465,7 +386,7 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, 
 
   const updateActualScale = useCallback((newScale: number) => {
     if (zoomDebounceRef.current) clearTimeout(zoomDebounceRef.current);
-    setVisualScale(1); // Reset visual scale when actual scale is updated
+    setVisualScale(1);
     setDisplayScale(newScale);
   }, []);
 
@@ -658,6 +579,8 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, 
     setRetryKey((k) => k + 1);
   }, []);
 
+  const nextDisabled = !isUnlocked && freeUntilPage > 0 && currentPage >= freeUntilPage;
+
   return (
     <div
       ref={containerRef}
@@ -679,7 +602,7 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, 
 
         {/* Center: prev + page counter + next */}
         <div className="flex items-center gap-2 sm:gap-3">
-          <ToolBtn onClick={goToPrev} disabled={isLocked || currentPage <= 1} title={t("pdf.prevPage", lang)} sound="navigate" className="bg-parchment-50 dark:bg-white/5 shadow-sm">
+          <ToolBtn onClick={goToPrev} disabled={currentPage <= 1} title={t("pdf.prevPage", lang)} sound="navigate" className="bg-parchment-50 dark:bg-white/5 shadow-sm">
             <ChevronLeft className="w-5 h-5 sm:w-6 sm:h-6" />
           </ToolBtn>
           <div className="flex flex-col items-center">
@@ -688,18 +611,11 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, 
             </h1>
             <div className="flex items-center gap-1.5 bg-gold-500/10 px-2 py-0.5 rounded-full border border-gold-500/20">
               <span className="text-[10px] sm:text-xs font-mono text-gold-600 dark:text-gold-400 font-bold">
-                {currentPage} <span className="opacity-40">/</span> {displayTotal}
+                {currentPage} <span className="opacity-40">/</span> {totalPages}
               </span>
-              {isSyncing && (
-                <span
-                  className="w-2.5 h-2.5 rounded-full border-[1.5px] border-gold-500/30 border-t-gold-500 animate-spin flex-shrink-0"
-                  title={t("pdf.loading", lang)}
-                  aria-label={t("pdf.loading", lang)}
-                />
-              )}
             </div>
           </div>
-          <ToolBtn onClick={goToNext} disabled={isLocked || currentPage >= navMax || totalPages === 0} title={t("pdf.nextPage", lang)} sound="navigate" className="bg-parchment-50 dark:bg-white/5 shadow-sm">
+          <ToolBtn onClick={goToNext} disabled={currentPage >= totalPages || totalPages === 0} title={t("pdf.nextPage", lang)} sound="navigate" className="bg-parchment-50 dark:bg-white/5 shadow-sm">
             <ChevronRight className="w-5 h-5 sm:w-6 sm:h-6" />
           </ToolBtn>
         </div>
@@ -765,15 +681,18 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, 
             </div>
           )}
           <div className="h-1.5 bg-parchment-200/50 dark:bg-white/5 cursor-pointer group relative overflow-hidden" onClick={(e) => {
-              if (isLocked) return;
-              const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
-              const ratio = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
-              const target = Math.max(1, Math.min(navMax, Math.round(ratio * displayTotal)));
-              setCurrentPage(target);
-              if (navigator.vibrate) navigator.vibrate(8);
-            }}>
+            if (nextDisabled) {
+              window.dispatchEvent(new CustomEvent("riwayati:show-subscription"));
+              return;
+            }
+            const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+            const ratio = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+            const target = Math.max(1, Math.min(totalPages, Math.round(ratio * totalPages)));
+            setCurrentPage(target);
+            if (navigator.vibrate) navigator.vibrate(8);
+          }}>
             <div className="h-full bg-gradient-to-r from-gold-400 via-gold-500 to-gold-400 transition-all duration-500 ease-out relative shadow-[0_0_10px_rgba(212,175,55,0.3)]"
-              style={{ width: `${Math.round((currentPage / displayTotal) * 100)}%` }}>
+              style={{ width: `${Math.round((currentPage / totalPages) * 100)}%` }}>
               <div className="absolute inset-0 bg-[length:20px_20px] bg-gradient-to-r from-white/20 to-transparent animate-[shimmer_2s_infinite]" />
             </div>
           </div>
@@ -865,7 +784,11 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, 
         </div>
       </div>
 
-      {/* ── Paywall overlay (fixed, above everything, zoom-independent) ── */}
+      {/* ── Paywall overlay (pure CSS, above the page, zoom-independent) ──
+       * The mature page is always rendered underneath; this blurred layer
+       * only covers it while `isLocked` is true. The moment a dev/activation
+       * code flips `isUnlocked` client-side, this overlay unmounts and every
+       * page (129 → 255) is instantly visible — no reload, no re-fetch. */}
       {isLocked && (
         <div className="absolute inset-0 z-50 flex items-center justify-center bg-parchment-50/95 dark:bg-onyx-950/97 backdrop-blur-md p-2 sm:p-4">
           <Paywall
