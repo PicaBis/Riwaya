@@ -29,6 +29,14 @@ export const metadata: Metadata = {
   description: "اقرأ روايات Medjahed Abdelhadi (Pica) في تجربة قراءة أنيقة وهادئة",
   keywords: ["رواية", "قراءة", "روايات عربية", "أدب", "روايتي", "Pica"],
   metadataBase: new URL("https://rewayati.vercel.app"),
+  alternates: {
+    canonical: "/",
+    languages: {
+      "ar-DZ": "/",
+      en: "/",
+      "x-default": "/",
+    },
+  },
   openGraph: {
     title: "روايتي — مكتبة الروايات الشخصية",
     description: "اقرأ روايات Medjahed Abdelhadi (Pica) في تجربة قراءة أنيقة وهادئة",

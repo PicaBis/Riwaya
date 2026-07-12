@@ -12,6 +12,7 @@ import { DevCodeModal } from "./DevCodeModal";
 import { SubscriptionModal } from "./SubscriptionModal";
 
 import { SearchBar } from "./SearchBar";
+import { InstallButton } from "./InstallButton";
 import { LanguageSwitcher } from "./LanguageSwitcher";
 import { ContactModal } from "./ContactModal";
 import { t } from "@/lib/i18n";
@@ -63,6 +64,12 @@ export function Header() {
             >
               {t("nav.about", lang)}
             </button>
+            <Link
+              href="/faq"
+              className={`px-2 py-1 rounded-lg text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-parchment-100 dark:hover:bg-white/8 transition-colors ${lang === "ar" ? "font-arabic" : "font-sans"}`}
+            >
+              {t("nav.faq", lang)}
+            </Link>
             <button
               onClick={() => setShowContact(true)}
               data-sound="open"
@@ -101,6 +108,7 @@ export function Header() {
 
           {/* ── Desktop Actions ────────────────────────── */}
           <div className="hidden sm:flex items-center gap-2">
+            <InstallButton />
             <LanguageSwitcher />
               <button
                 onClick={toggleSound}
@@ -197,6 +205,7 @@ export function Header() {
 
           {/* ── Mobile: theme + hamburger ──────────────── */}
           <div className="flex sm:hidden items-center gap-1.5">
+            <InstallButton compact />
             <LanguageSwitcher />
             <button
               onClick={toggleTheme}
@@ -243,6 +252,27 @@ export function Header() {
                 className="px-3 py-2.5 rounded-xl text-sm text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-parchment-100 dark:hover:bg-white/8 transition-colors"
               >
                 {t("nav.library", lang)}
+              </Link>
+              <Link
+                href="/quotes"
+                onClick={() => setMobileMenuOpen(false)}
+                className="px-3 py-2.5 rounded-xl text-sm text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-parchment-100 dark:hover:bg-white/8 transition-colors"
+              >
+                {t("nav.quotes", lang)}
+              </Link>
+              <Link
+                href="/faq"
+                onClick={() => setMobileMenuOpen(false)}
+                className="px-3 py-2.5 rounded-xl text-sm text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-parchment-100 dark:hover:bg-white/8 transition-colors"
+              >
+                {t("nav.faq", lang)}
+              </Link>
+              <Link
+                href="/how-to-subscribe"
+                onClick={() => setMobileMenuOpen(false)}
+                className="px-3 py-2.5 rounded-xl text-sm text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-parchment-100 dark:hover:bg-white/8 transition-colors"
+              >
+                {t("nav.howTo", lang)}
               </Link>
               <button
                 onClick={() => { setShowAbout(true); setMobileMenuOpen(false); }}

@@ -721,3 +721,22 @@ body input, body textarea, body [contenteditable="true"] {
   ::view-transition-old(root),
   ::view-transition-new(root) { animation-duration: 0.01ms !important; }
 }
+
+/* ── Readers marquee ─────────────────────────────────────────── */
+@keyframes marqueeX {
+  0%   { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+.animate-marquee {
+  animation: marqueeX 22s linear infinite;
+}
+[dir="rtl"] .animate-marquee {
+  animation-direction: reverse;
+}
+.marquee-mask {
+  -webkit-mask-image: linear-gradient(to right, transparent, #000 8%, #000 92%, transparent);
+  mask-image: linear-gradient(to right, transparent, #000 8%, #000 92%, transparent);
+}
+@media (prefers-reduced-motion: reduce) {
+  .animate-marquee { animation: none; }
+}

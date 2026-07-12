@@ -14,6 +14,8 @@ import { MysteryCard } from "@/components/MysteryCard";
 import { SafeBoundary } from "@/components/SafeBoundary";
 import { FullscreenPrompt } from "@/components/FullscreenPrompt";
 import { OnboardingTour } from "@/components/OnboardingTour";
+import { QuoteOfDay } from "@/components/QuoteOfDay";
+import { ReadersMarquee } from "@/components/ReadersMarquee";
 import { useApp } from "@/context/AppContext";
 import { t } from "@/lib/i18n";
 
@@ -108,6 +110,11 @@ export default function HomePage() {
         </a>
       </section>
 
+      {/* ── Live readers marquee ───────────────────────── */}
+      <Reveal className="mb-6">
+        <SafeBoundary name="readers-marquee" silent><ReadersMarquee /></SafeBoundary>
+      </Reveal>
+
       {/* ── Features / trust strip ─────────────────────── */}
       <Reveal className="mb-10 sm:mb-12">
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3" dir={dir}>
@@ -133,6 +140,10 @@ export default function HomePage() {
       </Reveal>
 
       <Reveal><FeaturedNovel /></Reveal>
+
+      <Reveal className="mb-10 sm:mb-12">
+        <SafeBoundary name="quote-of-day" silent><QuoteOfDay /></SafeBoundary>
+      </Reveal>
 
       <span id="novels" className="block -mt-4 pt-4" />
 

@@ -35,6 +35,23 @@ export default function NotFound() {
           {t("notFound.library", lang)}
         </Link>
       </div>
+
+      {/* Helpful quick links */}
+      <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 mt-8">
+        {[
+          { href: "/quotes", label: t("nav.quotes", lang) },
+          { href: "/faq", label: t("nav.faq", lang) },
+          { href: "/how-to-subscribe", label: t("nav.howTo", lang) },
+        ].map((l) => (
+          <Link
+            key={l.href}
+            href={l.href}
+            className={`text-xs text-gray-400 dark:text-gray-500 hover:text-gold-500 dark:hover:text-gold-400 underline underline-offset-4 transition-colors ${fontClass}`}
+          >
+            {l.label}
+          </Link>
+        ))}
+      </div>
     </div>
   );
 }

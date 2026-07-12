@@ -27,6 +27,9 @@ export function Footer() {
             <ul className="space-y-2">
               <li><a href="/" className={`text-sm text-gray-500 dark:text-gray-400 hover:text-gold-500 transition-colors ${fontClass}`}>{t("nav.home", lang)}</a></li>
               <li><a href="/library" className={`text-sm text-gray-500 dark:text-gray-400 hover:text-gold-500 transition-colors ${fontClass}`}>{t("footer.libraryLink", lang)}</a></li>
+              <li><a href="/quotes" className={`text-sm text-gray-500 dark:text-gray-400 hover:text-gold-500 transition-colors ${fontClass}`}>{t("footer.quotes", lang)}</a></li>
+              <li><a href="/faq" className={`text-sm text-gray-500 dark:text-gray-400 hover:text-gold-500 transition-colors ${fontClass}`}>{t("footer.faq", lang)}</a></li>
+              <li><a href="/how-to-subscribe" className={`text-sm text-gray-500 dark:text-gray-400 hover:text-gold-500 transition-colors ${fontClass}`}>{t("footer.howTo", lang)}</a></li>
               <li><a href="/about" className={`text-sm text-gray-500 dark:text-gray-400 hover:text-gold-500 transition-colors ${fontClass}`}>{t("nav.about", lang)}</a></li>
               <li><a href="/privacy" className={`text-sm text-gray-500 dark:text-gray-400 hover:text-gold-500 transition-colors ${fontClass}`}>{t("footer.privacy", lang)}</a></li>
               <li><a href="/terms" className={`text-sm text-gray-500 dark:text-gray-400 hover:text-gold-500 transition-colors ${fontClass}`}>{t("footer.terms", lang)}</a></li>

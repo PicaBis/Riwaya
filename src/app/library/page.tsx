@@ -4,6 +4,7 @@ import Link from "next/link";
 import { BookOpen, ArrowRight, Clock, Star } from "lucide-react";
 import { useApp } from "@/context/AppContext";
 import { novels } from "@/data/novels";
+import { DataBackup } from "@/components/DataBackup";
 import { t } from "@/lib/i18n";
 
 export default function LibraryPage() {
@@ -185,6 +186,11 @@ export default function LibraryPage() {
           </div>
         </>
       )}
+
+      {/* Backup / restore local data */}
+      <div className="mt-12 max-w-xl">
+        <DataBackup />
+      </div>
     </div>
   );
 }

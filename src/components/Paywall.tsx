@@ -162,6 +162,24 @@ export function Paywall({ onUnlock, onBackToFree, price = 500, ripNumber = BANK.
             </p>
           </div>
 
+          {/* ── What unlocks (teaser) ──────────────── */}
+          <div className="rounded-2xl bg-parchment-50 dark:bg-white/5 border border-gold-500/15 p-4">
+            <p className={`text-xs font-black text-gold-700 dark:text-gold-400 mb-2.5 text-center ${fontClass}`}>
+              {lang === "ar" ? "ماذا ينتظرك بعد الاشتراك؟" : "What awaits you after subscribing?"}
+            </p>
+            <div className="space-y-1.5">
+              {(lang === "ar"
+                ? ["قراءة الرواية كاملة حتى آخر صفحة", "كل الفصول المتبقية بلا استثناء", "تنقّل سلس فوري دون إعادة تحميل", "وصول محفوظ لك عبر أجهزتك"]
+                : ["Read the full novel to the last page", "Every remaining chapter, no exceptions", "Seamless instant navigation, no reloads", "Access saved for you across devices"]
+              ).map((line, i) => (
+                <div key={i} className={`flex items-center gap-2 text-[11px] sm:text-xs text-gray-600 dark:text-gray-300 ${fontClass}`}>
+                  <CheckCircle2 className="w-3.5 h-3.5 text-green-500 flex-shrink-0" />
+                  <span>{line}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
           {/* ── Price ──────────────────────────────── */}
           <div className="flex justify-center">
             <div className="inline-flex flex-col items-center gap-2 bg-parchment-50 dark:bg-white/5 px-6 py-4 rounded-2xl border-2 border-gold-500/20">
