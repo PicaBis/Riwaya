@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import Link from "next/link";
 import { ArrowRight, Wallet, Star, Flame, Sparkles, PenLine, BookOpen, Tag, Calendar, Clock, Lock, List } from "lucide-react";
 import dynamic from "next/dynamic";
@@ -14,6 +14,7 @@ import { PDFCover } from "@/components/PDFCover";
 import { PDFErrorBoundary } from "@/components/PDFErrorBoundary";
 import { SafeBoundary } from "@/components/SafeBoundary";
 import { ShareButtons } from "@/components/ShareButtons";
+import { WelcomeGateModal } from "@/components/WelcomeGateModal";
 import { estimateReadTime } from "@/components/NovelCard";
 import { useApp } from "@/context/AppContext";
 import { t } from "@/lib/i18n";
@@ -35,12 +36,15 @@ interface NovelReadingClientProps {
 }
 
 export function NovelReadingClient({ novel, startPage, showSubs: showSubsExternal, onShowSubsChange }: NovelReadingClientProps) {
-  const { bookmarks, ratings, setRating, guest, saveBookmark, trackNovelView, readerPrefs, lang, unlocked, devUnlocked, showToast, hydrated } = useApp();
+  const { bookmarks, ratings, setRating, guest, saveBookmark, trackNovelView, readerPrefs, lang, unlocked, devUnlocked, showToast, hydrated, loginAsGuest } = useApp();
   const [showCCP, setShowCCP] = useState(false);
   const [showSubs, setShowSubs] = useState(false);
   const [pageCurl, setPageCurl] = useState(false);
   const [showOverview, setShowOverview] = useState(!startPage);
+  const [showWelcomeGate, setShowWelcomeGate] = useState(false);
+  const [welcomeTargetPage, setWelcomeTargetPage] = useState<number | undefined>(undefined);
   const [entryPage, setEntryPage] = useState(startPage || bookmarks[novel.id] || 1);
+  const welcomePendingRef = useRef<{ page?: number } | null>(null);
 
   const setShowSubsSafe = useCallback((v: boolean) => {
     setShowSubs(v);
@@ -68,7 +72,9 @@ export function NovelReadingClient({ novel, startPage, showSubs: showSubsExterna
 
   const beginReading = (page?: number) => {
     if (!canRead) {
-      showToast(t("gate.loginRequired", lang));
+      welcomePendingRef.current = { page };
+      setWelcomeTargetPage(page);
+      setShowWelcomeGate(true);
       return;
     }
     setShowSubs(false);
@@ -84,6 +90,17 @@ export function NovelReadingClient({ novel, startPage, showSubs: showSubsExterna
     setShowOverview(false);
     window.scrollTo({ top: 0, behavior: "instant" });
   };
+
+  /* Retry auto-start on every change to the gate visibility or read gate,
+     so the pending chapter/reading action fires reliably whether the unlock
+     and the gate-close happen in the same render or in separate ones. */
+  useEffect(() => {
+    if (!showWelcomeGate && welcomePendingRef.current && canRead) {
+      const pending = welcomePendingRef.current;
+      welcomePendingRef.current = null;
+      setTimeout(() => beginReading(pending.page), 50);
+    }
+  }, [showWelcomeGate, canRead, hydrated, beginReading]);
 
   /* Deep links (e.g. "Continue Reading" / chapter links) that target a page
      must also respect the reading gate once the app is hydrated. */
@@ -384,6 +401,16 @@ export function NovelReadingClient({ novel, startPage, showSubs: showSubsExterna
 
       {showCCP && (
         <CCPModal novelTitle={novel.title} onClose={() => setShowCCP(false)} />
+      )}
+
+      {showWelcomeGate && (
+        <WelcomeGateModal
+          onClose={() => setShowWelcomeGate(false)}
+          onSkip={() => {
+            const randomId = "guest-" + Math.random().toString(36).slice(2, 8);
+            loginAsGuest(randomId);
+          }}
+        />
       )}
     </>
   );
