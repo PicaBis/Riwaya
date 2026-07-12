@@ -7,7 +7,7 @@ import { novels } from "@/data/novels";
 import { useApp } from "@/context/AppContext";
 import { t } from "@/lib/i18n";
 
-export function SearchBar() {
+export function SearchBar({ variant = "desktop" }: { variant?: "desktop" | "mobile" }) {
   const { lang } = useApp();
   const fontClass = lang === "ar" ? "font-arabic" : "font-sans";
   const dir = lang === "ar" ? "rtl" : "ltr";
@@ -25,13 +25,24 @@ export function SearchBar() {
 
   return (
     <>
-      <button
-        onClick={() => { setOpen(true); setQuery(""); }}
-        className={`hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-sm text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-parchment-100 dark:hover:bg-white/8 transition-colors ${fontClass}`}
-      >
-        <Search className="w-4 h-4" />
-        <span className="hidden lg:inline">{t("search.label", lang)}</span>
-      </button>
+      {variant === "mobile" ? (
+        <button
+          onClick={() => { setOpen(true); setQuery(""); }}
+          title={t("search.label", lang)}
+          aria-label={t("search.label", lang)}
+          className="flex sm:hidden items-center justify-center w-9 h-9 rounded-lg text-gray-500 dark:text-gray-400 hover:bg-parchment-200 dark:hover:bg-white/10 transition-all duration-200"
+        >
+          <Search className="w-5 h-5" />
+        </button>
+      ) : (
+        <button
+          onClick={() => { setOpen(true); setQuery(""); }}
+          className={`hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-sm text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-parchment-100 dark:hover:bg-white/8 transition-colors ${fontClass}`}
+        >
+          <Search className="w-4 h-4" />
+          <span className="hidden lg:inline">{t("search.label", lang)}</span>
+        </button>
+      )}
 
       {open && (
         <div

@@ -223,6 +223,36 @@ export function Header() {
             >
               {soundEnabled ? <Volume2 className="w-5 h-5" /> : <VolumeX className="w-5 h-5" />}
             </button>
+            {/* Search (mobile) */}
+            <SearchBar variant="mobile" />
+            {/* Account quick access (mobile) */}
+            {authUser ? (
+              <button
+                onClick={() => setMobileMenuOpen(true)}
+                aria-label={authUser.email || t("auth.title", lang)}
+                className="w-9 h-9 flex items-center justify-center rounded-full bg-green-500 text-white active:scale-95 transition-transform"
+              >
+                <span className="text-xs font-bold">{(authUser.email || "?").charAt(0).toUpperCase()}</span>
+              </button>
+            ) : guest ? (
+              <button
+                onClick={() => setMobileMenuOpen(true)}
+                aria-label={guest.name}
+                className="w-9 h-9 flex items-center justify-center rounded-full bg-gold-500 text-white active:scale-95 transition-transform"
+              >
+                <span className="text-xs font-bold">{guest.name.charAt(0).toUpperCase()}</span>
+              </button>
+            ) : (
+              <button
+                onClick={() => setShowLogin(true)}
+                data-sound="login"
+                title={t("nav.login", lang)}
+                aria-label={t("nav.login", lang)}
+                className="w-9 h-9 flex items-center justify-center rounded-lg text-gold-600 dark:text-gold-400 bg-gold-500/10 hover:bg-gold-500/20 active:scale-95 transition-all"
+              >
+                <User className="w-5 h-5" />
+              </button>
+            )}
             <button
               onClick={() => setMobileMenuOpen(prev => !prev)}
               data-sound="open"
