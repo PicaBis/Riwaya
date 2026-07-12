@@ -1,0 +1,39 @@
+{
+  "name": "روايتي — Riwayati",
+  "short_name": "روايتي",
+  "description": "مكتبة روايات شخصية — قراءة أنيقة وهادئة",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#fdfcf8",
+  "theme_color": "#b8860b",
+  "orientation": "portrait",
+  "lang": "ar",
+  "dir": "rtl",
+  "scope": "/",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["books", "education", "entertainment"],
+  "shortcuts": [],
+  "prefer_related_applications": false,
+  "edge_side_panel": {
+    "preferred_width": 480
+  }
+}

@@ -1,10 +1,13 @@
-@import url("https://fonts.googleapis.com/css2?family=Amiri:ital,wght@0,400;0,700;1,400&family=Playfair+Display:wght@600;700&display=swap");
+/* Amiri (the logo / Arabic display font) is loaded via an early <link> in the
+   document <head> (see layout.tsx) with display=block so the logo never
+   flashes a fallback font. The remaining fonts load here. */
+@import url("https://fonts.googleapis.com/css2?family=Noto+Serif+Arabic:wght@400;700&family=Playfair+Display:wght@600;700&display=swap");
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* ─── CSS Variables ───────────────────────────────────── */
+/* ─── CSS Variables ────────────────────────────────────── */
 :root {
   --bg: #fdfcf8;
   --bg-card: #ffffff;
@@ -27,160 +30,745 @@
   --shadow: rgba(0, 0, 0, 0.3);
 }
 
-/* ─── Base ────────────────────────────────────────────── */
+/* ─── Base ─────────────────────────────────────────────── */
 html {
   scroll-behavior: smooth;
   -webkit-text-size-adjust: 100%;
+  -webkit-tap-highlight-color: transparent;
 }
 
 body {
   background-color: var(--bg);
   color: var(--text);
   font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  transition: background-color 0.3s ease, color 0.3s ease;
+  transition: background-color 0.4s ease, color 0.4s ease;
   line-height: 1.7;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  overscroll-behavior: none;
 }
 
-/* ─── Keyframes ───────────────────────────────────────── */
+/* ─── Typography polish ─────────────────────────────────── */
+h1, h2, h3 {
+  text-wrap: balance;      /* avoid ugly single-word last lines */
+}
+p {
+  text-wrap: pretty;       /* fewer orphans in body copy */
+}
+/* Headings get a hair of negative tracking for a tighter, editorial look */
+h1, h2 {
+  letter-spacing: -0.01em;
+}
+/* Smooth anchor jumps clear the sticky header */
+:target {
+  scroll-margin-top: 5rem;
+}
+
+/* ─── Page transitions ──────────────────────────────────── */
+main {
+  animation: fadeIn 0.4s ease-out;
+}
+
+/* ─── Scrollbar (webkit) ───────────────────────────────── */
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 999px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+::-webkit-scrollbar-thumb:hover { background: var(--accent); background-clip: padding-box; }
+
+/* Firefox scrollbar */
+* { scrollbar-width: thin; scrollbar-color: var(--border) transparent; }
+
+/* ─── Reading-page content guard (scoped, NOT site-wide) ───
+ * Applied only inside the PDF reader via the `.reader-guard` class on
+ * its root container — the rest of the site (nav, about page, footer,
+ * modals…) keeps completely normal text selection and image handling. */
+.reader-guard, .reader-guard *, .reader-guard *::before, .reader-guard *::after {
+  -webkit-user-select: none !important;
+  user-select: none !important;
+}
+.reader-guard input, .reader-guard textarea {
+  -webkit-user-select: text !important;
+  user-select: text !important;
+}
+.reader-guard img, .reader-guard canvas, .reader-guard video, .reader-guard svg {
+  -webkit-user-drag: none !important;
+  user-drag: none !important;
+  -webkit-touch-callout: none !important;
+}
+.reader-guard::selection, .reader-guard *::selection { background: transparent !important; }
+
+.scrollbar-thin::-webkit-scrollbar { width: 6px; }
+.scrollbar-thin::-webkit-scrollbar-track { background: transparent; }
+.scrollbar-thin::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.18); border-radius: 999px; }
+.dark .scrollbar-thin::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.18); }
+.scrollbar-thin { scrollbar-width: thin; scrollbar-color: rgba(0,0,0,0.18) transparent; }
+.dark .scrollbar-thin { scrollbar-color: rgba(255,255,255,0.18) transparent; }
+
+/* ─── Focus-visible for keyboard navigation ────────────── */
+*:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Remove default focus outline only when not keyboard */
+*:focus:not(:focus-visible) { outline: none; }
+
+/* ─── Premium Background Patterns ────────────────────────── */
+
+/* Light mode: subtle parchment texture + gold radial glows */
+body {
+  background-color: var(--bg);
+  background-image:
+    radial-gradient(ellipse at 30% 20%, rgba(184, 134, 11, 0.04) 0%, transparent 60%),
+    radial-gradient(ellipse at 80% 80%, rgba(184, 134, 11, 0.06) 0%, transparent 50%),
+    radial-gradient(ellipse at 50% 50%, rgba(218, 165, 32, 0.02) 0%, transparent 70%);
+  background-attachment: fixed;
+}
+
+/* Dark mode: deep warm gradient with gold micro-accents */
+.dark body, .dark {
+  background-color: var(--bg);
+  background-image:
+    radial-gradient(ellipse at 30% 10%, rgba(212, 175, 55, 0.05) 0%, transparent 65%),
+    radial-gradient(ellipse at 80% 90%, rgba(212, 175, 55, 0.04) 0%, transparent 55%),
+    radial-gradient(ellipse at 50% 40%, rgba(184, 134, 11, 0.03) 0%, transparent 60%),
+    radial-gradient(circle at 15% 50%, rgba(212, 175, 55, 0.02) 0%, transparent 40%);
+  background-attachment: fixed;
+}
+
+/* ─── Animations ────────────────────────────────────────── */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(18px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
 @keyframes fadeIn {
   from { opacity: 0; }
   to   { opacity: 1; }
 }
 
-@keyframes fadeUp {
-  from { opacity: 0; transform: translateY(20px); }
-  to   { opacity: 1; transform: translateY(0); }
+@keyframes gentlePulse {
+  0%, 100% { opacity: 0.6; }
+  50%      { opacity: 1; }
+}
+
+.animate-fade-up {
+  animation: fadeUp 0.6s ease-out both;
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.45s ease-out both;
+}
+
+.animate-gentle-pulse {
+  animation: gentlePulse 3s ease-in-out infinite;
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50%       { transform: translateY(-6px); }
+}
+
+@keyframes slideInRight {
+  from { opacity: 0; transform: translateX(24px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes slideInLeft {
+  from { opacity: 0; transform: translateX(-24px); }
+  to   { opacity: 1; transform: translateX(0); }
 }
 
 @keyframes scaleIn {
-  from { opacity: 0; transform: scale(0.94); }
+  from { opacity: 0; transform: scale(0.92); }
   to   { opacity: 1; transform: scale(1); }
 }
 
-@keyframes shimmer {
-  from { background-position: -200% 0; }
-  to   { background-position:  200% 0; }
+@keyframes shimmerTranslate {
+  0%   { transform: translateX(-50%); }
+  100% { transform: translateX(0%); }
 }
 
-@keyframes spinSlow {
-  to { transform: rotate(360deg); }
+ @keyframes mysticSweep {
+  0%   { transform: translateX(-10%) translateY(0%); opacity: 0; }
+  25%  { opacity: 1; }
+  50%  { transform: translateX(10%) translateY(20%); opacity: 1; }
+  75%  { opacity: 0.5; }
+  100% { transform: translateX(-10%) translateY(0%); opacity: 0; }
+ }
+
+/* Synchronized diagonal shine for novel cards.
+   Both cards share the exact same animation (no per-element delay) so the
+   highlight sweeps in lock-step, top corner -> bottom corner. GPU-friendly
+   via translate3d + will-change. */
+@keyframes cardShine {
+  0%   { transform: translate3d(-120%, -120%, 0); }
+  55%  { transform: translate3d(120%, 120%, 0); }
+  100% { transform: translate3d(120%, 120%, 0); }
 }
 
-/* ── Page-flip animations ─────────────────────────────
-   Next page: current page folds to the RIGHT edge,
-              new page unfolds from RIGHT edge.
-   Prev page: mirror (folds/unfolds from LEFT edge).
-─────────────────────────────────────────────────────── */
-
-/* Going NEXT: page folds away to its left edge */
-@keyframes flipOutNext {
-  0%   { transform: perspective(900px) rotateY(0deg)   scaleX(1);    opacity: 1; }
-  50%  { transform: perspective(900px) rotateY(-45deg) scaleX(0.97); opacity: 0.6; }
-  100% { transform: perspective(900px) rotateY(-90deg) scaleX(0.94); opacity: 0; }
+.novel-shine {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
 }
-/* New page unfolds from the left edge */
-@keyframes flipInNext {
-  0%   { transform: perspective(900px) rotateY(90deg)  scaleX(0.94); opacity: 0; }
-  50%  { transform: perspective(900px) rotateY(45deg)  scaleX(0.97); opacity: 0.6; }
-  100% { transform: perspective(900px) rotateY(0deg)   scaleX(1);    opacity: 1; }
-}
-
-/* Going PREV: mirror */
-@keyframes flipOutPrev {
-  0%   { transform: perspective(900px) rotateY(0deg)  scaleX(1);    opacity: 1; }
-  50%  { transform: perspective(900px) rotateY(45deg) scaleX(0.97); opacity: 0.6; }
-  100% { transform: perspective(900px) rotateY(90deg) scaleX(0.94); opacity: 0; }
-}
-@keyframes flipInPrev {
-  0%   { transform: perspective(900px) rotateY(-90deg) scaleX(0.94); opacity: 0; }
-  50%  { transform: perspective(900px) rotateY(-45deg) scaleX(0.97); opacity: 0.6; }
-  100% { transform: perspective(900px) rotateY(0deg)   scaleX(1);    opacity: 1; }
+.novel-shine::before {
+  content: "";
+  position: absolute;
+  top: -60%;
+  left: -60%;
+  width: 220%;
+  height: 220%;
+  background: linear-gradient(
+    135deg,
+    transparent 40%,
+    rgba(255, 255, 255, 0.10) 47%,
+    rgba(255, 240, 205, 0.20) 50%,
+    rgba(255, 255, 255, 0.10) 53%,
+    transparent 60%
+  );
+  transform: translate3d(-120%, -120%, 0);
+  animation: cardShine 8s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+  will-change: transform;
 }
 
-/* Animated SVG underline on hero title */
-@keyframes drawUnderline {
-  from { stroke-dashoffset: 220; }
-  to   { stroke-dashoffset: 0; }
+  .animate-shimmer {
+    animation: shimmerTranslate 4s linear infinite;
+  }
+
+  @keyframes shimmer {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
+  }
+
+.animate-float {
+  animation: float 4s ease-in-out infinite;
 }
 
-.animate-draw-underline {
-  stroke-dasharray: 220;
-  stroke-dashoffset: 220;
-  animation: drawUnderline 1.2s 0.4s ease-out forwards;
+.animate-slide-in-right {
+  animation: slideInRight 0.5s ease-out both;
 }
 
-/* ─── Scrollbar (webkit) ──────────────────────────────── */
-::-webkit-scrollbar        { width: 5px; height: 5px; }
-::-webkit-scrollbar-track  { background: transparent; }
-::-webkit-scrollbar-thumb  { background: var(--border); border-radius: 999px; }
-::-webkit-scrollbar-thumb:hover { background: var(--accent); }
-
-/* ─── Selection ───────────────────────────────────────── */
-::selection {
-  background: rgba(184, 134, 11, 0.2);
-  color: var(--text);
+.animate-slide-in-left {
+  animation: slideInLeft 0.5s ease-out both;
 }
 
-/* ─── Number input — hide spinners ───────────────────── */
+.animate-scale-in {
+  animation: scaleIn 0.4s ease-out both;
+}
+
+/* Hover lift effect for cards */
+.hover-lift {
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+.hover-lift:hover {
+  transform: translateY(-3px);
+}
+
+/* ─── Breathing glow for primary CTAs ───────────────────── */
+@keyframes ctaGlow {
+  0%, 100% { box-shadow: 0 8px 22px -8px rgba(184, 134, 11, 0.45); }
+  50%      { box-shadow: 0 12px 30px -6px rgba(212, 175, 55, 0.6); }
+}
+.cta-glow { animation: ctaGlow 3.6s ease-in-out infinite; }
+
+/* Sweeping sheen that crosses a button on hover */
+.btn-sheen { position: relative; overflow: hidden; }
+.btn-sheen::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -75%;
+  width: 50%;
+  height: 100%;
+  background: linear-gradient(120deg, transparent, rgba(255, 255, 255, 0.35), transparent);
+  transform: skewX(-20deg);
+  transition: left 0.6s ease;
+  pointer-events: none;
+}
+.btn-sheen:hover::after { left: 130%; }
+
+/* Animated underline reveal for card titles */
+.title-underline {
+  background-image: linear-gradient(currentColor, currentColor);
+  background-position: 0% 100%;
+  background-repeat: no-repeat;
+  background-size: 0% 1.5px;
+  transition: background-size 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.group:hover .title-underline { background-size: 100% 1.5px; }
+
+/* Gentle continuous float for coming-soon / mystery accents */
+@keyframes softBob {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-4px); }
+}
+.animate-soft-bob { animation: softBob 3.5s ease-in-out infinite; }
+
+/* Gold shimmer text */
+.text-shimmer {
+  background: linear-gradient(
+    90deg,
+    var(--accent) 0%,
+    #f5d26b 50%,
+    var(--accent) 100%
+  );
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: shimmer 3s linear infinite;
+}
+
+/* Fullscreen reading mode — prevent body scroll */
+body:has(.pdf-fullscreen-active) {
+  overflow: hidden;
+}
+
+/* ─── Number input hide arrows ──────────────────────────── */
 input[type="number"]::-webkit-inner-spin-button,
-input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
-input[type="number"] { -moz-appearance: textfield; }
+input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+input[type="number"] {
+  -moz-appearance: textfield;
+}
 
-/* ─── Print blackout ──────────────────────────────────── */
-@media print {
-  html, body, * { display: none !important; visibility: hidden !important; }
-  body::before {
-    display: block !important;
-    visibility: visible !important;
-    content: "هذا المحتوى محمي بحقوق الطبع والنشر — روايتي";
-    font-size: 24px;
-    text-align: center;
-    padding-top: 40vh;
-    color: #111;
+/* ─── RTL utilities ─────────────────────────────────────── */
+[dir="rtl"] .ms-auto {
+  margin-left: auto;
+  margin-right: unset;
+}
+
+/* ─── Mobile reading optimizations ─────────────────────── */
+@media (max-width: 640px) {
+  body {
+    font-size: 15px;
+    line-height: 1.8;
+  }
+  canvas {
+    image-rendering: high-quality;
+    image-rendering: -webkit-optimize-contrast;
+  }
+  .toolbar-btn {
+    min-width: 36px;
+    min-height: 36px;
   }
 }
 
-/* ─── Reduced motion ─────────────────────────────────── */
+/* ─── Premium background pattern ─────────────────────────── */
+.premium-bg {
+  background-image:
+    radial-gradient(ellipse at 50% 0%, rgba(184, 134, 11, 0.03) 0%, transparent 70%),
+    radial-gradient(ellipse at 80% 50%, rgba(184, 134, 11, 0.02) 0%, transparent 60%);
+  background-attachment: fixed;
+}
+
+/* ─── Dark mode guardrail: PDF pages always stay white ────── */
+.dark .pdf-viewer-canvas {
+  background-color: #ffffff !important;
+}
+
+/* ─── Bug report floating button ──────────────────────────── */
+.bug-reporter {
+  animation: gentlePulse 4s ease-in-out infinite;
+}
+/* Never let the floating bug button cover the mobile menu's logout button. */
+body.mobile-menu-open .bug-reporter {
+  display: none;
+}
+
+/* ─── Card hover ring glow ──────────────────────────────── */
+.card-glow:hover {
+  box-shadow: 0 0 0 1px rgba(184, 134, 11, 0.15), 0 12px 32px -8px rgba(0, 0, 0, 0.1);
+}
+.dark .card-glow:hover {
+  box-shadow: 0 0 0 1px rgba(212, 175, 55, 0.2), 0 12px 32px -8px rgba(0, 0, 0, 0.4);
+}
+
+/* ─── Progress bar slide transition ─────────────────────── */
+.progress-bar-fill {
+  transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ─── Smooth body opacity fade for route transitions ───── */
+@keyframes pageEnter {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+main > * { animation: pageEnter 0.35s ease-out; }
+
+/* ─── Reduced motion preference ────────────────────────── */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 }
 
-/* ─── Performance hints ──────────────────────────────── */
-canvas { contain: strict; }
-
-.novel-card-enter {
-  animation: fadeUp 0.5s ease-out forwards;
+/* ─── Shimmer Skeleton Loading Effect ─────────────────────── */
+.shimmer-skeleton {
+  background: linear-gradient(90deg, transparent, rgba(184, 134, 11, 0.15), transparent);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
 }
 
-/* ─── Comment styles ──────────────────────────────────── */
-.comment-enter {
-  animation: fadeUp 0.3s ease-out forwards;
+/* ─── Animated Gold Shadows ─────────────────────────────── */
+.gold-shadow-glow {
+  box-shadow: 
+    0 0 0 1px rgba(184, 134, 11, 0.2),
+    0 0 20px 4px rgba(184, 134, 11, 0.15),
+    0 0 40px 8px rgba(212, 175, 55, 0.1);
+  transition: box-shadow 0.4s ease;
 }
 
-/* ─── Admin badge pulse ───────────────────────────────── */
-@keyframes adminPulse {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(184,134,11,0.4); }
-  50%      { box-shadow: 0 0 0 6px rgba(184,134,11,0); }
-}
-.admin-badge {
-  animation: adminPulse 2s infinite;
+.gold-shadow-glow:hover {
+  box-shadow: 
+    0 0 0 2px rgba(184, 134, 11, 0.3),
+    0 0 30px 6px rgba(184, 134, 11, 0.25),
+    0 0 60px 12px rgba(212, 175, 55, 0.2);
 }
 
-/* ─── Fix Tailwind opacity utilities ──────────────────── */
-.border-white\/8  { border-color: rgba(255,255,255,0.08); }
-.bg-white\/8      { background-color: rgba(255,255,255,0.08); }
-.border-black\/8  { border-color: rgba(0,0,0,0.08); }
-.bg-black\/8      { background-color: rgba(0,0,0,0.08); }
-.bg-black\/6      { background-color: rgba(0,0,0,0.06); }
-.hover\:bg-black\/8:hover  { background-color: rgba(0,0,0,0.08); }
+/* ─── Touch Feedback Enhancement ──────────────────────────── */
+@media (hover: none) and (pointer: coarse) {
+  .touch-ripple {
+    position: relative;
+    overflow: hidden;
+  }
+  .touch-ripple::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    border-radius: 50%;
+    background: rgba(184, 134, 11, 0.3);
+    transition: width 0.4s, height 0.4s, top 0.4s, left 0.4s;
+  }
+  .touch-ripple:active::after {
+    width: 200px;
+    height: 200px;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+  }
+}
 
-/* ─── Safelist for dynamic classes ────────────────────── */
-.animate-scale-in {
-  animation: scaleIn 0.4s ease-out forwards;
+/* ─── Parallax Background Elements ─────────────────────────── */
+.parallax-bg {
+  transform-style: preserve-3d;
+  transition: transform 0.1s ease-out;
+}
+
+.parallax-element {
+  will-change: transform;
+}
+
+/* ─── Hero Background Animations ─────────────────────────── */
+.hero-anim-bg {
+  z-index: 0;
+}
+
+/* Floating golden orbs */
+.hero-orb {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(40px);
+  opacity: 0.5;
+  animation: heroOrbFloat 14s ease-in-out infinite;
+}
+.hero-orb-1 {
+  top: 5%;
+  left: 10%;
+  width: 120px;
+  height: 120px;
+  background: radial-gradient(circle, rgba(212, 175, 55, 0.18) 0%, transparent 70%);
+  animation-delay: 0s;
+}
+.hero-orb-2 {
+  top: 30%;
+  right: 8%;
+  width: 160px;
+  height: 160px;
+  background: radial-gradient(circle, rgba(184, 134, 11, 0.14) 0%, transparent 70%);
+  animation-delay: -3s;
+}
+.hero-orb-3 {
+  bottom: 10%;
+  left: 50%;
+  width: 200px;
+  height: 200px;
+  background: radial-gradient(circle, rgba(245, 210, 107, 0.10) 0%, transparent 70%);
+  animation-delay: -7s;
+}
+
+@keyframes heroOrbFloat {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  33%      { transform: translate(30px, -20px) scale(1.1); }
+  66%      { transform: translate(-20px, 15px) scale(0.95); }
+}
+
+/* Drifting particles */
+.hero-particle {
+  position: absolute;
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: var(--accent);
+  opacity: 0.25;
+  animation: heroParticleDrift 18s linear infinite;
+}
+.hero-particle-1 { top: 20%; left: 15%; animation-delay: 0s; }
+.hero-particle-2 { top: 60%; left: 25%; animation-delay: -4s; width: 4px; height: 4px; }
+.hero-particle-3 { top: 35%; right: 20%; animation-delay: -8s; }
+.hero-particle-4 { top: 75%; right: 15%; animation-delay: -12s; width: 2px; height: 2px; }
+.hero-particle-5 { top: 50%; left: 60%; animation-delay: -2s; width: 5px; height: 5px; }
+
+@keyframes heroParticleDrift {
+  0%   { transform: translate(0, 0); opacity: 0; }
+  10%  { opacity: 0.25; }
+  50%  { transform: translate(40px, -60px); opacity: 0.4; }
+  90%  { opacity: 0.2; }
+  100% { transform: translate(80px, -120px); opacity: 0; }
+}
+
+/* Dark mode: brighter orbs/particles */
+.dark .hero-orb { opacity: 0.6; }
+.dark .hero-particle { opacity: 0.35; background: #d4af37; }
+
+/* Slow bounce for scroll hint */
+@keyframes bounceSlow {
+  0%, 100% { transform: translateX(-50%) translateY(0); }
+  50%      { transform: translateX(-50%) translateY(8px); }
+}
+.animate-bounce-slow {
+  animation: bounceSlow 2.5s ease-in-out infinite;
+}
+
+/* ─── Anti-Print Media Query ──────────────────────────── */
+@media print {
+  .reader-guard, .reader-guard * {
+    display: none !important;
+    visibility: hidden !important;
+  }
+  body {
+    background: white;
+  }
+  body::before {
+    content: "Printing is not allowed for this content.";
+    display: block;
+    text-align: center;
+    padding: 50px;
+    font-size: 24px;
+    color: #999;
+  }
+}
+
+/* ─── Prevent screenshot tools via CSS ──────────────────── */
+.reader-guard {
+  -webkit-user-select: none !important;
+  user-select: none !important;
+  pointer-events: auto !important;
+}
+
+/* Disable context menu on PDF canvas */
+.reader-guard canvas {
+  -webkit-user-select: none !important;
+  user-select: none !important;
+  -webkit-touch-callout: none !important;
+  -webkit-user-drag: none !important;
+}
+
+/* ─── Performance Optimizations ──────────────────────── */
+/* Reduce layout thrashing */
+.reader-guard {
+  will-change: auto;
+  contain: layout style paint;
+}
+
+/* Optimize canvas rendering */
+.reader-guard canvas {
+  will-change: transform;
+  image-rendering: crisp-edges;
+  image-rendering: -webkit-optimize-contrast;
+}
+
+/* Reduce repaints on scroll */
+.reader-guard [class*="scroll"] {
+  will-change: scroll-position;
+}
+
+/* Optimize animations */
+@media (prefers-reduced-motion: no-preference) {
+  .reader-guard * {
+    transition-duration: 150ms;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  }
+}
+
+/* Lazy load images */
+img {
+  loading: lazy;
+}
+
+/* ─── Skip-to-content link (keyboard / screen-reader accessibility) ─── */
+.skip-link {
+  position: fixed;
+  top: -60px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 100000;
+  padding: 0.6rem 1.2rem;
+  border-radius: 0 0 0.75rem 0.75rem;
+  background: #b8860b;
+  color: #fff;
+  font-size: 0.85rem;
+  font-weight: 700;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+  transition: top 0.2s ease;
+}
+.skip-link:focus {
+  top: 0;
+  outline: none;
+}
+
+/* ─── Screenshot Guard — site-wide clipboard protection ─── */
+
+/* Black flash overlay during a genuine screenshot key attempt (PrintScreen /
+   snipping shortcut). The ScreenshotGuard component toggles `.guard-visible`
+   on the overlay element; we don't trigger it on window blur anymore, so
+   harmless browser popups / tab switches never black out the site. */
+#screenshot-guard-overlay.guard-visible {
+  display: flex !important;
+  opacity: 0.97 !important;
+}
+
+/* ─── Light-theme card border enhancement ─── */
+html:not(.dark) .border-parchment-200 {
+  border-color: rgba(165, 145, 115, 0.45) !important;
+  border-width: 1.5px;
+}
+html:not(.dark) .border-parchment-300 {
+  border-color: rgba(150, 130, 100, 0.55) !important;
+}
+html:not(.dark) .bg-white {
+  box-shadow: 0 0 0 1px rgba(165, 145, 115, 0.18);
+}
+
+/* Site-wide: prevent text/image selection everywhere except inputs */
+body:not(.allow-select) {
+  -webkit-user-select: none !important;
+  user-select: none !important;
+}
+body input, body textarea, body [contenteditable="true"] {
+  -webkit-user-select: text !important;
+  user-select: text !important;
+}
+
+/* ─── Site-wide anti-print ─── */
+@media print {
+  body > * {
+    display: none !important;
+    visibility: hidden !important;
+  }
+  body::before {
+    content: "الطباعة غير مسموح بها";
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+    font-size: 24px;
+    color: #999;
+    direction: rtl;
+  }
+}
+
+/* Optimize font loading */
+@font-face {
+  font-display: swap;
+}
+
+/* ─── Smooth theme switch (View Transitions API) ─────────── */
+/* A light, fast cross-fade expanding from the toggle button. */
+::view-transition-old(root) {
+  animation: themeFadeOut 0.3s cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+::view-transition-new(root) {
+  animation: themeFadeIn 0.35s cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+@keyframes themeFadeIn {
+  from {
+    opacity: 0;
+    clip-path: circle(0% at var(--theme-x, 50%) var(--theme-y, 0%));
+  }
+  to {
+    opacity: 1;
+    clip-path: circle(150% at var(--theme-x, 50%) var(--theme-y, 0%));
+  }
+}
+@keyframes themeFadeOut {
+  from { opacity: 1; }
+  to   { opacity: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-old(root),
+  ::view-transition-new(root) { animation-duration: 0.01ms !important; }
+}
+
+/* ── Readers marquee ─────────────────────────────────────────── */
+@keyframes marqueeX {
+  0%   { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+.animate-marquee {
+  animation: marqueeX 22s linear infinite;
+}
+[dir="rtl"] .animate-marquee {
+  animation-direction: reverse;
+}
+.marquee-mask {
+  -webkit-mask-image: linear-gradient(to right, transparent, #000 8%, #000 92%, transparent);
+  mask-image: linear-gradient(to right, transparent, #000 8%, #000 92%, transparent);
+}
+@media (prefers-reduced-motion: reduce) {
+  .animate-marquee { animation: none; }
+}
+
+/* ── Mobile performance: keep the look, drop the scroll cost ──────────
+   On phones, `background-attachment: fixed` forces a full-viewport repaint
+   on every scroll frame — the main cause of janky, sub-60fps scrolling.
+   Switching to `scroll` is visually identical on small screens (the parallax
+   is imperceptible there) but lets the compositor scroll on the GPU. We also
+   trim backdrop-blur radius (cheaper per-frame) and calm the purely
+   decorative always-on hero animations — the elements stay, they just don't
+   composite every frame while you read/scroll. Nothing is removed. */
+@media (max-width: 640px) {
+  body,
+  .dark body,
+  .dark,
+  .premium-bg {
+    background-attachment: scroll;
+  }
+  /* Lighter frosted glass on mobile GPUs (was blur-md/lg ≈ 12–16px). */
+  .backdrop-blur-md { backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); }
+  .backdrop-blur-lg { backdrop-filter: blur(7px); -webkit-backdrop-filter: blur(7px); }
+  /* Promote the sticky header to its own layer so it doesn't repaint the
+     content beneath it on every scroll frame. */
+  header.sticky { transform: translateZ(0); will-change: transform; }
+  /* Calm the decorative, infinitely-animating hero flourishes on mobile —
+     they remain visible as soft static glows, just stop compositing 60×/s. */
+  .hero-orb,
+  .hero-particle { animation: none !important; }
+  .cta-glow { animation: none !important; }
 }

@@ -3,9 +3,10 @@
 import { useState } from "react";
 import { Star } from "lucide-react";
 import clsx from "clsx";
+import { useApp } from "@/context/AppContext";
+import { t } from "@/lib/i18n";
 
 interface StarRatingProps {
-  novelId: string;
   initialRating?: number;
   onRate?: (stars: number) => void;
   readOnly?: boolean;
@@ -13,12 +14,12 @@ interface StarRatingProps {
 }
 
 export function StarRating({
-  novelId,
   initialRating = 0,
   onRate,
   readOnly = false,
   size = "md",
 }: StarRatingProps) {
+  const { lang } = useApp();
   const [hovered, setHovered] = useState(0);
   const [rating, setRating] = useState(initialRating);
 
@@ -41,7 +42,7 @@ export function StarRating({
       className="flex items-center gap-0.5"
       onMouseLeave={() => !readOnly && setHovered(0)}
       role="group"
-      aria-label={`تقييم ${rating} من 5`}
+      aria-label={t("starRating.label", lang, { rating })}
     >
       {[1, 2, 3, 4, 5].map((star) => (
         <button
@@ -55,7 +56,7 @@ export function StarRating({
             !readOnly && "hover:scale-110 cursor-pointer",
             readOnly && "cursor-default"
           )}
-          aria-label={`${star} نجوم`}
+          aria-label={t("starRating.stars", lang, { n: star })}
         >
           <Star
             className={clsx(

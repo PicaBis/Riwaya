@@ -1,15 +1,43 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { Moon, Sun, User, LogOut, Info } from "lucide-react";
+import { Moon, Sun, User, LogOut, Menu, X, Shield, Coins, LayoutDashboard, Volume2, VolumeX, UserCircle } from "lucide-react";
 import { useApp } from "@/context/AppContext";
-import { GuestLoginModal } from "./GuestLoginModal";
+import dynamic from "next/dynamic";
+import { SearchBar } from "./SearchBar";
+import { InstallButton } from "./InstallButton";
+import { LanguageSwitcher } from "./LanguageSwitcher";
+
+// Modals are only needed on interaction — code-split them out of the initial
+// bundle so the first paint on mobile is as light and app-like as possible.
+const GuestLoginModal = dynamic(() => import("./GuestLoginModal").then((m) => m.GuestLoginModal), { ssr: false });
+const AuthModal = dynamic(() => import("./AuthModal").then((m) => m.AuthModal), { ssr: false });
+const AboutModal = dynamic(() => import("./AboutModal").then((m) => m.AboutModal), { ssr: false });
+const DevCodeModal = dynamic(() => import("./DevCodeModal").then((m) => m.DevCodeModal), { ssr: false });
+const SubscriptionModal = dynamic(() => import("./SubscriptionModal").then((m) => m.SubscriptionModal), { ssr: false });
+const ContactModal = dynamic(() => import("./ContactModal").then((m) => m.ContactModal), { ssr: false });
+import { t } from "@/lib/i18n";
+import { AUTHOR } from "@/lib/constants";
 
 export function Header() {
-  const { isDark, toggleTheme, guest, logout } = useApp();
+  const { isDark, toggleTheme, guest, logout, lang, isAdmin, soundEnabled, toggleSound, authUser, authAvailable, signOutAccount } = useApp();
   const [showLogin, setShowLogin] = useState(false);
+  const [showAuth, setShowAuth] = useState(false);
+  const [showAbout, setShowAbout] = useState(false);
+  const [showDevCode, setShowDevCode] = useState(false);
+  const [showSubs, setShowSubs] = useState(false);
+  const [showContact, setShowContact] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  // While the mobile menu is open, mark the body so the floating bug button
+  // (fixed bottom-left) is hidden and can never cover the logout button.
+  useEffect(() => {
+    if (typeof document === "undefined") return;
+    document.body.classList.toggle("mobile-menu-open", mobileMenuOpen);
+    return () => document.body.classList.remove("mobile-menu-open");
+  }, [mobileMenuOpen]);
 
   return (
     <>
@@ -17,88 +45,409 @@ export function Header() {
         <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
 
           {/* ── Logo ──────────────────────────────────── */}
-          <Link href="/" className="flex items-center gap-2.5 group" dir="rtl">
+          <Link href="/" className="flex items-center gap-2.5 group flex-shrink-0" dir={lang === "ar" ? "rtl" : "ltr"} onClick={() => setMobileMenuOpen(false)}>
             <div className="w-8 h-8 flex-shrink-0">
-              <Image src="/logo.svg" alt="روايتي" width={32} height={32} />
+              <Image src="/logo.svg" alt={t("site.name", lang)} width={32} height={32} />
             </div>
-            <span className="font-arabic text-xl font-bold text-gray-900 dark:text-gray-100 tracking-wide">
-              روايتي
+            <span className={`text-xl font-bold text-gray-900 dark:text-gray-100 tracking-wide ${lang === "ar" ? "font-arabic" : "font-sans"}`}>
+              {t("site.name", lang)}
             </span>
           </Link>
 
-          {/* ── Nav links ─────────────────────────────── */}
-          <nav className="hidden sm:flex items-center gap-1" dir="rtl">
+          {/* ── Desktop Nav links ──────────────────────── */}
+          <nav className="hidden sm:flex items-center gap-0.5" dir={lang === "ar" ? "rtl" : "ltr"}>
             <Link
               href="/"
-              className="px-3.5 py-1.5 rounded-lg text-sm font-arabic text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-parchment-100 dark:hover:bg-white/8 transition-colors"
+              className={`px-2 py-1 rounded-lg text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-parchment-100 dark:hover:bg-white/8 transition-colors ${lang === "ar" ? "font-arabic" : "font-sans"}`}
             >
-              المكتبة
+              {t("nav.home", lang)}
             </Link>
-<Link
-               href="/about"
-               className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-sm font-arabic text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-parchment-100 dark:hover:bg-white/8 transition-colors"
-             >
-               <Info className="w-3.5 h-3.5" />
-               عــن الأستاذ بيكا
-             </Link>
+            <Link
+              href="/library"
+              className={`px-2 py-1 rounded-lg text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-parchment-100 dark:hover:bg-white/8 transition-colors ${lang === "ar" ? "font-arabic" : "font-sans"}`}
+            >
+              {t("nav.library", lang)}
+            </Link>
+            <button
+              onClick={() => setShowAbout(true)}
+              data-sound="open"
+              className={`px-2 py-1 rounded-lg text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-parchment-100 dark:hover:bg-white/8 transition-colors ${lang === "ar" ? "font-arabic" : "font-sans"}`}
+            >
+              {t("nav.about", lang)}
+            </button>
+            <Link
+              href="/faq"
+              className={`px-2 py-1 rounded-lg text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-parchment-100 dark:hover:bg-white/8 transition-colors ${lang === "ar" ? "font-arabic" : "font-sans"}`}
+            >
+              {t("nav.faq", lang)}
+            </Link>
+            <button
+              onClick={() => setShowContact(true)}
+              data-sound="open"
+              className={`px-2 py-1 rounded-lg text-sm text-gray-600 dark:text-gray-400 hover:text-gold-500 dark:hover:text-gold-400 hover:bg-parchment-100 dark:hover:bg-white/8 transition-colors ${lang === "ar" ? "font-arabic" : "font-sans"}`}
+            >
+              {t("contact.title", lang)}
+            </button>
+            <button
+              onClick={() => setShowSubs(true)}
+              data-sound="open"
+              className={`flex items-center gap-1 px-2 py-1 rounded-lg text-sm text-gray-600 dark:text-gray-400 hover:text-gold-500 dark:hover:text-gold-400 hover:bg-parchment-100 dark:hover:bg-white/8 transition-colors ${lang === "ar" ? "font-arabic" : "font-sans"}`}
+            >
+              <Coins className="w-3.5 h-3.5" />
+              {t("nav.subscriptions", lang)}
+            </button>
+              <button
+                onClick={() => setShowDevCode(true)}
+                data-sound="open"
+                title={t("nav.devShield", lang)}
+                aria-label={t("nav.devShield", lang)}
+                className={`flex items-center gap-1 px-2 py-1 rounded-lg text-sm text-gray-400 dark:text-gray-500 hover:text-rose-500 dark:hover:text-rose-400 hover:bg-parchment-100 dark:hover:bg-white/8 transition-colors ${lang === "ar" ? "font-arabic" : "font-sans"}`}
+              >
+              <Shield className="w-3.5 h-3.5" />
+            </button>
+            {isAdmin && (
+              <Link
+                href="/admin"
+                className="flex items-center gap-1 px-2 py-1 rounded-lg text-sm text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-500/10 transition-colors font-arabic"
+                title={t("nav.adminPanel", lang)}
+              >
+                <LayoutDashboard className="w-3.5 h-3.5" />
+              </Link>
+            )}
+            <SearchBar />
           </nav>
 
-          {/* ── Actions ───────────────────────────────── */}
-          <div className="flex items-center gap-2">
-            {/* Theme toggle */}
-            <button
-              onClick={toggleTheme}
-              title={isDark ? "الوضع النهاري" : "الوضع الليلي"}
-              className="relative w-9 h-9 flex items-center justify-center rounded-lg text-gray-500 dark:text-gray-400 hover:bg-parchment-200 dark:hover:bg-white/10 transition-all duration-200"
+          {/* ── Desktop Actions ────────────────────────── */}
+          <div className="hidden sm:flex items-center gap-2">
+            <InstallButton />
+            <LanguageSwitcher />
+              <button
+                onClick={toggleSound}
+                title={soundEnabled ? t("sound.on", lang) : t("sound.off", lang)}
+                aria-label={soundEnabled ? t("sound.on", lang) : t("sound.off", lang)}
+                data-sound={soundEnabled ? "toggle" : undefined}
+                className="relative w-9 h-9 flex items-center justify-center rounded-lg text-gray-500 dark:text-gray-400 hover:bg-parchment-200 dark:hover:bg-white/10 transition-all duration-200"
+              >
+                {soundEnabled ? <Volume2 className="w-5 h-5" /> : <VolumeX className="w-5 h-5" />}
+              </button>
+
+              {/* Theme toggle */}
+              <button
+                onClick={toggleTheme}
+                title={isDark ? t("theme.toDay", lang) : t("theme.toNight", lang)}
+                aria-label={isDark ? t("theme.toDay", lang) : t("theme.toNight", lang)}
+                className="relative w-9 h-9 flex items-center justify-center rounded-lg text-gray-500 dark:text-gray-400 hover:bg-parchment-200 dark:hover:bg-white/10 transition-all duration-200"
             >
-              <Sun
-                className={`w-5 h-5 absolute transition-all duration-300 ${
-                  isDark ? "opacity-100 rotate-0" : "opacity-0 rotate-90"
-                }`}
-              />
-              <Moon
-                className={`w-5 h-5 absolute transition-all duration-300 ${
-                  isDark ? "opacity-0 -rotate-90" : "opacity-100 rotate-0"
-                }`}
-              />
+              <Sun className={`w-5 h-5 absolute transition-all duration-300 ${isDark ? "opacity-100 rotate-0" : "opacity-0 rotate-90"}`} />
+              <Moon className={`w-5 h-5 absolute transition-all duration-300 ${isDark ? "opacity-0 -rotate-90" : "opacity-100 rotate-0"}`} />
             </button>
 
-            {/* Guest auth */}
-            {guest ? (
+            {/* Account (real auth) takes precedence over guest */}
+            {authUser ? (
               <div className="flex items-center gap-1.5">
-                <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-lg bg-gold-500/10 border border-gold-500/20">
-                  <div className="w-5 h-5 rounded-full bg-gold-500 flex items-center justify-center flex-shrink-0">
-                    <span className="text-white text-xs font-bold">
-                      {guest.name.charAt(0).toUpperCase()}
-                    </span>
+                <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-green-500/10 border border-green-500/20 max-w-[180px]">
+                  <div className="w-5 h-5 rounded-full bg-green-500 flex items-center justify-center flex-shrink-0">
+                    <span className="text-white text-xs font-bold">{(authUser.email || "?").charAt(0).toUpperCase()}</span>
                   </div>
-                  <span className="text-sm font-arabic text-gold-600 dark:text-gold-400 font-medium">
-                    {guest.name}
-                  </span>
+                  <span className="text-sm font-sans text-green-700 dark:text-green-400 font-medium truncate" dir="ltr">{authUser.email}</span>
                 </div>
                 <button
+                  onClick={signOutAccount}
+                  title={t("auth.signOut", lang)}
+                  aria-label={t("auth.signOut", lang)}
+                  data-sound="logout"
+                  className="w-9 h-9 flex items-center justify-center rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors"
+                >
+                  <LogOut className="w-4 h-4" />
+                </button>
+              </div>
+            ) : guest ? (
+              <div className="flex items-center gap-1.5">
+                <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-gold-500/10 border border-gold-500/20">
+                  <div className="w-5 h-5 rounded-full bg-gold-500 flex items-center justify-center flex-shrink-0">
+                    <span className="text-white text-xs font-bold">{guest.name.charAt(0).toUpperCase()}</span>
+                  </div>
+                  <span className="text-sm font-arabic text-gold-600 dark:text-gold-400 font-medium">{guest.name}</span>
+                </div>
+                {authAvailable && (
+                  <button
+                    onClick={() => setShowAuth(true)}
+                    title={t("auth.title", lang)}
+                    aria-label={t("auth.title", lang)}
+                    data-sound="open"
+                    className="w-9 h-9 flex items-center justify-center rounded-lg text-gray-400 hover:text-green-600 hover:bg-green-50 dark:hover:bg-green-500/10 transition-colors"
+                  >
+                    <UserCircle className="w-5 h-5" />
+                  </button>
+                )}
+                <button
                   onClick={logout}
-                  title="تسجيل الخروج"
+                  title={t("nav.logout", lang)}
+                  aria-label={t("nav.logout", lang)}
+                  data-sound="logout"
                   className="w-9 h-9 flex items-center justify-center rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors"
                 >
                   <LogOut className="w-4 h-4" />
                 </button>
               </div>
             ) : (
+              <div className="flex items-center gap-1.5">
+                {authAvailable && (
+                  <button
+                    onClick={() => setShowAuth(true)}
+                    data-sound="open"
+                    className={`flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-gold-500 hover:bg-gold-600 active:scale-95 text-white text-sm font-medium transition-all duration-150 shadow-sm ${lang === "ar" ? "font-arabic" : "font-sans"}`}
+                  >
+                    <UserCircle className="w-4 h-4" />
+                    <span>{t("auth.title", lang)}</span>
+                  </button>
+                )}
                 <button
-                  data-guest-login
                   onClick={() => setShowLogin(true)}
-                  className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-gold-500 hover:bg-gold-600 active:scale-95 text-white text-sm font-arabic font-medium transition-all duration-150 shadow-sm"
+                  data-sound="login"
+                  className={`flex items-center gap-1.5 px-3 py-2 rounded-lg border border-parchment-300 dark:border-white/10 text-gray-600 dark:text-gray-300 hover:border-gold-500/40 active:scale-95 text-sm font-medium transition-all duration-150 ${lang === "ar" ? "font-arabic" : "font-sans"}`}
                 >
                   <User className="w-4 h-4" />
-                  <span>دخول كضيف</span>
+                  <span>{t("nav.login", lang)}</span>
                 </button>
+              </div>
             )}
           </div>
+
+          {/* ── Mobile: theme + hamburger ──────────────── */}
+          <div className="flex sm:hidden items-center gap-1.5">
+            <InstallButton compact />
+            <LanguageSwitcher />
+            <button
+              onClick={toggleTheme}
+              title={isDark ? t("theme.toDay", lang) : t("theme.toNight", lang)}
+              className="relative w-9 h-9 flex items-center justify-center rounded-lg text-gray-500 dark:text-gray-400 hover:bg-parchment-200 dark:hover:bg-white/10 transition-all duration-200"
+            >
+              <Sun className={`w-5 h-5 absolute transition-all duration-300 ${isDark ? "opacity-100 rotate-0" : "opacity-0 rotate-90"}`} />
+              <Moon className={`w-5 h-5 absolute transition-all duration-300 ${isDark ? "opacity-0 -rotate-90" : "opacity-100 rotate-0"}`} />
+            </button>
+            <button
+              onClick={toggleSound}
+              title={soundEnabled ? t("sound.on", lang) : t("sound.off", lang)}
+              data-sound={soundEnabled ? "toggle" : undefined}
+              className="relative w-9 h-9 flex items-center justify-center rounded-lg text-gray-500 dark:text-gray-400 hover:bg-parchment-200 dark:hover:bg-white/10 transition-all duration-200"
+            >
+              {soundEnabled ? <Volume2 className="w-5 h-5" /> : <VolumeX className="w-5 h-5" />}
+            </button>
+            {/* Search (mobile) */}
+            <SearchBar variant="mobile" />
+            {/* Account quick access (mobile) */}
+            {authUser ? (
+              <button
+                onClick={() => setMobileMenuOpen(true)}
+                aria-label={authUser.email || t("auth.title", lang)}
+                className="w-9 h-9 flex items-center justify-center rounded-full bg-green-500 text-white active:scale-95 transition-transform"
+              >
+                <span className="text-xs font-bold">{(authUser.email || "?").charAt(0).toUpperCase()}</span>
+              </button>
+            ) : guest ? (
+              <button
+                onClick={() => setMobileMenuOpen(true)}
+                aria-label={guest.name}
+                className="w-9 h-9 flex items-center justify-center rounded-full bg-gold-500 text-white active:scale-95 transition-transform"
+              >
+                <span className="text-xs font-bold">{guest.name.charAt(0).toUpperCase()}</span>
+              </button>
+            ) : (
+              <button
+                onClick={() => setShowLogin(true)}
+                data-sound="login"
+                title={t("nav.login", lang)}
+                aria-label={t("nav.login", lang)}
+                className="w-9 h-9 flex items-center justify-center rounded-lg text-gold-600 dark:text-gold-400 bg-gold-500/10 hover:bg-gold-500/20 active:scale-95 transition-all"
+              >
+                <User className="w-5 h-5" />
+              </button>
+            )}
+            <button
+              onClick={() => setMobileMenuOpen(prev => !prev)}
+              data-sound="open"
+              className="w-9 h-9 flex items-center justify-center rounded-lg text-gray-600 dark:text-gray-400 hover:bg-parchment-200 dark:hover:bg-white/10 transition-colors"
+              aria-label={t("nav.menu", lang)}
+            >
+              {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+            </button>
+          </div>
         </div>
+
+        {/* ── Mobile Menu Drawer ─────────────────────── */}
+        {mobileMenuOpen && (
+          <div className={`sm:hidden border-t border-parchment-200 dark:border-white/8 bg-parchment-50/98 dark:bg-onyx-900/98 backdrop-blur-md animate-fade-up pb-4 ${lang === "ar" ? "font-arabic" : "font-sans"}`} dir={lang === "ar" ? "rtl" : "ltr"}>
+            {/* Nav links */}
+            <nav className="px-4 pt-3 pb-3 flex flex-col gap-1 border-b border-parchment-200 dark:border-white/8">
+              <Link
+                href="/"
+                onClick={() => setMobileMenuOpen(false)}
+                className="px-3 py-2.5 rounded-xl text-sm text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-parchment-100 dark:hover:bg-white/8 transition-colors"
+              >
+                {t("nav.home", lang)}
+              </Link>
+              <Link
+                href="/library"
+                onClick={() => setMobileMenuOpen(false)}
+                className="px-3 py-2.5 rounded-xl text-sm text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-parchment-100 dark:hover:bg-white/8 transition-colors"
+              >
+                {t("nav.library", lang)}
+              </Link>
+              <Link
+                href="/quotes"
+                onClick={() => setMobileMenuOpen(false)}
+                className="px-3 py-2.5 rounded-xl text-sm text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-parchment-100 dark:hover:bg-white/8 transition-colors"
+              >
+                {t("nav.quotes", lang)}
+              </Link>
+              <Link
+                href="/faq"
+                onClick={() => setMobileMenuOpen(false)}
+                className="px-3 py-2.5 rounded-xl text-sm text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-parchment-100 dark:hover:bg-white/8 transition-colors"
+              >
+                {t("nav.faq", lang)}
+              </Link>
+              <Link
+                href="/how-to-subscribe"
+                onClick={() => setMobileMenuOpen(false)}
+                className="px-3 py-2.5 rounded-xl text-sm text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-parchment-100 dark:hover:bg-white/8 transition-colors"
+              >
+                {t("nav.howTo", lang)}
+              </Link>
+              <button
+                onClick={() => { setShowAbout(true); setMobileMenuOpen(false); }}
+                className="px-3 py-2.5 rounded-xl text-sm text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-parchment-100 dark:hover:bg-white/8 transition-colors text-right"
+              >
+                {t("nav.about", lang)}
+              </button>
+              <button
+                onClick={() => { setShowContact(true); setMobileMenuOpen(false); }}
+                className="px-3 py-2.5 rounded-xl text-sm text-gray-700 dark:text-gray-300 hover:text-gold-500 dark:hover:text-gold-400 hover:bg-parchment-100 dark:hover:bg-white/8 transition-colors text-right"
+              >
+                {t("contact.title", lang)}
+              </button>
+              <button
+                onClick={() => { setShowSubs(true); setMobileMenuOpen(false); }}
+                className="px-3 py-2.5 rounded-xl text-sm text-gray-700 dark:text-gray-300 hover:text-gold-500 dark:hover:text-gold-400 hover:bg-parchment-100 dark:hover:bg-white/8 transition-colors text-right flex items-center gap-1.5"
+              >
+                <Coins className="w-4 h-4" />
+                {t("nav.subscriptions", lang)}
+              </button>
+              <button
+                onClick={() => { setShowDevCode(true); setMobileMenuOpen(false); }}
+                className="px-3 py-2.5 rounded-xl text-sm text-gray-400 dark:text-gray-500 hover:text-rose-500 dark:hover:text-rose-400 hover:bg-parchment-100 dark:hover:bg-white/8 transition-colors text-right flex items-center gap-1.5"
+              >
+                <Shield className="w-4 h-4" />
+                {t("nav.devShield", lang)}
+              </button>
+              {isAdmin && (
+                <Link
+                  href="/admin"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="px-3 py-2.5 rounded-xl text-sm text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-500/10 transition-colors text-right flex items-center gap-1.5"
+                >
+                  <LayoutDashboard className="w-4 h-4" />
+                  {t("nav.adminPanel", lang)}
+                </Link>
+              )}
+            </nav>
+
+            {/* Author profile card */}
+            <div className="px-4 pt-4">
+              <div className="rounded-2xl bg-white dark:bg-onyx-800 border border-parchment-200 dark:border-white/10 p-4 shadow-sm">
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="w-11 h-11 rounded-xl overflow-hidden border border-gold-500/20 flex-shrink-0">
+                    <Image src="/author.jpg" alt={t("author.penName", lang)} width={44} height={44} className="w-full h-full object-cover" />
+                  </div>
+                  <div>
+                    <p className="font-bold text-sm text-gray-900 dark:text-gray-100">{t("author.penName", lang)} — Pica</p>
+                     <p className="text-xs text-gold-500">@{AUTHOR.instagramHandle}</p>
+                  </div>
+                </div>
+                <p className="text-xs text-gray-600 dark:text-gray-400 leading-relaxed mb-3">
+                  {t("about.bio", lang)}
+                </p>
+                <div className="flex flex-wrap gap-1.5">
+                  {[t("tags.programming", lang), t("tags.novels", lang), t("tags.digitalArt", lang)].map(tag => (
+                    <span key={tag} className="text-[11px] px-2 py-0.5 rounded-full bg-parchment-100 dark:bg-white/5 border border-parchment-200 dark:border-white/10 text-gray-500 dark:text-gray-400">
+                      {tag}
+                    </span>
+                  ))}
+                </div>
+              </div>
+
+              {/* Account (real auth) in mobile menu */}
+              {authAvailable && !authUser && (
+                <button
+                  onClick={() => { setShowAuth(true); setMobileMenuOpen(false); }}
+                  className="mt-3 w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-gold-500 hover:bg-gold-600 text-white text-sm font-medium transition-all duration-150 active:scale-95"
+                >
+                  <UserCircle className="w-4 h-4" />
+                  {t("auth.title", lang)}
+                </button>
+              )}
+
+              {/* Guest / account identity + prominent logout */}
+              <div className="mt-3 space-y-3">
+                {authUser ? (
+                  <>
+                    <div className="flex items-center gap-2 px-3 py-2.5 rounded-xl bg-green-500/10 border border-green-500/20">
+                      <div className="w-6 h-6 rounded-full bg-green-500 flex items-center justify-center flex-shrink-0">
+                        <span className="text-white text-xs font-bold">{(authUser.email || "?").charAt(0).toUpperCase()}</span>
+                      </div>
+                      <span className="text-sm text-green-700 dark:text-green-400 font-medium truncate" dir="ltr">{authUser.email}</span>
+                    </div>
+                    <button
+                      onClick={() => { signOutAccount(); setMobileMenuOpen(false); }}
+                      data-sound="logout"
+                      className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-red-500/10 border border-red-500/25 text-red-600 dark:text-red-400 text-sm font-bold hover:bg-red-500/20 active:scale-95 transition-all duration-150"
+                    >
+                      <LogOut className="w-4 h-4" />
+                      {t("auth.signOut", lang)}
+                    </button>
+                  </>
+                ) : guest ? (
+                  <>
+                    <div className="flex items-center gap-2 px-3 py-2.5 rounded-xl bg-gold-500/10 border border-gold-500/20">
+                      <div className="w-6 h-6 rounded-full bg-gold-500 flex items-center justify-center flex-shrink-0">
+                        <span className="text-white text-xs font-bold">{guest.name.charAt(0).toUpperCase()}</span>
+                      </div>
+                      <span className="text-sm text-gold-600 dark:text-gold-400 font-medium truncate">{guest.name}</span>
+                    </div>
+                    <button
+                      onClick={() => { logout(); setMobileMenuOpen(false); }}
+                      data-sound="logout"
+                      className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-red-500/10 border border-red-500/25 text-red-600 dark:text-red-400 text-sm font-bold hover:bg-red-500/20 active:scale-95 transition-all duration-150"
+                    >
+                      <LogOut className="w-4 h-4" />
+                      {t("nav.logout", lang)}
+                    </button>
+                  </>
+                ) : (
+                  <button
+                    onClick={() => { setShowLogin(true); setMobileMenuOpen(false); }}
+                    data-sound="login"
+                    className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-gold-500 hover:bg-gold-600 text-white text-sm font-bold transition-all duration-150 active:scale-95"
+                  >
+                    <User className="w-4 h-4" />
+                    {t("nav.login", lang)}
+                  </button>
+                )}
+              </div>
+            </div>
+            {/* Spacer so the logout button always clears the floating bug button */}
+            <div className="h-20" aria-hidden="true" />
+          </div>
+        )}
       </header>
 
       {showLogin && <GuestLoginModal onClose={() => setShowLogin(false)} />}
+      {showAuth && <AuthModal onClose={() => setShowAuth(false)} />}
+      {showAbout && <AboutModal onClose={() => setShowAbout(false)} />}
+      {showContact && <ContactModal onClose={() => setShowContact(false)} />}
+      {showDevCode && <DevCodeModal onClose={() => setShowDevCode(false)} />}
+      {showSubs && <SubscriptionModal onClose={() => setShowSubs(false)} />}
     </>
   );
 }

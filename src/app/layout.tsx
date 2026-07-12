@@ -1,33 +1,74 @@
 import type { Metadata } from "next";
+import { Amiri } from "next/font/google";
 import "./globals.css";
 import { AppProvider } from "@/context/AppContext";
+
+/* Self-hosted Amiri (the logo + Arabic display font). next/font inlines the
+   font files at build time and auto-injects a <link rel="preload">, so the
+   correct font paints on the first frame — no FOUC glitch and no render-blocking
+   request to Google, and it silences the google-font-display / no-page-custom-font
+   lint warnings. */
+const amiri = Amiri({
+  subsets: ["arabic"],
+  weight: ["400", "700"],
+  display: "swap",
+  variable: "--font-amiri",
+});
 import { Header } from "@/components/Header";
-import { AntiScreenshot } from "@/components/AntiScreenshot";
-import { ToastProvider } from "@/components/Toast";
+import { SplashScreen } from "@/components/SplashScreen";
+import { BugReporter } from "@/components/BugReporter";
+import { CookieConsent } from "@/components/CookieConsent";
+import { AutoFullscreen } from "@/components/AutoFullscreen";
+import ScreenshotGuard from "@/components/ScreenshotGuard";
+import { ScrollToTop } from "@/components/ScrollToTop";
+import { ScrollProgress } from "@/components/ScrollProgress";
+import { Footer } from "@/components/Footer";
 
 export const metadata: Metadata = {
   title: "روايتي — مكتبة الروايات الشخصية",
   description: "اقرأ روايات Medjahed Abdelhadi (Pica) في تجربة قراءة أنيقة وهادئة",
   keywords: ["رواية", "قراءة", "روايات عربية", "أدب", "روايتي", "Pica"],
-  metadataBase: new URL("https://riwayati.vercel.app"),
+  metadataBase: new URL("https://rewayati.vercel.app"),
+  alternates: {
+    canonical: "/",
+    languages: {
+      "ar-DZ": "/",
+      en: "/",
+      "x-default": "/",
+    },
+  },
   openGraph: {
-    title: "روايتي",
-    description: "مكتبة روايات شخصية — قراءة أنيقة وهادئة",
+    title: "روايتي — مكتبة الروايات الشخصية",
+    description: "اقرأ روايات Medjahed Abdelhadi (Pica) في تجربة قراءة أنيقة وهادئة",
     locale: "ar_DZ",
     type: "website",
-    url: "https://riwayati.vercel.app",
+    url: "https://rewayati.vercel.app",
+    siteName: "روايتي",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "روايتي — مكتبة الروايات الشخصية",
+    description: "اقرأ روايات Medjahed Abdelhadi (Pica) في تجربة قراءة أنيقة وهادئة",
   },
   icons: {
     icon: [
       { url: "/favicon.svg", type: "image/svg+xml" },
+      { url: "/icon-192.png", sizes: "192x192", type: "image/png" },
+      { url: "/icon-512.png", sizes: "512x512", type: "image/png" },
     ],
     shortcut: "/favicon.svg",
-    apple: "/favicon.svg",
+    apple: "/apple-touch-icon.png",
   },
   robots: {
     index: true,
     follow: true,
     nocache: false,
+  },
+  manifest: "/manifest.json",
+  appleWebApp: {
+    capable: true,
+    title: "روايتي",
+    statusBarStyle: "default",
   },
 };
 
@@ -37,11 +78,15 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="ar" dir="rtl" suppressHydrationWarning>
+    <html lang="ar" dir="rtl" className={amiri.variable} suppressHydrationWarning>
       <head>
         <meta charSet="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <meta name="theme-color" content="#fdfcf8" media="(prefers-color-scheme: light)" />
+        <meta name="theme-color" content="#1a1917" media="(prefers-color-scheme: dark)" />
         <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         {/* Prevent FOUC for dark mode */}
         <script
           dangerouslySetInnerHTML={{
@@ -55,24 +100,60 @@ export default function RootLayout({
             `,
           }}
         />
+        {/* JSON-LD Structured Data */}
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "WebSite",
+              name: "روايتي",
+              url: "https://rewayati.vercel.app",
+              description: "مكتبة روايات شخصية — قراءة أنيقة وهادئة",
+              inLanguage: "ar",
+              author: {
+                "@type": "Person",
+                name: "Medjahed Abdelhadi",
+                alternateName: "Pica",
+                url: "https://rewayati.vercel.app/about",
+              },
+              potentialAction: {
+                "@type": "SearchAction",
+                target: "https://rewayati.vercel.app/?q={search_term_string}",
+                "query-input": "required name=search_term_string",
+              },
+            }),
+          }}
+        />
+        {/* Vercel Analytics */}
+        <script
+          defer
+          src="/_vercel/insights/script.js"
+        />
+        {/* Service Worker */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              if('serviceWorker' in navigator) {
+                navigator.serviceWorker.register('/sw.js');
+              }
+            `,
+          }}
+        />
       </head>
       <body className="min-h-screen flex flex-col">
+        <a href="#main-content" className="skip-link">تخطّي إلى المحتوى</a>
+        <ScreenshotGuard />
         <AppProvider>
-          <ToastProvider>
-          <AntiScreenshot />
+          <ScrollProgress />
+          <SplashScreen />
+          <AutoFullscreen />
           <Header />
-          <main className="flex-1">{children}</main>
-          <footer className="border-t border-parchment-200 dark:border-white/8 py-8 mt-16">
-            <div className="max-w-6xl mx-auto px-4 text-center space-y-1">
-              <p className="font-arabic text-sm text-gray-400 dark:text-gray-600">
-                روايتي · riwayati.vercel.app
-              </p>
-              <p className="font-arabic text-xs text-gray-300 dark:text-gray-700">
-                جميع الحقوق محفوظة لـ Medjahed Abdelhadi — Pica &copy; {new Date().getFullYear()}
-              </p>
-            </div>
-          </footer>
-          </ToastProvider>
+          <main id="main-content" className="flex-1 premium-bg">{children}</main>
+          <CookieConsent />
+          <BugReporter />
+          <ScrollToTop />
+          <Footer />
         </AppProvider>
       </body>
     </html>

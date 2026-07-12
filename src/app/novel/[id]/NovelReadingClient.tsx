@@ -1,117 +1,444 @@
 "use client";
 
+import { useState, useCallback, useEffect, useRef } from "react";
 import Link from "next/link";
-import { ArrowRight, Wallet, Star, Shield } from "lucide-react";
+import { ArrowRight, Wallet, Star, Flame, Sparkles, PenLine, BookOpen, Tag, Calendar, Clock, Lock, List, ChevronLeft } from "lucide-react";
 import dynamic from "next/dynamic";
-import { useState, useEffect } from "react";
-import { Novel, getFreeUntilPage, getLockedChapter } from "@/data/novels";
+import { Novel } from "@/data/novels";
 import { StarRating } from "@/components/StarRating";
 import { CCPModal } from "@/components/CCPModal";
 import { Comments } from "@/components/Comments";
+import { Breadcrumb } from "@/components/Breadcrumb";
+import { SkeletonReader } from "@/components/Skeleton";
+import { PDFCover } from "@/components/PDFCover";
+import { PDFErrorBoundary } from "@/components/PDFErrorBoundary";
+import { SafeBoundary } from "@/components/SafeBoundary";
+import { ShareButtons } from "@/components/ShareButtons";
+import { WelcomeGateModal } from "@/components/WelcomeGateModal";
+import { estimateReadTime } from "@/components/NovelCard";
 import { useApp } from "@/context/AppContext";
+import { t } from "@/lib/i18n";
 
-const BookViewer = dynamic(
-  () => import("@/components/BookViewer").then((m) => m.BookViewer),
+/* Lazy-load PDF viewer (client only, no SSR) */
+const PDFViewer = dynamic(
+  () => import("@/components/PDFViewer").then((m) => m.PDFViewer),
   {
     ssr: false,
-    loading: () => (
-      <div className="flex-1 flex items-center justify-center bg-[#F5F0E8] dark:bg-[#0E0D0B]" style={{ minHeight: "80vh" }}>
-        <div className="flex flex-col items-center gap-3 text-gray-400">
-          <div className="w-12 h-12 rounded-full border-2 border-gold-500/30 border-t-gold-500 animate-spin" />
-          <span className="font-arabic text-sm">جارٍ تهيئة القارئ…</span>
-        </div>
-      </div>
-    ),
+    loading: () => <SkeletonReader />,
   }
 );
 
-export function NovelReadingClient({ novel }: { novel: Novel }) {
-  const { ratings, setRating, guest, isAdmin } = useApp();
+interface NovelReadingClientProps {
+  novel: Novel;
+  startPage?: number;
+  showSubs?: boolean;
+  onShowSubsChange?: (show: boolean) => void;
+}
+
+export function NovelReadingClient({ novel, startPage, showSubs: showSubsExternal, onShowSubsChange }: NovelReadingClientProps) {
+  const { bookmarks, ratings, setRating, guest, saveBookmark, trackNovelView, readerPrefs, lang, unlocked, devUnlocked, showToast, hydrated, loginAsGuest } = useApp();
   const [showCCP, setShowCCP] = useState(false);
-  const currentRating = ratings[novel.id] ?? 0;
-  const pdfUrl = `/novels/${novel.pdfFile}`;
-  const freeUntilPage = getFreeUntilPage(novel);
-  const lockedChapter = getLockedChapter(novel);
+  const [showSubs, setShowSubs] = useState(false);
+  const [pageCurl, setPageCurl] = useState(false);
+  const [showOverview, setShowOverview] = useState(!startPage);
+  const [showWelcomeGate, setShowWelcomeGate] = useState(false);
+  const [welcomeTargetPage, setWelcomeTargetPage] = useState<number | undefined>(undefined);
+  const [entryPage, setEntryPage] = useState(startPage || bookmarks[novel.id] || 1);
+  const welcomePendingRef = useRef<{ page?: number } | null>(null);
+
+  const setShowSubsSafe = useCallback((v: boolean) => {
+    setShowSubs(v);
+    onShowSubsChange?.(v);
+  }, [onShowSubsChange]);
+
+  const track = useCallback(() => {
+    void trackNovelView(novel.id);
+  }, [novel.id, trackNovelView]);
 
   useEffect(() => {
-    if (!document.fullscreenElement) {
-      document.documentElement.requestFullscreen?.().catch(() => {});
+    track();
+  }, [track]);
+
+  useEffect(() => {
+    const handler = () => setShowSubsSafe(true);
+    window.addEventListener("riwayati:show-subscription", handler);
+    return () => window.removeEventListener("riwayati:show-subscription", handler);
+  }, [setShowSubsSafe]);
+
+  const pdfUrl = `/api/novel-asset/${novel.pdfFile}`;
+  const hasProgress = (bookmarks[novel.id] || 0) > 1;
+
+  const canRead = hydrated && (guest !== null || devUnlocked);
+
+  const beginReading = useCallback((page?: number) => {
+    if (!canRead) {
+      welcomePendingRef.current = { page };
+      setWelcomeTargetPage(page);
+      setShowWelcomeGate(true);
+      return;
     }
-    return () => {
-      if (document.fullscreenElement) {
-        document.exitFullscreen?.().catch(() => {});
-      }
-    };
-  }, []);
+    setShowSubs(false);
+    // New visitors => no bookmark yet, so this falls back to page 1.
+    // Returning readers resume at their stored bookmark.
+    const targetPage = page || bookmarks[novel.id] || 1;
+    const isChapterLocked = page ? !unlocked && !devUnlocked && page > novel.freeUntilPage && novel.freeUntilPage > 0 : false;
+
+    if (isChapterLocked) {
+      setShowSubs(true);
+      return;
+    }
+
+    setEntryPage(targetPage);
+    setShowOverview(false);
+    window.scrollTo({ top: 0, behavior: "instant" });
+  }, [canRead, bookmarks, novel.id, novel.freeUntilPage, unlocked, devUnlocked]);
+
+  /* Retry auto-start on every change to the gate visibility or read gate,
+     so the pending chapter/reading action fires reliably whether the unlock
+     and the gate-close happen in the same render or in separate ones. */
+  useEffect(() => {
+    if (!showWelcomeGate && welcomePendingRef.current && canRead) {
+      const pending = welcomePendingRef.current;
+      welcomePendingRef.current = null;
+      setTimeout(() => beginReading(pending.page), 50);
+    }
+  }, [showWelcomeGate, canRead, hydrated, beginReading]);
+
+  /* Deep links (e.g. "Continue Reading" / chapter links) that target a page
+     must also respect the reading gate once the app is hydrated. */
+  useEffect(() => {
+    if (hydrated && startPage && !canRead) {
+      setShowOverview(true);
+      showToast(t("gate.loginRequired", lang));
+    }
+  }, [hydrated, startPage, canRead, lang, showToast]);
+
+  const handlePageChange = useCallback(
+    (page: number, total?: number) => {
+      saveBookmark(novel.id, page);
+      setPageCurl(true);
+      setTimeout(() => setPageCurl(false), 600);
+    },
+    [novel.id, saveBookmark]
+  );
+
+  const isComingSoon = novel.status === "coming-soon";
+  const dir = lang === "ar" ? "rtl" : "ltr";
+  const fontClass = lang === "ar" ? "font-arabic" : "font-sans";
+
+  if (isComingSoon) {
+    return (
+      <>
+        <div className="min-h-screen flex flex-col" dir={dir}>
+          <Breadcrumb items={[{ label: novel.title }]} />
+
+          {/* ── Coming-soon hero ─────────────────────── */}
+          <div className="flex-1 flex flex-col items-center justify-center px-4 py-12 sm:py-20">
+            <div className="relative w-full max-w-2xl rounded-3xl overflow-hidden shadow-book border border-gold-500/20 animate-scale-in">
+              {/* Fiery gradient backdrop */}
+              <div className="absolute inset-0 bg-gradient-to-br from-amber-950 via-red-900 to-gold-600" />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/30" />
+              {/* Shimmer sweep */}
+              <div
+                className="absolute inset-0 opacity-30"
+                style={{
+                  background:
+                    "linear-gradient(115deg, transparent 30%, rgba(255,240,200,0.4) 50%, transparent 70%)",
+                  backgroundSize: "200% 100%",
+                  animation: "shimmer 4s linear infinite",
+                }}
+              />
+              {/* Ember dots */}
+              <div className="absolute inset-0 pointer-events-none">
+                <span className="absolute top-[15%] left-[18%] w-1.5 h-1.5 rounded-full bg-amber-200/70 animate-gentle-pulse" />
+                <span className="absolute top-[25%] right-[22%] w-2 h-2 rounded-full bg-gold-400/50 animate-gentle-pulse" style={{ animationDelay: "1s" }} />
+                <span className="absolute bottom-[40%] left-[25%] w-1 h-1 rounded-full bg-amber-100/60 animate-gentle-pulse" style={{ animationDelay: "1.8s" }} />
+                <span className="absolute bottom-[20%] right-[30%] w-1.5 h-1.5 rounded-full bg-amber-300/50 animate-gentle-pulse" style={{ animationDelay: "0.5s" }} />
+              </div>
+
+              <div className="relative z-10 p-8 sm:p-12 text-center">
+                <div className="flex justify-center mb-5">
+                  <div className="relative">
+                    <Flame className="w-12 h-12 text-amber-200 animate-float drop-shadow-lg" />
+                    <Sparkles className="w-4 h-4 text-gold-400 absolute -top-1 -right-2 animate-gentle-pulse" />
+                  </div>
+                </div>
+
+                <span className={`inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-white/15 backdrop-blur-sm text-amber-50 text-xs font-bold mb-6 border border-white/20 ${fontClass}`}>
+                  <PenLine className="w-3.5 h-3.5" />
+                  {t("comingSoon.inWriting", lang)}
+                </span>
+
+                <h1 className={`text-4xl sm:text-5xl font-bold text-white drop-shadow-lg mb-2 leading-tight ${fontClass}`}>
+                  {novel.title}
+                </h1>
+                {novel.subtitle && (
+                  <p className={`text-base text-amber-200/80 mb-5 ${fontClass}`}>{novel.subtitle}</p>
+                )}
+
+                <p className={`text-sm sm:text-base text-amber-50/90 leading-relaxed max-w-xl mx-auto mb-6 ${fontClass}`}>
+                  {novel.description}
+                </p>
+
+                {novel.tags && novel.tags.length > 0 && (
+                  <div className="flex flex-wrap items-center justify-center gap-2 mb-7">
+                    {novel.tags.map((tag) => (
+                      <span key={tag} className={`px-3 py-1 rounded-full bg-white/10 text-amber-100/90 text-xs border border-white/10 ${fontClass}`}>
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
+                )}
+
+                <div className={`flex items-center justify-center gap-2 text-amber-200/70`}>
+                  <span className="h-px w-8 bg-gradient-to-r from-transparent to-amber-200/40" />
+                  <Sparkles className="w-3.5 h-3.5" />
+                  <span className={`text-sm font-medium ${fontClass}`}>{t("comingSoon.soon", lang)}</span>
+                  <Sparkles className="w-3.5 h-3.5" />
+                  <span className="h-px w-8 bg-gradient-to-l from-transparent to-amber-200/40" />
+                </div>
+              </div>
+            </div>
+
+            {/* Author + back */}
+            <div className="mt-6 flex flex-col items-center gap-3">
+              <p className={`text-xs text-gray-400 ${fontClass}`}>{novel.author}</p>
+              <Link
+                href="/"
+                className={`inline-flex items-center gap-1.5 px-5 py-2.5 rounded-xl bg-white dark:bg-onyx-800 border border-parchment-200 dark:border-white/10 text-sm text-gray-700 dark:text-gray-300 hover:border-gold-500/40 hover:text-gold-500 transition-all duration-200 ${fontClass}`}
+              >
+                <ArrowRight className={`w-4 h-4 ${dir === "ltr" ? "rotate-180" : ""}`} />
+                {t("comingSoon.backToLibrary", lang)}
+              </Link>
+            </div>
+          </div>
+
+        {/* ── Comments Section (Moved for mobile) ───────────────────────── */}
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 py-8 w-full order-first sm:order-last" dir={dir}>
+          <Comments novelId={novel.id} />
+        </div>
+        </div>
+
+        {showCCP && (
+          <CCPModal novelTitle={novel.title} onClose={() => setShowCCP(false)} />
+        )}
+      </>
+    );
+  }
+
+  const currentRating = ratings[novel.id] ?? 0;
 
   return (
     <>
-      {/* ── Slim top bar ──────────────────────────────── */}
-      <div
-        className="flex items-center justify-between gap-3 px-4 sm:px-5 py-2 bg-white dark:bg-onyx-900 border-b border-parchment-200 dark:border-white/8 flex-shrink-0"
-        dir="rtl"
-      >
-        <Link
-          href="/"
-          className="flex items-center gap-1 text-xs text-gray-400 hover:text-gold-500 transition-colors font-arabic group flex-shrink-0"
-        >
-          <ArrowRight className="w-3.5 h-3.5 transition-transform group-hover:translate-x-0.5" />
-          <span className="hidden sm:inline">المكتبة</span>
-        </Link>
+      <div className="min-h-screen flex flex-col" dir={dir}>
+        <Breadcrumb items={[{ label: novel.title }]} />
 
-        <h1 className="font-arabic text-sm font-semibold text-gray-700 dark:text-gray-300 truncate flex-1 text-center">
-          {novel.title}
-        </h1>
+        {showOverview || !canRead ? (
+          /* ── Overview screen ───────────────────────── */
+          <div className="max-w-5xl mx-auto w-full px-4 sm:px-6 py-8 sm:py-10">
+            <div className="flex flex-col md:flex-row gap-8">
+              {/* Cover */}
+              <div className="w-full max-w-[220px] mx-auto md:mx-0 flex-shrink-0">
+                <div className="rounded-2xl overflow-hidden shadow-book border border-parchment-200 dark:border-white/8">
+                  <SafeBoundary name="novel-cover" silent>
+                    <PDFCover pdfUrl={pdfUrl} novelId={novel.id} title={novel.title} className="w-full aspect-[3/4]" />
+                  </SafeBoundary>
+                </div>
+              </div>
 
-        <div className="flex items-center gap-2 flex-shrink-0">
-          {isAdmin && (
-            <span className="flex items-center gap-1 text-xs text-gold-600 dark:text-gold-400 bg-gold-500/10 px-2 py-0.5 rounded-full">
-              <Shield className="w-3 h-3" />
-              مشرف
-            </span>
-          )}
-          <div className="hidden sm:flex items-center gap-1">
-            <Star className="w-3 h-3 text-gold-500/50" />
-            <StarRating
-              novelId={novel.id}
-              initialRating={currentRating}
-              onRate={(s) => setRating(novel.id, s)}
-              size="sm"
-            />
+              {/* Info */}
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 flex-wrap mb-3">
+                  <span className="inline-flex items-center gap-1 text-xs text-gold-500 bg-gold-500/10 px-2.5 py-0.5 rounded-full">
+                    <Tag className="w-3 h-3" />
+                    {novel.genre}
+                  </span>
+                  <span className="inline-flex items-center gap-1 text-xs text-gray-400 dark:text-gray-500">
+                    <Calendar className="w-3 h-3" />
+                    {novel.year}
+                  </span>
+                  <span className="inline-flex items-center gap-1 text-xs text-gray-400 dark:text-gray-500">
+                    <Clock className="w-3 h-3" />
+                    {t("card.readingDuration", lang)}: {estimateReadTime(novel, lang)}
+                  </span>
+                </div>
+
+                <h1 className={`text-2xl sm:text-3xl font-bold text-gray-900 dark:text-gray-100 mb-1 ${fontClass}`}>
+                  {novel.title}
+                </h1>
+                {novel.subtitle && (
+                  <p className={`text-gray-500 dark:text-gray-400 mb-2 ${fontClass}`}>{novel.subtitle}</p>
+                )}
+                <p className={`text-sm text-gray-500 dark:text-gray-400 mb-4 ${fontClass}`}>{novel.author}</p>
+
+                <p className={`text-gray-700 dark:text-gray-300 leading-relaxed mb-5 ${fontClass}`}>
+                  {novel.description}
+                </p>
+
+                {novel.tags && novel.tags.length > 0 && (
+                  <div className="flex flex-wrap gap-1.5 mb-5">
+                    {novel.tags.map((tag) => (
+                      <span key={tag} className={`text-xs px-2.5 py-1 rounded-full bg-parchment-100 dark:bg-white/5 border border-parchment-200 dark:border-white/10 text-gray-500 dark:text-gray-400 ${fontClass}`}>
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
+                )}
+
+                {/* Reading progress */}
+                {hasProgress && (
+                  <div className="mb-5">
+                    <p className={`text-xs text-gray-400 mb-1.5 ${fontClass}`}>{t("overview.readingProgress", lang)}</p>
+                    <div className="flex items-center gap-2">
+                      <div className="flex-1 h-1.5 bg-parchment-200 dark:bg-white/10 rounded-full overflow-hidden max-w-xs">
+                        <div
+                          className="h-full bg-gold-500 rounded-full"
+                          style={{ width: `${Math.min(Math.round((bookmarks[novel.id] / (novel.freeUntilPage + 80)) * 100), 100)}%` }}
+                        />
+                      </div>
+                      <span className="text-xs text-gold-500 font-sans font-medium">
+                        {t("library.page", lang)} {bookmarks[novel.id]}
+                      </span>
+                    </div>
+                  </div>
+                )}
+
+                {/* Rating */}
+                <div className="flex items-center gap-2 mb-6">
+                  <span className={`text-xs text-gray-400 dark:text-gray-500 ${fontClass}`}>
+                    {t("card.yourRating", lang)}:
+                  </span>
+                  <StarRating
+                    initialRating={currentRating}
+                    onRate={(s) => setRating(novel.id, s)}
+                    size="sm"
+                    readOnly={!guest}
+                  />
+                </div>
+
+                {/* CTA */}
+                <div className="flex flex-wrap gap-3">
+                  <button
+                    onClick={() => beginReading()}
+                    className={`flex items-center justify-center gap-2 px-6 py-3 bg-gray-900 dark:bg-white hover:bg-gold-500 dark:hover:bg-gold-500 text-white dark:text-gray-900 hover:text-white rounded-xl font-medium transition-all duration-200 active:scale-95 ${fontClass}`}
+                  >
+                    <BookOpen className="w-4 h-4" />
+                    {hasProgress ? t("library.continue", lang) : t("card.startReading", lang)}
+                  </button>
+                  <button
+                    onClick={() => setShowCCP(true)}
+                    className={`flex items-center justify-center gap-2 px-5 py-3 rounded-xl border border-parchment-300 dark:border-white/10 text-gold-500 hover:bg-gold-500/10 active:scale-95 transition-all duration-150 ${fontClass}`}
+                  >
+                    <Wallet className="w-4 h-4" />
+                    {t("card.supportCCP", lang)}
+                  </button>
+                  <SafeBoundary name="share" silent>
+                    <ShareButtons title={novel.title} url={`/novel/${novel.id}`} />
+                  </SafeBoundary>
+                </div>
+              </div>
+            </div>
+
+            {/* Chapters */}
+            <div className="mt-10 pt-8 border-t border-parchment-200 dark:border-white/8">
+              <h2 className={`flex items-center gap-2 text-lg font-bold text-gray-900 dark:text-gray-100 mb-4 ${fontClass}`}>
+                <List className="w-4.5 h-4.5 text-gold-500" />
+                {t("overview.chapters", lang)}
+              </h2>
+              {novel.chapters && novel.chapters.length > 0 ? (
+                <>
+                  <div className="grid sm:grid-cols-2 gap-2">
+                    {novel.chapters.map((chapter, i) => {
+                      const isLocked = !unlocked && !devUnlocked && chapter.startPage > novel.freeUntilPage && novel.freeUntilPage > 0;
+                      return (
+                        <button
+                          key={i}
+                          onClick={() => beginReading(chapter.startPage)}
+                          className={`flex items-center justify-between gap-2 px-4 py-3 rounded-xl border transition-all text-start hover:shadow-sm ${
+                            isLocked
+                              ? "bg-amber-50/50 dark:bg-amber-900/10 border-amber-200 dark:border-amber-700/30"
+                              : "bg-white dark:bg-onyx-800/60 border-parchment-200 dark:border-white/8 hover:border-gold-500/30"
+                          }`}
+                        >
+                          <div className="flex items-center gap-3 min-w-0">
+                            <span className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${
+                              isLocked ? "bg-amber-100 dark:bg-amber-800/30 text-amber-600" : "bg-gold-500/10 text-gold-500"
+                            }`}>
+                              {isLocked ? <Lock className="w-4 h-4" /> : <BookOpen className="w-4 h-4" />}
+                            </span>
+                            <div className="min-w-0">
+                              <p className={`text-sm font-bold text-gray-800 dark:text-gray-200 truncate ${fontClass}`}>{chapter.title}</p>
+                              <p className="text-[11px] text-gray-400 font-sans">{t("subs.page", lang)} {chapter.startPage}</p>
+                            </div>
+                          </div>
+                          {isLocked ? (
+                            <span className={`text-[11px] text-amber-600 dark:text-amber-400 bg-amber-100 dark:bg-amber-800/30 px-2 py-0.5 rounded-full flex-shrink-0 ${fontClass}`}>
+                              {t("subs.locked", lang)}
+                            </span>
+                          ) : (
+                            <ChevronLeft className={`w-4 h-4 text-gray-400 flex-shrink-0 ${dir === "ltr" ? "rotate-180" : ""}`} />
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+                  <div className={`flex items-center gap-4 mt-4 pt-3 border-t border-parchment-200 dark:border-white/8 text-xs text-gray-400 justify-center ${fontClass}`}>
+                    <span className="flex items-center gap-1"><BookOpen className="w-3 h-3 text-gold-500" /> {t("subs.legendFree", lang)}</span>
+                    <span className="flex items-center gap-1"><Lock className="w-3 h-3 text-amber-500" /> {t("subs.legendLocked", lang)}</span>
+                  </div>
+                </>
+              ) : (
+                <p className={`text-sm text-gray-400 ${fontClass}`}>{t("overview.noChapters", lang)}</p>
+              )}
+            </div>
           </div>
-          <button
-            onClick={() => setShowCCP(true)}
-            className="flex items-center gap-1 text-xs font-arabic text-gold-500 hover:text-gold-600 border border-gold-500/20 hover:border-gold-500/40 px-2 py-1 rounded-lg transition-all"
+        ) : (
+          <div className={`min-h-[50vh] sm:min-h-[65vh] flex flex-col reading-theme-${readerPrefs.readingTheme} ${pageCurl ? "animate-page-curl" : ""}`} dir="ltr">
+              <PDFErrorBoundary>
+                <PDFViewer
+                  pdfUrl={pdfUrl}
+                  title={novel.title}
+                  freeUntilPage={novel.freeUntilPage}
+                  initialPage={entryPage}
+                  onPageChange={handlePageChange}
+                  preview={novel.description}
+                  novelId={novel.id}
+                  chapters={novel.chapters}
+                  readingTheme={readerPrefs.readingTheme}
+                  showSubscription={showSubs}
+                  onSubscriptionClose={() => setShowSubsSafe(false)}
+                />
+              </PDFErrorBoundary>
+          </div>
+        )}
+
+        {/* ── Comments ───────────────────────────────── */}
+        <div className="max-w-4xl mx-auto px-3 sm:px-6 py-4 sm:py-6 w-full" dir={dir}>
+          <SafeBoundary
+            name="novel-comments"
+            fallback={
+              <p className={`text-center text-sm text-gray-400 dark:text-gray-500 py-8 ${fontClass}`}>
+                {t("comments.empty", lang)}
+              </p>
+            }
           >
-            <Wallet className="w-3 h-3" />
-            <span className="hidden sm:inline">دعم</span>
-          </button>
-        </div>
-      </div>
-
-      {/* ── Scrollable area: Reader + Comments ───────── */}
-      <div className="flex-1 overflow-y-auto" style={{ height: "calc(100dvh - 104px)" }}>
-        {/* Reader — takes at least 80vh */}
-        <div style={{ minHeight: "80vh" }}>
-<BookViewer
-             pdfUrl={pdfUrl}
-             title={novel.title}
-             novelId={novel.id}
-             freeUntilPage={freeUntilPage}
-             lockedChapterTitle={lockedChapter?.title}
-             lockedChapterTeaser={lockedChapter?.teaser}
-             lockedChapterPreview={lockedChapter?.preview}
-           />
-        </div>
-
-        {/* Comments — below the reader */}
-        <div className="max-w-4xl mx-auto w-full px-4 sm:px-6 pb-12">
-          <Comments novelId={novel.id} />
+            <Comments novelId={novel.id} />
+          </SafeBoundary>
         </div>
       </div>
 
       {showCCP && (
         <CCPModal novelTitle={novel.title} onClose={() => setShowCCP(false)} />
+      )}
+
+      {showWelcomeGate && (
+        <WelcomeGateModal
+          onClose={() => setShowWelcomeGate(false)}
+          onSkip={() => {
+            const randomId = "guest-" + Math.random().toString(36).slice(2, 8);
+            loginAsGuest(randomId);
+          }}
+        />
       )}
     </>
   );

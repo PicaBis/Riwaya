@@ -2,26 +2,96 @@
 
 import { useEffect, useRef, useState } from "react";
 import { BookOpen } from "lucide-react";
+import { useApp } from "@/context/AppContext";
+import { t } from "@/lib/i18n";
+import { resolveProtectedPdfSource } from "@/lib/asset-client";
 
 interface PDFCoverProps {
   pdfUrl: string;
+  /** Novel id — used to request a short-lived asset token for the protected file. */
+  novelId?: string;
   title: string;
   className?: string;
 }
 
-export function PDFCover({ pdfUrl, title, className = "" }: PDFCoverProps) {
+const COVER_CACHE_KEY = (id: string) => `riwayati_cover_v1_${id}`;
+
+export function PDFCover({ pdfUrl, novelId, title, className = "" }: PDFCoverProps) {
+  const { lang } = useApp();
+  const fontClass = lang === "ar" ? "font-arabic" : "font-sans";
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [status, setStatus] = useState<"loading" | "ready" | "error">("loading");
+  const wrapRef = useRef<HTMLDivElement>(null);
+  const [status, setStatus] = useState<"loading" | "ready" | "error" | "blank">("loading");
+  const cacheId = novelId || pdfUrl;
+
+  // 1) Instant path: if we've cached this cover's first-page image before,
+  //    show it immediately and skip pdf.js entirely — makes repeat navigation
+  //    feel app-like on mobile.
+  const [cachedSrc, setCachedSrc] = useState<string | null>(null);
+  useEffect(() => {
+    try {
+      const hit = localStorage.getItem(COVER_CACHE_KEY(cacheId));
+      if (hit) { setCachedSrc(hit); setStatus("ready"); }
+    } catch {}
+  }, [cacheId]);
+
+  // 2) Defer the heavy render until the card is actually near the viewport,
+  //    so off-screen covers never download/parse the PDF up front.
+  const [visible, setVisible] = useState(false);
+  useEffect(() => {
+    const el = wrapRef.current;
+    if (!el) return;
+    if (typeof IntersectionObserver === "undefined") { setVisible(true); return; }
+    const io = new IntersectionObserver(
+      (entries) => { if (entries.some((e) => e.isIntersecting)) { setVisible(true); io.disconnect(); } },
+      { rootMargin: "300px" }
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
+    if (cachedSrc || !visible) return;
+
+    const isCanvasBlank = (canvas: HTMLCanvasElement): boolean => {
+      try {
+        const ctx = canvas.getContext("2d");
+        if (!ctx) return true;
+        const imageData = ctx.getImageData(0, 0, canvas.width || 1, canvas.height || 1);
+        const data = imageData.data;
+        let whitePixels = 0;
+        const total = data.length / 4;
+        const sampleStep = Math.max(1, Math.floor(total / 200));
+        let sampled = 0;
+        for (let i = 0; i < data.length; i += 4 * sampleStep) {
+          sampled++;
+          if (data[i] > 240 && data[i + 1] > 240 && data[i + 2] > 240) whitePixels++;
+        }
+        return sampled > 0 && whitePixels / sampled > 0.92;
+      } catch {
+        return false;
+      }
+    };
 
     const render = async () => {
       try {
         const pdfjsLib = await import("pdfjs-dist");
-        pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
+        pdfjsLib.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.js";
 
-        const loadingTask = pdfjsLib.getDocument(pdfUrl);
+        const source = novelId
+          ? await resolveProtectedPdfSource(novelId, pdfUrl)
+          : { url: pdfUrl };
+        if (cancelled) return;
+        const loadingTask = pdfjsLib.getDocument({
+          url: source.url,
+          httpHeaders: source.httpHeaders,
+          withCredentials: true,
+          // Same rationale as PDFViewer: /api/novel-asset always returns the
+          // full body in one response and never handles Range requests.
+          disableRange: true,
+          disableStream: true,
+        });
         const pdf = await loadingTask.promise;
         if (cancelled) return;
 
@@ -31,7 +101,6 @@ export function PDFCover({ pdfUrl, title, className = "" }: PDFCoverProps) {
         const canvas = canvasRef.current;
         if (!canvas) return;
 
-        // Fit within the card at 2× for retina
         const desiredWidth = canvas.parentElement?.clientWidth || 240;
         const scale = (desiredWidth / page.getViewport({ scale: 1 }).width) * 2;
         const viewport = page.getViewport({ scale });
@@ -45,9 +114,26 @@ export function PDFCover({ pdfUrl, title, className = "" }: PDFCoverProps) {
         if (!ctx) return;
 
         await page.render({ canvasContext: ctx, viewport }).promise;
-        if (!cancelled) setStatus("ready");
-      } catch {
-        if (!cancelled) setStatus("error");
+        if (cancelled) return;
+
+        if (isCanvasBlank(canvas)) {
+          if (!cancelled) setStatus("blank");
+        } else {
+          if (!cancelled) setStatus("ready");
+          // Cache the rendered first-page image (free preview page — safe to
+          // store) so future mounts show instantly without touching pdf.js.
+          try {
+            const dataUrl = canvas.toDataURL("image/jpeg", 0.72);
+            if (dataUrl && dataUrl.length < 900_000) {
+              localStorage.setItem(COVER_CACHE_KEY(cacheId), dataUrl);
+            }
+          } catch {}
+        }
+      } catch (err) {
+        if (!cancelled) {
+          console.error("[PDFCover] failed to render cover:", err);
+          setStatus("error");
+        }
       }
     };
 
@@ -55,33 +141,47 @@ export function PDFCover({ pdfUrl, title, className = "" }: PDFCoverProps) {
     return () => {
       cancelled = true;
     };
-  }, [pdfUrl]);
+  }, [pdfUrl, novelId, visible, cachedSrc, cacheId]);
 
   return (
-    <div className={`relative overflow-hidden bg-parchment-100 dark:bg-onyx-900 ${className}`}>
+    <div ref={wrapRef} className={`relative overflow-hidden bg-parchment-100 dark:bg-onyx-900 ${className}`}>
+      {/* Cached cover image (instant path) */}
+      {cachedSrc && (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={cachedSrc} alt={title} className="object-cover w-full h-full" loading="lazy" decoding="async" />
+      )}
+
       {/* Canvas (PDF first page) */}
+      {!cachedSrc && (
       <canvas
         ref={canvasRef}
         className={`object-cover w-full h-full transition-opacity duration-500 ${
           status === "ready" ? "opacity-100" : "opacity-0"
         }`}
       />
+      )}
 
       {/* Skeleton loader */}
       {status === "loading" && (
         <div className="absolute inset-0 flex flex-col items-center justify-center gap-3">
           <div className="w-10 h-10 rounded-full border-2 border-gold-500/30 border-t-gold-500 animate-spin" />
-          <span className="text-xs text-gray-400 dark:text-gray-600 font-sans">
-            جارٍ التحميل…
+          <span className={`text-xs text-gray-400 dark:text-gray-600 font-sans ${fontClass}`}>
+            {t("pdfcover.loading", lang)}
           </span>
         </div>
       )}
 
-      {/* Error fallback */}
-      {status === "error" && (
-        <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 p-4">
-          <BookOpen className="w-10 h-10 text-gold-500/50" />
-          <span className="text-xs text-center text-gray-400 dark:text-gray-500 font-arabic leading-relaxed">
+      {/* Blank / error fallback — styled cover with title */}
+      {(status === "error" || status === "blank") && (
+        <div className="absolute inset-0 bg-gradient-to-br from-amber-950 via-onyx-800 to-gold-700 flex flex-col items-center justify-center gap-2 p-4">
+          <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-black/20" />
+          <div className="absolute inset-0 opacity-30" style={{
+            width: "200%", left: "-100%",
+            background: "linear-gradient(115deg, transparent 30%, rgba(255,240,200,0.4) 50%, transparent 70%)",
+            backgroundSize: "200% 100%", animation: "shimmer 4s linear infinite",
+          }} />
+          <BookOpen className="w-8 h-8 text-amber-200/80 relative z-10 drop-shadow-lg" />
+          <span className={`text-xs text-center text-amber-50/90 leading-relaxed relative z-10 font-arabic font-medium line-clamp-3 ${fontClass}`}>
             {title}
           </span>
         </div>

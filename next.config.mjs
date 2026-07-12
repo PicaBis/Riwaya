@@ -1,7 +1,9 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  reactStrictMode: true,
+  output: "standalone",
+  poweredByHeader: false,
   webpack: (config) => {
-    // Required for pdfjs-dist to work in Next.js
     config.resolve.alias.canvas = false;
     config.resolve.alias.encoding = false;
     return config;
