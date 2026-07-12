@@ -24,16 +24,25 @@ export function ReadersMarquee() {
     if (!supabase) return;
     const key = `${guest?.name || "guest"}-${Math.floor(performance.now())}-${Math.floor(performance.timeOrigin)}`;
     const channel = supabase.channel("online-guests", { config: { presence: { key } } });
+    const recount = () => setCount(Object.keys(channel.presenceState()).length);
     channel
-      .on("presence", { event: "sync" }, () => {
-        setCount(Object.keys(channel.presenceState()).length);
-      })
+      // Recompute on every presence change so the number refreshes live as
+      // visitors enter or leave the site.
+      .on("presence", { event: "sync" }, recount)
+      .on("presence", { event: "join" }, recount)
+      .on("presence", { event: "leave" }, recount)
       .subscribe((status) => {
         if (status === "SUBSCRIBED") {
           channel.track({ online_at: Date.now(), name: guest?.name || "guest" });
         }
       });
+    // Heartbeat: re-assert presence periodically so a dropped/rejoined socket
+    // keeps this reader counted and the number stays accurate.
+    const heartbeat = setInterval(() => {
+      channel.track({ online_at: Date.now(), name: guest?.name || "guest" }).catch(() => {});
+    }, 25000);
     return () => {
+      clearInterval(heartbeat);
       supabase.removeChannel(channel);
     };
   }, [guest?.name]);

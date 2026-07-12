@@ -1,20 +1,23 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { Moon, Sun, User, LogOut, Menu, X, Shield, Coins, LayoutDashboard, Volume2, VolumeX, UserCircle } from "lucide-react";
 import { useApp } from "@/context/AppContext";
-import { GuestLoginModal } from "./GuestLoginModal";
-import { AuthModal } from "./AuthModal";
-import { AboutModal } from "./AboutModal";
-import { DevCodeModal } from "./DevCodeModal";
-import { SubscriptionModal } from "./SubscriptionModal";
-
+import dynamic from "next/dynamic";
 import { SearchBar } from "./SearchBar";
 import { InstallButton } from "./InstallButton";
 import { LanguageSwitcher } from "./LanguageSwitcher";
-import { ContactModal } from "./ContactModal";
+
+// Modals are only needed on interaction — code-split them out of the initial
+// bundle so the first paint on mobile is as light and app-like as possible.
+const GuestLoginModal = dynamic(() => import("./GuestLoginModal").then((m) => m.GuestLoginModal), { ssr: false });
+const AuthModal = dynamic(() => import("./AuthModal").then((m) => m.AuthModal), { ssr: false });
+const AboutModal = dynamic(() => import("./AboutModal").then((m) => m.AboutModal), { ssr: false });
+const DevCodeModal = dynamic(() => import("./DevCodeModal").then((m) => m.DevCodeModal), { ssr: false });
+const SubscriptionModal = dynamic(() => import("./SubscriptionModal").then((m) => m.SubscriptionModal), { ssr: false });
+const ContactModal = dynamic(() => import("./ContactModal").then((m) => m.ContactModal), { ssr: false });
 import { t } from "@/lib/i18n";
 import { AUTHOR } from "@/lib/constants";
 
@@ -27,6 +30,14 @@ export function Header() {
   const [showSubs, setShowSubs] = useState(false);
   const [showContact, setShowContact] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  // While the mobile menu is open, mark the body so the floating bug button
+  // (fixed bottom-left) is hidden and can never cover the logout button.
+  useEffect(() => {
+    if (typeof document === "undefined") return;
+    document.body.classList.toggle("mobile-menu-open", mobileMenuOpen);
+    return () => document.body.classList.remove("mobile-menu-open");
+  }, [mobileMenuOpen]);
 
   return (
     <>
@@ -377,11 +388,11 @@ export function Header() {
                 </button>
               )}
 
-              {/* Guest auth in mobile menu */}
-              <div className="mt-3">
+              {/* Guest / account identity + prominent logout */}
+              <div className="mt-3 space-y-3">
                 {authUser ? (
-                  <div className="flex items-center justify-between px-3 py-2.5 rounded-xl bg-green-500/10 border border-green-500/20">
-                    <div className="flex items-center gap-2 min-w-0">
+                  <>
+                    <div className="flex items-center gap-2 px-3 py-2.5 rounded-xl bg-green-500/10 border border-green-500/20">
                       <div className="w-6 h-6 rounded-full bg-green-500 flex items-center justify-center flex-shrink-0">
                         <span className="text-white text-xs font-bold">{(authUser.email || "?").charAt(0).toUpperCase()}</span>
                       </div>
@@ -390,32 +401,34 @@ export function Header() {
                     <button
                       onClick={() => { signOutAccount(); setMobileMenuOpen(false); }}
                       data-sound="logout"
-                      className="text-xs text-gray-400 hover:text-red-500 transition-colors flex-shrink-0 ms-2"
+                      className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-red-500/10 border border-red-500/25 text-red-600 dark:text-red-400 text-sm font-bold hover:bg-red-500/20 active:scale-95 transition-all duration-150"
                     >
+                      <LogOut className="w-4 h-4" />
                       {t("auth.signOut", lang)}
                     </button>
-                  </div>
+                  </>
                 ) : guest ? (
-                  <div className="flex items-center justify-between px-3 py-2.5 rounded-xl bg-gold-500/10 border border-gold-500/20">
-                    <div className="flex items-center gap-2">
-                      <div className="w-6 h-6 rounded-full bg-gold-500 flex items-center justify-center">
+                  <>
+                    <div className="flex items-center gap-2 px-3 py-2.5 rounded-xl bg-gold-500/10 border border-gold-500/20">
+                      <div className="w-6 h-6 rounded-full bg-gold-500 flex items-center justify-center flex-shrink-0">
                         <span className="text-white text-xs font-bold">{guest.name.charAt(0).toUpperCase()}</span>
                       </div>
-                      <span className="text-sm text-gold-600 dark:text-gold-400 font-medium">{guest.name}</span>
+                      <span className="text-sm text-gold-600 dark:text-gold-400 font-medium truncate">{guest.name}</span>
                     </div>
                     <button
-                  onClick={() => { logout(); setMobileMenuOpen(false); }}
-                  data-sound="logout"
-                  className="text-xs text-gray-400 hover:text-red-500 transition-colors"
+                      onClick={() => { logout(); setMobileMenuOpen(false); }}
+                      data-sound="logout"
+                      className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-red-500/10 border border-red-500/25 text-red-600 dark:text-red-400 text-sm font-bold hover:bg-red-500/20 active:scale-95 transition-all duration-150"
                     >
+                      <LogOut className="w-4 h-4" />
                       {t("nav.logout", lang)}
                     </button>
-                  </div>
+                  </>
                 ) : (
-              <button
-                onClick={() => { setShowLogin(true); setMobileMenuOpen(false); }}
-                data-sound="login"
-                className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-gold-500 hover:bg-gold-600 text-white text-sm font-medium transition-all duration-150 active:scale-95"
+                  <button
+                    onClick={() => { setShowLogin(true); setMobileMenuOpen(false); }}
+                    data-sound="login"
+                    className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-gold-500 hover:bg-gold-600 text-white text-sm font-bold transition-all duration-150 active:scale-95"
                   >
                     <User className="w-4 h-4" />
                     {t("nav.login", lang)}
@@ -423,6 +436,8 @@ export function Header() {
                 )}
               </div>
             </div>
+            {/* Spacer so the logout button always clears the floating bug button */}
+            <div className="h-20" aria-hidden="true" />
           </div>
         )}
       </header>

@@ -32,7 +32,7 @@
   ],
   "categories": ["books", "education", "entertainment"],
   "shortcuts": [],
-  "prefer_related_applications": true,
+  "prefer_related_applications": false,
   "edge_side_panel": {
     "preferred_width": 480
   }

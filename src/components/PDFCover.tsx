@@ -14,14 +14,45 @@ interface PDFCoverProps {
   className?: string;
 }
 
+const COVER_CACHE_KEY = (id: string) => `riwayati_cover_v1_${id}`;
+
 export function PDFCover({ pdfUrl, novelId, title, className = "" }: PDFCoverProps) {
   const { lang } = useApp();
   const fontClass = lang === "ar" ? "font-arabic" : "font-sans";
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const wrapRef = useRef<HTMLDivElement>(null);
   const [status, setStatus] = useState<"loading" | "ready" | "error" | "blank">("loading");
+  const cacheId = novelId || pdfUrl;
+
+  // 1) Instant path: if we've cached this cover's first-page image before,
+  //    show it immediately and skip pdf.js entirely — makes repeat navigation
+  //    feel app-like on mobile.
+  const [cachedSrc, setCachedSrc] = useState<string | null>(null);
+  useEffect(() => {
+    try {
+      const hit = localStorage.getItem(COVER_CACHE_KEY(cacheId));
+      if (hit) { setCachedSrc(hit); setStatus("ready"); }
+    } catch {}
+  }, [cacheId]);
+
+  // 2) Defer the heavy render until the card is actually near the viewport,
+  //    so off-screen covers never download/parse the PDF up front.
+  const [visible, setVisible] = useState(false);
+  useEffect(() => {
+    const el = wrapRef.current;
+    if (!el) return;
+    if (typeof IntersectionObserver === "undefined") { setVisible(true); return; }
+    const io = new IntersectionObserver(
+      (entries) => { if (entries.some((e) => e.isIntersecting)) { setVisible(true); io.disconnect(); } },
+      { rootMargin: "300px" }
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
+    if (cachedSrc || !visible) return;
 
     const isCanvasBlank = (canvas: HTMLCanvasElement): boolean => {
       try {
@@ -89,6 +120,14 @@ export function PDFCover({ pdfUrl, novelId, title, className = "" }: PDFCoverPro
           if (!cancelled) setStatus("blank");
         } else {
           if (!cancelled) setStatus("ready");
+          // Cache the rendered first-page image (free preview page — safe to
+          // store) so future mounts show instantly without touching pdf.js.
+          try {
+            const dataUrl = canvas.toDataURL("image/jpeg", 0.72);
+            if (dataUrl && dataUrl.length < 900_000) {
+              localStorage.setItem(COVER_CACHE_KEY(cacheId), dataUrl);
+            }
+          } catch {}
         }
       } catch (err) {
         if (!cancelled) {
@@ -102,17 +141,25 @@ export function PDFCover({ pdfUrl, novelId, title, className = "" }: PDFCoverPro
     return () => {
       cancelled = true;
     };
-  }, [pdfUrl, novelId]);
+  }, [pdfUrl, novelId, visible, cachedSrc, cacheId]);
 
   return (
-    <div className={`relative overflow-hidden bg-parchment-100 dark:bg-onyx-900 ${className}`}>
+    <div ref={wrapRef} className={`relative overflow-hidden bg-parchment-100 dark:bg-onyx-900 ${className}`}>
+      {/* Cached cover image (instant path) */}
+      {cachedSrc && (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={cachedSrc} alt={title} className="object-cover w-full h-full" loading="lazy" decoding="async" />
+      )}
+
       {/* Canvas (PDF first page) */}
+      {!cachedSrc && (
       <canvas
         ref={canvasRef}
         className={`object-cover w-full h-full transition-opacity duration-500 ${
           status === "ready" ? "opacity-100" : "opacity-0"
         }`}
       />
+      )}
 
       {/* Skeleton loader */}
       {status === "loading" && (

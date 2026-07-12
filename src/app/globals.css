@@ -381,6 +381,10 @@ input[type="number"] {
 .bug-reporter {
   animation: gentlePulse 4s ease-in-out infinite;
 }
+/* Never let the floating bug button cover the mobile menu's logout button. */
+body.mobile-menu-open .bug-reporter {
+  display: none;
+}
 
 /* ─── Card hover ring glow ──────────────────────────────── */
 .card-glow:hover {
