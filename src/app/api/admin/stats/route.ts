@@ -14,19 +14,31 @@ export async function GET(request: NextRequest) {
 
   const [comments, codes, progress, ratings, guests] = await Promise.all([
     supabase.from("comments").select("*").order("created_at", { ascending: false }),
-    supabase.from("activation_codes").select("code,used"),
+    supabase.from("activation_codes").select("code,used,used_by"),
     supabase.from("reading_progress").select("user_key,novel_id,last_page,updated_at"),
     supabase.from("ratings").select("novel_id,stars,user_key,updated_at").order("updated_at", { ascending: false }),
     supabase.from("guest_names").select("name,created_at").order("created_at", { ascending: false }),
   ]);
 
   const allComments = comments.data || [];
-  const allCodes = codes.data || [];
+  const allCodes = (codes.data || []) as { code: string; used: boolean; used_by: string | null }[];
   const allProgress = progress.data || [];
   const allRatings = (ratings.data || []) as { novel_id: string; stars: number; user_key: string; updated_at: string }[];
   const allGuests = (guests.data || []) as { name: string; created_at: string }[];
 
   const uniqueReaders = new Set(allProgress.map((p: { user_key: string }) => p.user_key)).size;
+
+  // Which guest names have an active subscription. A guest's server userKey is
+  // deterministically `user:<lowercased name>` (see getUserKey in lib/device),
+  // so we can correlate redeemed activation codes back to a human-readable
+  // guest name with no schema change.
+  const subscribedKeys = new Set(
+    allCodes.filter((c) => c.used && c.used_by).map((c) => String(c.used_by).toLowerCase())
+  );
+  const isGuestSubscribed = (name: string) =>
+    subscribedKeys.has(`user:${name.trim().toLowerCase()}`);
+  const guestsWithStatus = allGuests.map((g) => ({ ...g, subscribed: isGuestSubscribed(g.name) }));
+  const subscribersCount = guestsWithStatus.filter((g) => g.subscribed).length;
 
   // Per-novel rating aggregates (average + count), most-rated first.
   const byNovel: Record<string, { sum: number; count: number }> = {};
@@ -60,7 +72,8 @@ export async function GET(request: NextRequest) {
     },
     guests: {
       total: allGuests.length,
-      recent: allGuests.slice(0, 100),
+      subscribers: subscribersCount,
+      recent: guestsWithStatus.slice(0, 100),
     },
   });
 }

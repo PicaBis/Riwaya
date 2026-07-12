@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useEffect, useRef } from "react";
 import Link from "next/link";
-import { ArrowRight, Wallet, Star, Flame, Sparkles, PenLine, BookOpen, Tag, Calendar, Clock, Lock, List } from "lucide-react";
+import { ArrowRight, Wallet, Star, Flame, Sparkles, PenLine, BookOpen, Tag, Calendar, Clock, Lock, List, ChevronLeft } from "lucide-react";
 import dynamic from "next/dynamic";
 import { Novel } from "@/data/novels";
 import { StarRating } from "@/components/StarRating";
@@ -346,21 +346,47 @@ export function NovelReadingClient({ novel, startPage, showSubs: showSubsExterna
                 {t("overview.chapters", lang)}
               </h2>
               {novel.chapters && novel.chapters.length > 0 ? (
-                <div className="grid sm:grid-cols-2 gap-2">
-                  {novel.chapters.map((chapter, i) => {
-                    const isLocked = !unlocked && !devUnlocked && chapter.startPage > novel.freeUntilPage && novel.freeUntilPage > 0;
-                    return (
-                      <button
-                        key={i}
-                        onClick={() => beginReading(chapter.startPage)}
-                        className="flex items-center justify-between gap-2 px-4 py-3 rounded-xl bg-white dark:bg-onyx-800/60 border border-parchment-200 dark:border-white/8 hover:border-gold-500/30 hover:shadow-sm transition-all text-start"
-                      >
-                        <span className={`text-sm text-gray-700 dark:text-gray-300 ${fontClass}`}>{chapter.title}</span>
-                        {isLocked && <Lock className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" />}
-                      </button>
-                    );
-                  })}
-                </div>
+                <>
+                  <div className="grid sm:grid-cols-2 gap-2">
+                    {novel.chapters.map((chapter, i) => {
+                      const isLocked = !unlocked && !devUnlocked && chapter.startPage > novel.freeUntilPage && novel.freeUntilPage > 0;
+                      return (
+                        <button
+                          key={i}
+                          onClick={() => beginReading(chapter.startPage)}
+                          className={`flex items-center justify-between gap-2 px-4 py-3 rounded-xl border transition-all text-start hover:shadow-sm ${
+                            isLocked
+                              ? "bg-amber-50/50 dark:bg-amber-900/10 border-amber-200 dark:border-amber-700/30"
+                              : "bg-white dark:bg-onyx-800/60 border-parchment-200 dark:border-white/8 hover:border-gold-500/30"
+                          }`}
+                        >
+                          <div className="flex items-center gap-3 min-w-0">
+                            <span className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${
+                              isLocked ? "bg-amber-100 dark:bg-amber-800/30 text-amber-600" : "bg-gold-500/10 text-gold-500"
+                            }`}>
+                              {isLocked ? <Lock className="w-4 h-4" /> : <BookOpen className="w-4 h-4" />}
+                            </span>
+                            <div className="min-w-0">
+                              <p className={`text-sm font-bold text-gray-800 dark:text-gray-200 truncate ${fontClass}`}>{chapter.title}</p>
+                              <p className="text-[11px] text-gray-400 font-sans">{t("subs.page", lang)} {chapter.startPage}</p>
+                            </div>
+                          </div>
+                          {isLocked ? (
+                            <span className={`text-[11px] text-amber-600 dark:text-amber-400 bg-amber-100 dark:bg-amber-800/30 px-2 py-0.5 rounded-full flex-shrink-0 ${fontClass}`}>
+                              {t("subs.locked", lang)}
+                            </span>
+                          ) : (
+                            <ChevronLeft className={`w-4 h-4 text-gray-400 flex-shrink-0 ${dir === "ltr" ? "rotate-180" : ""}`} />
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+                  <div className={`flex items-center gap-4 mt-4 pt-3 border-t border-parchment-200 dark:border-white/8 text-xs text-gray-400 justify-center ${fontClass}`}>
+                    <span className="flex items-center gap-1"><BookOpen className="w-3 h-3 text-gold-500" /> {t("subs.legendFree", lang)}</span>
+                    <span className="flex items-center gap-1"><Lock className="w-3 h-3 text-amber-500" /> {t("subs.legendLocked", lang)}</span>
+                  </div>
+                </>
               ) : (
                 <p className={`text-sm text-gray-400 ${fontClass}`}>{t("overview.noChapters", lang)}</p>
               )}

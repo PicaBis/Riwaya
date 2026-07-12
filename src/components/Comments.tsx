@@ -443,9 +443,9 @@ export function Comments({ novelId }: { novelId: string }) {
               <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center gap-2">
                   <div className="w-8 h-8 rounded-full bg-gold-500/10 flex items-center justify-center">
-                    <span className="text-xs font-bold text-gold-500">{c.author.charAt(0).toUpperCase()}</span>
+                    <span className="text-xs font-bold text-gold-500">{(c.author || "?").charAt(0).toUpperCase()}</span>
                   </div>
-                  <span className={`text-sm font-bold text-gray-900 dark:text-gray-100 ${textClass}`}>{c.author}</span>
+                  <span className={`text-sm font-bold text-gray-900 dark:text-gray-100 ${textClass}`}>{c.author || "—"}</span>
                   <span className={`text-xs text-gray-400 dark:text-gray-500 ${textClass}`}>{timeAgo(c.createdAt)}</span>
                 </div>
                 {isAdmin ? (

@@ -740,3 +740,31 @@ body input, body textarea, body [contenteditable="true"] {
 @media (prefers-reduced-motion: reduce) {
   .animate-marquee { animation: none; }
 }
+
+/* ── Mobile performance: keep the look, drop the scroll cost ──────────
+   On phones, `background-attachment: fixed` forces a full-viewport repaint
+   on every scroll frame — the main cause of janky, sub-60fps scrolling.
+   Switching to `scroll` is visually identical on small screens (the parallax
+   is imperceptible there) but lets the compositor scroll on the GPU. We also
+   trim backdrop-blur radius (cheaper per-frame) and calm the purely
+   decorative always-on hero animations — the elements stay, they just don't
+   composite every frame while you read/scroll. Nothing is removed. */
+@media (max-width: 640px) {
+  body,
+  .dark body,
+  .dark,
+  .premium-bg {
+    background-attachment: scroll;
+  }
+  /* Lighter frosted glass on mobile GPUs (was blur-md/lg ≈ 12–16px). */
+  .backdrop-blur-md { backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); }
+  .backdrop-blur-lg { backdrop-filter: blur(7px); -webkit-backdrop-filter: blur(7px); }
+  /* Promote the sticky header to its own layer so it doesn't repaint the
+     content beneath it on every scroll frame. */
+  header.sticky { transform: translateZ(0); will-change: transform; }
+  /* Calm the decorative, infinitely-animating hero flourishes on mobile —
+     they remain visible as soft static glows, just stop compositing 60×/s. */
+  .hero-orb,
+  .hero-particle { animation: none !important; }
+  .cta-glow { animation: none !important; }
+}

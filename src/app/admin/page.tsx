@@ -42,7 +42,7 @@ interface Stats {
     perNovel: { novelId: string; avg: number; count: number }[];
     recent: RatingRow[];
   };
-  guests?: { total: number; recent: { name: string; created_at: string }[] };
+  guests?: { total: number; subscribers?: number; recent: { name: string; created_at: string; subscribed?: boolean }[] };
 }
 
 export default function AdminPage() {
@@ -322,15 +322,31 @@ export default function AdminPage() {
       <section>
         <h2 className={`flex items-center gap-2 text-lg font-bold text-gray-900 dark:text-gray-100 mb-3 ${fontClass}`}>
           <UserCheck className="w-5 h-5 text-gold-500" /> {t("admin.guestsSection", lang)}
+          {stats?.guests?.subscribers ? (
+            <span className={`ms-2 text-xs font-medium text-green-600 dark:text-green-400 bg-green-500/10 border border-green-500/20 px-2 py-0.5 rounded-full ${fontClass}`}>
+              {t("admin.subscribersCount", lang, { n: stats.guests.subscribers })}
+            </span>
+          ) : null}
         </h2>
         <div className="space-y-2">
           {!stats?.guests || stats.guests.recent.length === 0 ? (
             <p className={`text-sm text-gray-400 py-4 text-center ${fontClass}`}>{t("admin.noGuests", lang)}</p>
           ) : (
             stats.guests.recent.map((g) => (
-              <div key={g.name} className="flex items-center justify-between gap-3 p-3 rounded-xl border border-parchment-200 dark:border-white/8 bg-white dark:bg-onyx-800/40">
+              <div key={g.name} className={`flex items-center justify-between gap-3 p-3 rounded-xl border bg-white dark:bg-onyx-800/40 ${g.subscribed ? "border-green-500/30" : "border-parchment-200 dark:border-white/8"}`}>
                 <div className="min-w-0 flex-1">
-                  <p className={`text-sm font-bold text-gray-900 dark:text-gray-100 ${fontClass}`}>{g.name}</p>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <p className={`text-sm font-bold text-gray-900 dark:text-gray-100 ${fontClass}`}>{g.name}</p>
+                    {g.subscribed ? (
+                      <span className={`inline-flex items-center gap-1 text-[10px] font-bold text-green-700 dark:text-green-400 bg-green-500/10 border border-green-500/25 px-1.5 py-0.5 rounded-full ${fontClass}`}>
+                        <CheckCircle2 className="w-3 h-3" /> {t("admin.subscribed", lang)}
+                      </span>
+                    ) : (
+                      <span className={`text-[10px] text-gray-400 dark:text-gray-500 bg-parchment-100 dark:bg-white/5 border border-parchment-200 dark:border-white/8 px-1.5 py-0.5 rounded-full ${fontClass}`}>
+                        {t("admin.notSubscribed", lang)}
+                      </span>
+                    )}
+                  </div>
                   <p className="text-[10px] text-gray-400 font-mono">{new Date(g.created_at).toLocaleDateString("ar-DZ")}</p>
                 </div>
                 <button onClick={() => deleteGuest(g.name)} title={t("admin.deleteGuest", lang)} className="p-1.5 rounded-lg text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors flex-shrink-0">
