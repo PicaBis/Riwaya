@@ -70,7 +70,7 @@ export function NovelReadingClient({ novel, startPage, showSubs: showSubsExterna
 
   const canRead = hydrated && (guest !== null || devUnlocked);
 
-  const beginReading = (page?: number) => {
+  const beginReading = useCallback((page?: number) => {
     if (!canRead) {
       welcomePendingRef.current = { page };
       setWelcomeTargetPage(page);
@@ -78,6 +78,8 @@ export function NovelReadingClient({ novel, startPage, showSubs: showSubsExterna
       return;
     }
     setShowSubs(false);
+    // New visitors => no bookmark yet, so this falls back to page 1.
+    // Returning readers resume at their stored bookmark.
     const targetPage = page || bookmarks[novel.id] || 1;
     const isChapterLocked = page ? !unlocked && !devUnlocked && page > novel.freeUntilPage && novel.freeUntilPage > 0 : false;
 
@@ -89,7 +91,7 @@ export function NovelReadingClient({ novel, startPage, showSubs: showSubsExterna
     setEntryPage(targetPage);
     setShowOverview(false);
     window.scrollTo({ top: 0, behavior: "instant" });
-  };
+  }, [canRead, bookmarks, novel.id, novel.freeUntilPage, unlocked, devUnlocked]);
 
   /* Retry auto-start on every change to the gate visibility or read gate,
      so the pending chapter/reading action fires reliably whether the unlock

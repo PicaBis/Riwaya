@@ -13,6 +13,7 @@ import { FeaturedNovel } from "@/components/FeaturedNovel";
 import { MysteryCard } from "@/components/MysteryCard";
 import { SafeBoundary } from "@/components/SafeBoundary";
 import { FullscreenPrompt } from "@/components/FullscreenPrompt";
+import { OnboardingTour } from "@/components/OnboardingTour";
 import { useApp } from "@/context/AppContext";
 import { t } from "@/lib/i18n";
 
@@ -24,6 +25,7 @@ export default function HomePage() {
   return (
     <div className="max-w-6xl mx-auto px-2 sm:px-4">
       <FullscreenPrompt />
+      <OnboardingTour />
 
       {/* ── Hero Banner ────────────────────────────── */}
       <section className="relative overflow-hidden mb-8 sm:mb-10 -mt-8 sm:-mt-10 pt-10 sm:pt-20 pb-14 sm:pb-20">
