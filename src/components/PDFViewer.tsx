@@ -57,6 +57,50 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, 
     typeof window !== "undefined" ? window.innerWidth < 768 : false
   );
 
+  /* ── Mobile persistent pinch-zoom + free-pan ──────────────
+   * On phones the zoom is a real, sticky CSS transform on the page: pinching
+   * in makes it bigger AND keeps it that way; pinching out shrinks it; and
+   * once zoomed you can drag a single finger anywhere on the page to move the
+   * viewport to whatever word you want to read. Works the same in fullscreen. */
+  const [mZoom, setMZoom] = useState(1);
+  const [mPan, setMPan] = useState({ x: 0, y: 0 });
+  const [mGesturing, setMGesturing] = useState(false);
+  const mZoomRef = useRef(1);
+  const mPanRef = useRef({ x: 0, y: 0 });
+  const zoomedRef = useRef(false);
+  const pageWrapRef = useRef<HTMLDivElement>(null);
+
+  const clampPan = useCallback((z: number, x: number, y: number) => {
+    const wrap = pageWrapRef.current;
+    if (!wrap) return { x, y };
+    // The page renders inside a fit-sized box (overflow-hidden) that is the
+    // pan viewport. With a centered transform origin, scaling by z lets us
+    // reveal each edge by panning up to size*(z-1)/2 (+ a little slack).
+    const maxX = Math.max(0, (wrap.offsetWidth * (z - 1)) / 2 + 8);
+    const maxY = Math.max(0, (wrap.offsetHeight * (z - 1)) / 2 + 8);
+    return { x: Math.max(-maxX, Math.min(maxX, x)), y: Math.max(-maxY, Math.min(maxY, y)) };
+  }, []);
+
+  const applyZoomPan = useCallback((z: number, x: number, y: number) => {
+    mZoomRef.current = z;
+    zoomedRef.current = z > 1.01;
+    const p = clampPan(z, x, y);
+    mPanRef.current = p;
+    setMZoom(z);
+    setMPan(p);
+  }, [clampPan]);
+
+  const resetMobileZoom = useCallback(() => {
+    applyZoomPan(1, 0, 0);
+  }, [applyZoomPan]);
+
+  // Reset the pan (keep the zoom level) whenever the page changes, so a new
+  // page starts centered rather than scrolled off to the previous position.
+  useEffect(() => {
+    mPanRef.current = { x: 0, y: 0 };
+    setMPan({ x: 0, y: 0 });
+  }, [currentPage]);
+
   useEffect(() => {
     const onResize = () => setIsMobile(window.innerWidth < 768);
     window.addEventListener("resize", onResize, { passive: true });
@@ -107,44 +151,6 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, 
     if (panMode) endPan();
   }, [panMode, endPan]);
 
-  const onTouchStartRef = useRef<{ x: number; y: number; timer?: ReturnType<typeof setTimeout> } | null>(null);
-
-  const onTouchStartPan = useCallback((e: React.TouchEvent) => {
-    if (e.touches.length !== 1) return;
-    const t = e.touches[0];
-    onTouchStartRef.current = { x: t.clientX, y: t.clientY };
-    const timer = setTimeout(() => {
-      onTouchStartRef.current = null;
-      startPan(t.clientX, t.clientY);
-    }, 300);
-    onTouchStartRef.current.timer = timer;
-  }, [startPan]);
-
-  const onTouchMovePan = useCallback((e: React.TouchEvent) => {
-    if (e.touches.length !== 1) return;
-    const t = e.touches[0];
-    if (panMode) {
-      e.preventDefault();
-      doPan(t.clientX, t.clientY);
-    } else if (onTouchStartRef.current?.timer) {
-      const dx = Math.abs(t.clientX - onTouchStartRef.current.x);
-      const dy = Math.abs(t.clientY - onTouchStartRef.current.y);
-      if (dx > 10 || dy > 10) {
-        clearTimeout(onTouchStartRef.current.timer);
-        onTouchStartRef.current = null;
-      }
-    }
-  }, [panMode, doPan]);
-
-  const onTouchEndPan = useCallback(() => {
-    if (onTouchStartRef.current?.timer) {
-      clearTimeout(onTouchStartRef.current.timer);
-      onTouchStartRef.current = null;
-    }
-    if (panMode) endPan();
-  }, [panMode, endPan]);
-
-
   /* ── Fast Swipe Navigation (Left/Right Slide) ──────────────────────────── */
   const swipeThreshold = 50;
   const swipeTimeThreshold = 300;
@@ -156,7 +162,8 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, 
   }, []);
 
   const onSwipeEnd = useCallback((x: number, y: number) => {
-    if (!swipeRef.current || lockedRef.current) return;
+    // While zoomed in, one-finger drags are pans, not page-turn swipes.
+    if (!swipeRef.current || lockedRef.current || zoomedRef.current) return;
     const deltaX = x - swipeRef.current.x;
     const deltaY = y - swipeRef.current.y;
     const deltaTime = Date.now() - swipeRef.current.time;
@@ -490,55 +497,89 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, 
     };
   }, []);
 
-  /* ── Pinch-to-zoom (two fingers) ────────────────────── */
-  const pinchScaleRef = useRef(1);
-
+  /* ── Mobile gestures: persistent pinch-zoom, free-pan, double-tap reset ──
+   * Attached natively (passive:false) so we can preventDefault and own the
+   * gesture. Two fingers → sticky zoom. One finger while zoomed → pan the
+   * page. Double-tap → reset to fit. Desktop keeps its wheel/button zoom. */
   useEffect(() => {
-    const el = containerRef.current;
-    if (!el) return;
-    let lastDist = 0;
+    const el = scrollRef.current;
+    if (!el || !isMobile) return;
+
     let raf = 0;
-    const getDist = (t1: Touch, t2: Touch) => Math.hypot(t1.clientX - t2.clientX, t1.clientY - t2.clientY);
-    const onTouchS = (e: TouchEvent) => {
+    let pinchStartDist = 0;
+    let pinchStartZoom = 1;
+    let panStartX = 0, panStartY = 0, panBaseX = 0, panBaseY = 0, panning = false;
+    let lastTapTime = 0;
+    const getDist = (a: Touch, b: Touch) => Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY);
+
+    const onStart = (e: TouchEvent) => {
       if (e.touches.length === 2) {
-        lastDist = getDist(e.touches[0], e.touches[1]);
-      }
-    };
-    const onTouchM = (e: TouchEvent) => {
-      if (e.touches.length === 2) {
-        e.preventDefault();
-        const d = getDist(e.touches[0], e.touches[1]);
-        const ratio = d / lastDist;
-        
-        if (Math.abs(ratio - 1) > 0.01) {
-          cancelAnimationFrame(raf);
-          raf = requestAnimationFrame(() => {
-            pinchScaleRef.current = Math.min(Math.max(pinchScaleRef.current * ratio, 0.5), 3.0);
-            setVisualScale(pinchScaleRef.current);
-            
-            if (zoomDebounceRef.current) clearTimeout(zoomDebounceRef.current);
-            zoomDebounceRef.current = setTimeout(() => {
-              const accumulated = pinchScaleRef.current;
-              setDisplayScale(s => {
-                const newScale = Math.min(Math.max(s * accumulated, 0.3), 4.0);
-                return newScale;
-              });
-              pinchScaleRef.current = 1;
-              setVisualScale(1);
-            }, 300);
-          });
-          lastDist = d;
+        // Begin a pinch — remember the starting spread and zoom.
+        pinchStartDist = getDist(e.touches[0], e.touches[1]);
+        pinchStartZoom = mZoomRef.current;
+        panning = false;
+        setMGesturing(true);
+      } else if (e.touches.length === 1) {
+        // Double-tap anywhere resets the zoom.
+        const now = Date.now();
+        if (now - lastTapTime < 300 && mZoomRef.current > 1.01) {
+          resetMobileZoom();
+          lastTapTime = 0;
+          return;
+        }
+        lastTapTime = now;
+        // Start a one-finger pan only when already zoomed in.
+        if (mZoomRef.current > 1.01) {
+          panning = true;
+          panStartX = e.touches[0].clientX;
+          panStartY = e.touches[0].clientY;
+          panBaseX = mPanRef.current.x;
+          panBaseY = mPanRef.current.y;
+          setMGesturing(true);
         }
       }
     };
-    const onTouchE = () => {
-      lastDist = 0;
+
+    const onMove = (e: TouchEvent) => {
+      if (e.touches.length === 2 && pinchStartDist > 0) {
+        e.preventDefault();
+        const d = getDist(e.touches[0], e.touches[1]);
+        const z = Math.min(Math.max(pinchStartZoom * (d / pinchStartDist), 1), 4);
+        cancelAnimationFrame(raf);
+        raf = requestAnimationFrame(() => applyZoomPan(z, mPanRef.current.x, mPanRef.current.y));
+      } else if (panning && e.touches.length === 1) {
+        // Panning a zoomed page — take over from native scroll.
+        e.preventDefault();
+        const nx = panBaseX + (e.touches[0].clientX - panStartX);
+        const ny = panBaseY + (e.touches[0].clientY - panStartY);
+        cancelAnimationFrame(raf);
+        raf = requestAnimationFrame(() => applyZoomPan(mZoomRef.current, nx, ny));
+      }
     };
-    el.addEventListener("touchstart", onTouchS, { passive: false });
-    el.addEventListener("touchmove", onTouchM, { passive: false });
-    el.addEventListener("touchend", onTouchE);
-    return () => { el.removeEventListener("touchstart", onTouchS); el.removeEventListener("touchmove", onTouchM); el.removeEventListener("touchend", onTouchE); cancelAnimationFrame(raf); };
-  }, []);
+
+    const onEnd = (e: TouchEvent) => {
+      if (e.touches.length === 0) {
+        pinchStartDist = 0;
+        panning = false;
+        setMGesturing(false);
+      } else if (e.touches.length === 1) {
+        // Lifting one finger of a pinch — stop pinching, don't jump into a pan.
+        pinchStartDist = 0;
+      }
+    };
+
+    el.addEventListener("touchstart", onStart, { passive: false });
+    el.addEventListener("touchmove", onMove, { passive: false });
+    el.addEventListener("touchend", onEnd, { passive: false });
+    el.addEventListener("touchcancel", onEnd, { passive: false });
+    return () => {
+      el.removeEventListener("touchstart", onStart);
+      el.removeEventListener("touchmove", onMove);
+      el.removeEventListener("touchend", onEnd);
+      el.removeEventListener("touchcancel", onEnd);
+      cancelAnimationFrame(raf);
+    };
+  }, [isMobile, applyZoomPan, resetMobileZoom]);
 
   /* ── Mouse wheel zoom ───────────────────────────────── */
   useEffect(() => {
@@ -707,7 +748,9 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, 
           panMode ? "cursor-grabbing" : "cursor-grab"
         )}
         style={{
-          touchAction: "pan-x pan-y",
+          // When zoomed on mobile we own the gesture (pan), so disable the
+          // browser's own touch scrolling; otherwise allow normal scroll/swipe.
+          touchAction: isMobile ? (mZoom > 1.01 ? "none" : "pan-x pan-y") : "pan-x pan-y",
           userSelect: panMode ? "none" : undefined,
         }}
         onContextMenu={(e) => e.preventDefault()}
@@ -715,10 +758,6 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, 
         onMouseMove={onMouseMovePan}
         onMouseUp={endMousePan}
         onMouseLeave={endMousePan}
-        onTouchStart={onTouchStartPan}
-        onTouchMove={onTouchMovePan}
-        onTouchEnd={onTouchEndPan}
-        onTouchCancel={onTouchEndPan}
       >
         <div
           className="flex flex-col items-center w-full py-1 sm:py-2"
@@ -757,9 +796,16 @@ export function PDFViewer({ pdfUrl, title, freeUntilPage = 20, initialPage = 1, 
                   : undefined,
               }}
             >
-              <div 
-                className="w-full h-full flex items-center justify-center will-change-transform transition-transform duration-75"
-                style={{ transform: `scale(${visualScale})` }}
+              <div
+                ref={pageWrapRef}
+                className="w-full h-full flex items-center justify-center will-change-transform"
+                style={{
+                  transform: isMobile
+                    ? `translate(${mPan.x}px, ${mPan.y}px) scale(${mZoom})`
+                    : `scale(${visualScale})`,
+                  transformOrigin: "center center",
+                  transition: mGesturing ? "none" : "transform 120ms ease-out",
+                }}
               >
                 <canvas
                   ref={canvasRef}
